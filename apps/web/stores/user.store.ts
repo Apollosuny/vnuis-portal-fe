@@ -1,0 +1,33 @@
+import { IUser } from '@/types/user.type';
+import { create } from 'zustand';
+
+type State = {
+  user: IUser | null;
+  jwt: string | null;
+  jwtRefresh: string | null;
+  isAuthenticated: boolean;
+};
+
+type Actions = {
+  setUser: (user: IUser | null) => void;
+  setJwt: (jwt: string | null) => void;
+  setJwtRefresh: (jwtRefresh: string | null) => void;
+  setIsAuthenticated: (isAuthenticated: boolean) => void;
+  clean: () => void;
+};
+
+const defaultStates = {
+  user: null,
+  jwt: null,
+  jwtRefresh: null,
+  isAuthenticated: false,
+};
+
+export const useUserStore = create<State & Actions>((set) => ({
+  ...defaultStates,
+  setUser: (user) => set({ user }),
+  setJwt: (jwt) => set({ jwt }),
+  setJwtRefresh: (jwtRefresh) => set({ jwtRefresh }),
+  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  clean: () => set({ ...defaultStates }),
+}));

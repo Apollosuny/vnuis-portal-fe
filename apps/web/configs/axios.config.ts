@@ -10,9 +10,9 @@ const axiosOptions = {
   },
 };
 
-export const nextusAxios = Axios.create(axiosOptions);
+export const nexusAxios = Axios.create(axiosOptions);
 
-nextusAxios.interceptors.request.use(
+nexusAxios.interceptors.request.use(
   (config) => {
     return config;
   },
@@ -21,7 +21,7 @@ nextusAxios.interceptors.request.use(
   }
 );
 
-nextusAxios.interceptors.response.use(
+nexusAxios.interceptors.response.use(
   (response) => {
     return response;
   },
