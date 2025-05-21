@@ -79,13 +79,20 @@ const LoginPage: React.FC = () => {
                 )}
               />
             </CardContent>
-            <CardFooter className='flex justify-end'>
+            <CardFooter className='flex flex-col gap-2'>
               <Button
                 onClick={() => handleSubmit(onLogin)}
                 disabled={shouldDisableButton}
                 className='w-full'
               >
                 Login
+              </Button>
+              <Button
+                variant='outline'
+                onClick={() => (window.location.href = '/dashboard')}
+                className='w-full'
+              >
+                Demo Dashboard
               </Button>
             </CardFooter>
           </Card>

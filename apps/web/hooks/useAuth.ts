@@ -43,7 +43,11 @@ export const useAuth = (onSuccess?: () => void) => {
         setJwtRefresh(res.jwtRefresh);
         setUser(res.user);
         setIsAuthenticated(true);
-        onSuccess?.();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          window.location.href = '/dashboard';
+        }
       }
     } catch (error) {
       handleApiError(error, 'Login failed');

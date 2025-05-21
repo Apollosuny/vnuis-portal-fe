@@ -7,22 +7,22 @@ import { PropsWithChildren, useEffect } from 'react';
 export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
   children,
 }) => {
-  const { jwt, jwtRefresh, user, clean } = useUserStore();
-  const router = useRouter();
+  // const { jwt, jwtRefresh, user, clean } = useUserStore();
+  // const router = useRouter();
 
-  useEffect(() => {
-    if (!jwt || !jwtRefresh || !user) {
-      clean();
-      router.push('/login');
-    }
-  }, [jwt, jwtRefresh, user]);
+  // useEffect(() => {
+  //   if (!jwt || !jwtRefresh || !user) {
+  //     clean();
+  //     router.push('/login');
+  //   }
+  // }, [jwt, jwtRefresh, user]);
 
-  if (!jwt || !jwtRefresh || !user) {
-    return (
-      <div className='flex h-screen items-center justify-center'>
-        Please login
-      </div>
-    );
-  }
+  // if (!jwt || !jwtRefresh || !user) {
+  //   return (
+  //     <div className='flex h-screen items-center justify-center'>
+  //       Please login
+  //     </div>
+  //   );
+  // }
   return <>{children}</>;
 };
