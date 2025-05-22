@@ -1,6 +1,6 @@
-import { login } from '@/api/auth.api';
-import { useUserStore } from '@/stores/user.store';
-import { handleApiError } from '@/utils/errorHandler';
+import { login } from '../api/auth.api';
+import { useUserStore } from '../stores/user.store';
+import { handleApiError } from '../utils/errorHandler';
 import { useMemo, useState } from 'react';
 import { object, string } from 'yup';
 import { useForm } from 'react-hook-form';
@@ -11,6 +11,14 @@ export type LoginValues = {
   password: string;
 };
 
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  profileId?: string;
+};
+
 const schema = object().shape({
   username: string().required('Username is required'),
   password: string().required('Password is required'),
@@ -18,7 +26,15 @@ const schema = object().shape({
 
 export const useAuth = (onSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
-  const { setJwt, setJwtRefresh, setUser, setIsAuthenticated } = useUserStore();
+  const {
+    jwt,
+    user,
+    isAuthenticated,
+    setJwt,
+    setJwtRefresh,
+    setUser,
+    setIsAuthenticated,
+  } = useUserStore();
 
   const {
     control,
@@ -57,6 +73,9 @@ export const useAuth = (onSuccess?: () => void) => {
   };
 
   return {
+    user,
+    jwt,
+    isAuthenticated,
     control,
     handleSubmit,
     onLogin,

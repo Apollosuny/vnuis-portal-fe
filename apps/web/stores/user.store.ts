@@ -1,4 +1,4 @@
-import { IUser } from '@/types/user.type';
+import { IUser } from '../types/user.type';
 import { create } from 'zustand';
 
 type State = {
@@ -6,6 +6,7 @@ type State = {
   jwt: string | null;
   jwtRefresh: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
 };
 
 type Actions = {
@@ -13,6 +14,7 @@ type Actions = {
   setJwt: (jwt: string | null) => void;
   setJwtRefresh: (jwtRefresh: string | null) => void;
   setIsAuthenticated: (isAuthenticated: boolean) => void;
+  setIsLoading: (isLoading: boolean) => void;
   clean: () => void;
 };
 
@@ -21,6 +23,7 @@ const defaultStates = {
   jwt: null,
   jwtRefresh: null,
   isAuthenticated: false,
+  isLoading: false,
 };
 
 export const useUserStore = create<State & Actions>((set) => ({
@@ -29,5 +32,6 @@ export const useUserStore = create<State & Actions>((set) => ({
   setJwt: (jwt) => set({ jwt }),
   setJwtRefresh: (jwtRefresh) => set({ jwtRefresh }),
   setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  setIsLoading: (isLoading) => set({ isLoading }),
   clean: () => set({ ...defaultStates }),
 }));

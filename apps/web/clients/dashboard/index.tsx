@@ -25,11 +25,13 @@ import {
   Settings,
   SquareStackIcon,
   User,
+  DoorOpen,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FormsPanel from '@/clients/dashboard/panels/forms-panel';
 import BookingsPanel from '@/clients/dashboard/panels/bookings-panel';
 import EventsPanel from '@/clients/dashboard/panels/events-panel';
+import RoomsPanel from '@/clients/dashboard/panels/rooms-panel';
 
 const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -55,6 +57,12 @@ const DashboardPage: React.FC = () => {
               label='Forms'
               active={activeTab === 'forms'}
               onClick={() => setActiveTab('forms')}
+            />
+            <SidebarItem
+              icon={<DoorOpen size={18} />}
+              label='Rooms'
+              active={activeTab === 'rooms'}
+              onClick={() => setActiveTab('rooms')}
             />
             <SidebarItem
               icon={<Calendar size={18} />}
@@ -92,6 +100,7 @@ const DashboardPage: React.FC = () => {
               <h1 className='text-2xl font-semibold'>
                 {activeTab === 'overview' && 'Dashboard Overview'}
                 {activeTab === 'forms' && 'Administrative Procedures'}
+                {activeTab === 'rooms' && 'Room Management'}
                 {activeTab === 'bookings' && 'Room Bookings'}
                 {activeTab === 'events' && 'Events Management'}
                 {activeTab === 'settings' && 'Settings'}
@@ -107,6 +116,7 @@ const DashboardPage: React.FC = () => {
             <main className='flex-1 p-6 overflow-auto'>
               {activeTab === 'overview' && <OverviewPanel />}
               {activeTab === 'forms' && <FormsPanel />}
+              {activeTab === 'rooms' && <RoomsPanel />}
               {activeTab === 'bookings' && <BookingsPanel />}
               {activeTab === 'events' && <EventsPanel />}
               {activeTab === 'settings' && <SettingsPanel />}

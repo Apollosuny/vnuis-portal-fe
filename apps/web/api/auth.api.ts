@@ -1,5 +1,5 @@
-import { nexusAxios } from '@/configs/axios.config';
-import { IUser } from '@/types/user.type';
+import { nexusAxios } from '../configs/axios.config';
+import { IUser } from '../types/user.type';
 
 export const login = async (
   username: string,
