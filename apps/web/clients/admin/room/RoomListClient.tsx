@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRoomOperations } from '../../hooks/useRoom';
 import { PlusIcon, Loader2Icon, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
-import { RoomType } from '../../types/room.types';
+import { useRoomOperations } from '@/hooks/useRoom';
+import { RoomType } from '@/types/room.types';
 
 export const RoomListClient = () => {
   const { rooms, isLoading, fetchRooms } = useRoomOperations();

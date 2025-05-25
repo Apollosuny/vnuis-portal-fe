@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { ArrowLeftIcon, PlusIcon, TrashIcon, SaveIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, SaveIcon, ArrowLeft } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { useFormCreation } from '@/hooks/useFormCreation';
 import { Button } from '@workspace/ui/components/button';
 import { Question, Answer } from '@/types/administrative-form.types';
+import { useRouter } from 'next/navigation';
 
 export const FormCreationClient = () => {
+  const router = useRouter();
   const [questionCount, setQuestionCount] = useState(1);
 
   const {
@@ -124,20 +125,20 @@ export const FormCreationClient = () => {
   ];
 
   return (
-    <div className='container mx-auto py-6 px-4 sm:px-6'>
-      <div className='mb-6'>
-        <Link
-          href='/admin/forms'
-          className='text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors'
+    <div className='space-y-6'>
+      {/* Back button */}
+      <div className='flex items-center gap-2'>
+        <Button
+          variant='ghost'
+          onClick={() => router.push('/dashboard/forms')}
+          className='flex items-center gap-2'
         >
-          <ArrowLeftIcon className='h-4 w-4' />
+          <ArrowLeft className='h-4 w-4' />
           Back to Forms
-        </Link>
+        </Button>
       </div>
 
-      <h1 className='text-3xl font-bold mb-8 text-white'>Create New Form</h1>
-
-      <div className='bg-gray-900 rounded-xl shadow-lg p-8 border border-gray-800'>
+      <div className='bg-card rounded-xl shadow-lg p-8 border'>
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
           {/* Form Basic Information */}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>

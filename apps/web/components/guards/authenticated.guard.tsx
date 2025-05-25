@@ -11,11 +11,12 @@ export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
   const { jwt, jwtRefresh, user, isAuthenticated, isLoading } = useUserStore();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (!isLoading && (!jwt || !jwtRefresh || !user || !isAuthenticated)) {
-  //     router.push('/login');
-  //   }
-  // }, [jwt, jwtRefresh, user, isAuthenticated, isLoading, router]);
+  useEffect(() => {
+    // if (!isLoading && (!jwt || !jwtRefresh || !user || !isAuthenticated)) {
+    //   router.push('/login');
+    // }
+    // router.push('/login');
+  }, []);
 
   // if (isLoading) {
   //   return (

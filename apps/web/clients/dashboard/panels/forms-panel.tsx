@@ -27,6 +27,8 @@ import {
   SelectValue,
 } from '@workspace/ui/components/select';
 import { Badge } from '@workspace/ui/components/badge';
+import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/constants/router';
 
 // Mock data for forms
 const mockForms = [
@@ -86,6 +88,7 @@ const mockForms = [
 ];
 
 const FormsPanel: React.FC = () => {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -159,7 +162,10 @@ const FormsPanel: React.FC = () => {
           </div>
         </div>
 
-        <Button className='flex items-center gap-2'>
+        <Button
+          className='flex items-center gap-2'
+          onClick={() => router.push(ROUTES.CREATE_FORM)}
+        >
           <Plus className='size-4' />
           <span>Create Form</span>
         </Button>
