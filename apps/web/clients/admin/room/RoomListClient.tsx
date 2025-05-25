@@ -5,6 +5,7 @@ import { PlusIcon, Loader2Icon, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRoomOperations } from '@/hooks/useRoom';
 import { RoomType } from '@/types/room.types';
+import { ROUTES } from '@/constants/router';
 
 export const RoomListClient = () => {
   const { rooms, isLoading, fetchRooms } = useRoomOperations();
@@ -39,7 +40,7 @@ export const RoomListClient = () => {
       <div className='flex justify-between items-center mb-6'>
         <h1 className='text-2xl font-bold'>Room Management</h1>
         <Link
-          href='/rooms/create'
+          href={ROUTES.CREATE_ROOM}
           className='bg-primary text-white px-4 py-2 rounded-md flex items-center gap-2'
         >
           <PlusIcon className='h-4 w-4' />

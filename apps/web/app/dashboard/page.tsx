@@ -1,4 +1,4 @@
-import DashboardPage from '@/clients/dashboard';
+import DashboardPage from '@/clients/admin/dashboard';
 
 export default function Page() {
   return <DashboardPage />;

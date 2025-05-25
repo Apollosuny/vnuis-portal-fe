@@ -38,7 +38,7 @@ import {
 } from '@workspace/ui/components/select';
 import { Badge } from '@workspace/ui/components/badge';
 import { useRouter } from 'next/navigation';
-import { RoomType } from '../../../types/room.types';
+import { RoomType } from '@/types/room.types';
 
 // Mock data for rooms
 const mockRooms = [

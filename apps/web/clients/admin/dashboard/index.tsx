@@ -8,11 +8,11 @@ import {
   CardTitle,
 } from '@workspace/ui/components/card';
 import { BarChart4, Calendar, FileText } from 'lucide-react';
-import FormsPanel from '@/clients/dashboard/panels/forms-panel';
-import BookingsPanel from '@/clients/dashboard/panels/bookings-panel';
-import EventsPanel from '@/clients/dashboard/panels/events-panel';
-import RoomsPanel from '@/clients/dashboard/panels/rooms-panel';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
+import FormsPanel from './panels/forms-panel';
+import RoomsPanel from './panels/rooms-panel';
+import BookingsPanel from './panels/bookings-panel';
+import EventsPanel from './panels/events-panel';
 
 const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');

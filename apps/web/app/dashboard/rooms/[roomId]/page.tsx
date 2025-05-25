@@ -1,5 +1,5 @@
 import { RoomDetailClient } from '../../../clients/room/RoomDetailClient';
-import { AuthenticatedGuard } from '../../../components/guards/authenticated.guard';
+import { AuthenticatedGuard } from '../../../../components/guards/authenticated.guard';
 
 export const metadata = {
   title: 'Room Details - VirtuUni Nexus',

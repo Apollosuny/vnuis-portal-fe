@@ -1,6 +1,7 @@
 import { AdminGuard } from '@/components/guards/admin.guard';
-import { RoomFormClient } from '../../../clients/room/RoomFormClient';
-import { AuthenticatedGuard } from '../../../components/guards/authenticated.guard';
+import { AuthenticatedGuard } from '../../../../components/guards/authenticated.guard';
+import { RoomFormClient } from '@/clients/admin/room/RoomFormClient';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 
 export const metadata = {
   title: 'Create Room - VirtuUni Nexus',
@@ -14,6 +15,8 @@ export default function CreateRoomPage() {
     //     <RoomFormClient />
     //   </AdminGuard>
     // </AuthenticatedGuard>
-    <RoomFormClient />
+    <DashboardLayout title='Create Room'>
+      <RoomFormClient />
+    </DashboardLayout>
   );
 }

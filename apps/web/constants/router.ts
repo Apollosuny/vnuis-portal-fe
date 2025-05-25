@@ -4,4 +4,6 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
   CREATE_FORM: '/dashboard/forms/create',
+  ROOMS: '/dashboard/rooms',
+  CREATE_ROOM: '/dashboard/rooms/create',
 };

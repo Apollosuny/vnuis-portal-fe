@@ -1,15 +1,13 @@
 'use client';
 
 import { Controller } from 'react-hook-form';
-import {
-  useCreateRoom,
-  useUpdateRoom,
-  RoomFormValues,
-} from '../../hooks/useRoom';
-import { RoomType, Room } from '../../types/room.types';
+
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, Loader2Icon } from 'lucide-react';
 import Link from 'next/link';
+import { RoomFormValues, useCreateRoom, useUpdateRoom } from '@/hooks/useRoom';
+import { Room, RoomType } from '@/types/room.types';
+import { ROUTES } from '@/constants/router';
 
 type RoomFormClientProps = {
   room?: Room | null;
@@ -65,26 +63,29 @@ export const RoomFormClient = ({
     <div className='container mx-auto py-6'>
       <div className='mb-6'>
         <Link
-          href={isEditing && room ? `/rooms/${room.roomId}` : '/rooms'}
-          className='text-gray-500 hover:text-gray-700 flex items-center gap-1'
+          href={
+            isEditing && room ? `${ROUTES.ROOMS}/${room.roomId}` : ROUTES.ROOMS
+          }
+          className='flex items-center gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
         >
           <ArrowLeftIcon className='h-4 w-4' />
           {isEditing ? 'Back to Room Details' : 'Back to Rooms'}
         </Link>
       </div>
 
-      <h1 className='text-2xl font-bold mb-6'>
+      <h1 className='text-2xl font-bold mb-6 text-gray-900 dark:text-white'>
         {isEditing ? 'Edit Room' : 'Create New Room'}
       </h1>
 
-      <div className='bg-white rounded-lg shadow-sm p-6 border'>
+      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700'>
         <form onSubmit={submitHandler} className='space-y-6'>
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
             <div className='space-y-4'>
+              {/* Room Name */}
               <div>
                 <label
                   htmlFor='name'
-                  className='block text-sm font-medium mb-1'
+                  className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'
                 >
                   Room Name *
                 </label>
@@ -97,11 +98,11 @@ export const RoomFormClient = ({
                         {...field}
                         id='name'
                         type='text'
-                        className='w-full border rounded-md p-2'
+                        className='w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
                         placeholder='Enter room name'
                       />
                       {formErrors.name && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 dark:text-red-400 text-sm mt-1'>
                           {formErrors.name.message}
                         </p>
                       )}
@@ -110,10 +111,11 @@ export const RoomFormClient = ({
                 />
               </div>
 
+              {/* Description */}
               <div>
                 <label
                   htmlFor='description'
-                  className='block text-sm font-medium mb-1'
+                  className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'
                 >
                   Description
                 </label>
@@ -126,11 +128,11 @@ export const RoomFormClient = ({
                         {...field}
                         id='description'
                         rows={3}
-                        className='w-full border rounded-md p-2'
+                        className='w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
                         placeholder='Enter room description'
                       />
                       {formErrors.description && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 dark:text-red-400 text-sm mt-1'>
                           {formErrors.description.message}
                         </p>
                       )}
@@ -139,10 +141,11 @@ export const RoomFormClient = ({
                 />
               </div>
 
+              {/* Capacity */}
               <div>
                 <label
                   htmlFor='capacity'
-                  className='block text-sm font-medium mb-1'
+                  className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'
                 >
                   Capacity *
                 </label>
@@ -156,11 +159,11 @@ export const RoomFormClient = ({
                         id='capacity'
                         type='number'
                         min={10}
-                        className='w-full border rounded-md p-2'
+                        className='w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
                         placeholder='Enter room capacity'
                       />
                       {formErrors.capacity && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 dark:text-red-400 text-sm mt-1'>
                           {formErrors.capacity.message}
                         </p>
                       )}
@@ -171,10 +174,11 @@ export const RoomFormClient = ({
             </div>
 
             <div className='space-y-4'>
+              {/* Location */}
               <div>
                 <label
                   htmlFor='location'
-                  className='block text-sm font-medium mb-1'
+                  className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'
                 >
                   Location *
                 </label>
@@ -187,11 +191,11 @@ export const RoomFormClient = ({
                         {...field}
                         id='location'
                         type='text'
-                        className='w-full border rounded-md p-2'
+                        className='w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500'
                         placeholder='Enter room location'
                       />
                       {formErrors.location && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 dark:text-red-400 text-sm mt-1'>
                           {formErrors.location.message}
                         </p>
                       )}
@@ -200,10 +204,11 @@ export const RoomFormClient = ({
                 />
               </div>
 
+              {/* Room Type */}
               <div>
                 <label
                   htmlFor='type'
-                  className='block text-sm font-medium mb-1'
+                  className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'
                 >
                   Room Type *
                 </label>
@@ -215,7 +220,7 @@ export const RoomFormClient = ({
                       <select
                         {...field}
                         id='type'
-                        className='w-full border rounded-md p-2'
+                        className='w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                       >
                         <option value=''>Select Room Type</option>
                         <option value={RoomType.CLASSROOM}>Classroom</option>
@@ -223,7 +228,7 @@ export const RoomFormClient = ({
                         <option value={RoomType.EVENT}>Event Hall</option>
                       </select>
                       {formErrors.type && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 dark:text-red-400 text-sm mt-1'>
                           {formErrors.type.message}
                         </p>
                       )}
@@ -232,8 +237,9 @@ export const RoomFormClient = ({
                 />
               </div>
 
+              {/* Availability */}
               <div>
-                <label className='block text-sm font-medium mb-1'>
+                <label className='block text-sm font-medium mb-1 text-gray-700 dark:text-gray-200'>
                   Availability
                 </label>
                 <Controller
@@ -246,9 +252,12 @@ export const RoomFormClient = ({
                         id='isAvailable'
                         checked={field.value}
                         onChange={field.onChange}
-                        className='h-4 w-4'
+                        className='h-4 w-4 text-primary dark:text-primary-dark bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded'
                       />
-                      <label htmlFor='isAvailable' className='text-sm'>
+                      <label
+                        htmlFor='isAvailable'
+                        className='text-sm text-gray-900 dark:text-gray-100'
+                      >
                         Room is available for booking
                       </label>
                     </div>
@@ -261,18 +270,16 @@ export const RoomFormClient = ({
           <div className='flex justify-end mt-6'>
             <Link
               href={isEditing && room ? `/rooms/${room.roomId}` : '/rooms'}
-              className='bg-gray-200 text-gray-800 px-4 py-2 rounded-md mr-2'
+              className='px-4 py-2 mr-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
             >
               Cancel
             </Link>
             <button
               type='submit'
               disabled={isDisabled}
-              className='bg-primary text-white px-4 py-2 rounded-md flex items-center gap-2 disabled:opacity-50'
+              className='flex items-center gap-2 px-4 py-2 rounded-md bg-primary dark:bg-primary-dark text-white disabled:opacity-50'
             >
-              {isSubmitting ? (
-                <Loader2Icon className='h-4 w-4 animate-spin' />
-              ) : null}
+              {isSubmitting && <Loader2Icon className='h-4 w-4 animate-spin' />}
               {isEditing ? 'Update Room' : 'Create Room'}
             </button>
           </div>

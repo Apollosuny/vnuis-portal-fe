@@ -49,7 +49,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         router.push('/dashboard/forms');
         break;
       case 'rooms':
-        router.push('/rooms');
+        router.push(ROUTES.ROOMS);
         break;
       case 'bookings':
         router.push('/dashboard'); // Update when bookings page is available
