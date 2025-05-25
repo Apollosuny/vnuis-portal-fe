@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2Icon } from 'lucide-react';
 import { toast } from 'sonner';
+import { Role } from '@/types/user.types';
 
 type AdminGuardProps = {
   children: React.ReactNode;
@@ -15,10 +16,15 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   const router = useRouter();
 
   useEffect(() => {
-    // if (!isLoading && user && user.role !== 'ADMIN') {
-    //   toast.error('You do not have permission to access this page');
-    //   router.push('/rooms');
-    // }
+    if (
+      !isLoading &&
+      user &&
+      user.role !== Role.ADMIN &&
+      user.role !== Role.SUPERADMIN
+    ) {
+      toast.error('You do not have permission to access this page');
+      router.push('/dashboard');
+    }
   }, [user, isLoading, router]);
 
   if (isLoading) {
@@ -29,7 +35,7 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     );
   }
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role !== Role.ADMIN && user.role !== Role.SUPERADMIN)) {
     return null;
   }
 
