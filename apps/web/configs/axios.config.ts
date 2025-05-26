@@ -1,6 +1,6 @@
 import Axios from 'axios';
 
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000/api';
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
 
 const axiosOptions = {
   baseURL: baseUrl,

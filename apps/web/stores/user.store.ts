@@ -1,10 +1,10 @@
 // User store with zustand
-import { User } from '../types/user.types';
+import { IUser } from '@/types/user.type';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type State = {
-  user: User | null;
+  user: IUser | null;
   jwt: string | null;
   jwtRefresh: string | null;
   isAuthenticated: boolean;
@@ -12,7 +12,7 @@ type State = {
 };
 
 type Actions = {
-  setUser: (user: User | null) => void;
+  setUser: (user: IUser | null) => void;
   setJwt: (jwt: string | null) => void;
   setJwtRefresh: (jwtRefresh: string | null) => void;
   setIsAuthenticated: (isAuthenticated: boolean) => void;

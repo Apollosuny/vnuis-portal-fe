@@ -16,6 +16,7 @@ import {
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
+import { useLogout } from '@/hooks/useLogout';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
+  const { onLogout } = useLogout();
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -126,7 +128,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <SidebarItem
               icon={<LogOut size={18} />}
               label='Logout'
-              onClick={() => console.log('logout')}
+              onClick={onLogout}
             />
           </div>
         </div>
@@ -161,7 +163,7 @@ const SidebarItem: React.FC<{
 }> = ({ icon, label, active, onClick }) => {
   return (
     <button
-      className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors ${
+      className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors cursor-pointer ${
         active
           ? 'bg-sidebar-primary text-sidebar-primary-foreground'
           : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'

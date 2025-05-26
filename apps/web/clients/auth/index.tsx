@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Card,
@@ -14,14 +14,35 @@ import { Input } from '@workspace/ui/components/input';
 import { Button } from '@workspace/ui/components/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Controller } from 'react-hook-form';
+import { useUserStore } from '@/stores/user.store';
 
 const LoginPage: React.FC = () => {
+  const { jwt, jwtRefresh, isAuthenticated, user } = useUserStore();
   const { onLogin, control, errors, handleSubmit, shouldDisableButton } =
     useAuth();
 
+  useEffect(() => {
+    // if (isAuthenticated && jwt && jwtRefresh && user) {
+    //   // Redirect to the dashboard or home page if already authenticated
+    //   window.location.href = '/dashboard'; // Adjust the redirect path as needed
+    // }
+  }, [jwt, jwtRefresh, isAuthenticated, user]);
+
   return (
-    <div className='h-screen w-full relative'>
-      <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
+    <div className='h-screen w-full relative overflow-hidden'>
+      {/* Video background */}
+      <video
+        className='absolute top-0 left-0 w-full h-full object-cover'
+        src='/assets/video/main-bg.mp4'
+        autoPlay
+        muted
+        loop
+      />
+
+      <div className='absolute inset-0' />
+
+      {/* Form */}
+      <div className='fixed inset-0 z-10 flex items-center justify-center'>
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -81,18 +102,11 @@ const LoginPage: React.FC = () => {
             </CardContent>
             <CardFooter className='flex flex-col gap-2'>
               <Button
-                onClick={() => handleSubmit(onLogin)}
+                onClick={() => handleSubmit(onLogin)()}
                 disabled={shouldDisableButton}
-                className='w-full'
+                className='w-full cursor-pointer'
               >
                 Login
-              </Button>
-              <Button
-                variant='outline'
-                onClick={() => (window.location.href = '/dashboard')}
-                className='w-full'
-              >
-                Demo Dashboard
               </Button>
             </CardFooter>
           </Card>
