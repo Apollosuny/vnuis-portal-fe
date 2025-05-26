@@ -2,20 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Select } from '@/components/ui/select';
 import { Controller } from 'react-hook-form';
 import { useEventFilter } from '@/hooks/useEvent';
 import { eventApi } from '@/api/event.api';
@@ -25,6 +11,30 @@ import { PlusIcon, FilterIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
+
+// Import UI components from workspace
+import { Button } from '@workspace/ui/components/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@workspace/ui/components/card';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@workspace/ui/components/table';
+import { Badge } from '@workspace/ui/components/badge';
+
+// Import form components
+import { FormInput } from '@/components/ui/form-input';
+import { FormDateTimePicker } from '@/components/ui/form-date-time-picker';
+import { FormSelect } from '@/components/ui/form-select';
+import { FormButton } from '@/components/ui/form-button';
 
 export const EventsClient = () => {
   const router = useRouter();
@@ -120,7 +130,7 @@ export const EventsClient = () => {
                   name='searchTerm'
                   control={control}
                   render={({ field }) => (
-                    <Input
+                    <FormInput
                       {...field}
                       id='searchTerm'
                       placeholder='Search by name or description'
@@ -135,7 +145,7 @@ export const EventsClient = () => {
                   name='startDate'
                   control={control}
                   render={({ field }) => (
-                    <DatePicker {...field} id='startDate' />
+                    <FormDateTimePicker {...field} id='startDate' />
                   )}
                 />
               </div>
@@ -145,7 +155,9 @@ export const EventsClient = () => {
                 <Controller
                   name='endDate'
                   control={control}
-                  render={({ field }) => <DatePicker {...field} id='endDate' />}
+                  render={({ field }) => (
+                    <FormDateTimePicker {...field} id='endDate' />
+                  )}
                 />
               </div>
 
@@ -155,9 +167,8 @@ export const EventsClient = () => {
                   name='category'
                   control={control}
                   render={({ field }) => (
-                    <Select
+                    <FormSelect
                       {...field}
-                      id='category'
                       options={[
                         { label: 'All Categories', value: '' },
                         { label: 'Academic', value: 'academic' },
@@ -176,9 +187,9 @@ export const EventsClient = () => {
                   name='isPublished'
                   control={control}
                   render={({ field }) => (
-                    <Select
+                    <FormSelect
                       {...field}
-                      id='isPublished'
+                      value={field.value?.toString() || ''}
                       options={[
                         { label: 'All', value: '' },
                         { label: 'Published', value: 'true' },
@@ -190,9 +201,9 @@ export const EventsClient = () => {
               </div>
 
               <div className='flex items-end space-x-2 md:col-span-2 lg:col-span-1'>
-                <Button type='submit' className='flex-1'>
+                <FormButton type='submit' className='flex-1'>
                   Apply Filters
-                </Button>
+                </FormButton>
                 <Button type='button' variant='outline' onClick={resetFilter}>
                   Reset
                 </Button>
@@ -261,7 +272,7 @@ export const EventsClient = () => {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={event.isPublished ? 'success' : 'secondary'}
+                          variant={event.isPublished ? 'default' : 'secondary'}
                         >
                           {event.isPublished ? 'Published' : 'Draft'}
                         </Badge>
@@ -288,7 +299,7 @@ export const EventsClient = () => {
                         <Button
                           size='sm'
                           variant={
-                            event.isPublished ? 'destructive' : 'success'
+                            event.isPublished ? 'destructive' : 'default'
                           }
                           onClick={() => handlePublishToggle(event)}
                         >

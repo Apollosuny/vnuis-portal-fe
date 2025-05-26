@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
 
 // Validation schema for event form
-const eventSchema = object().shape({
+const eventSchema = object({
   name: string().required('Event name is required'),
   description: string().required('Description is required'),
   startTime: date().required('Start time is required'),
@@ -33,11 +33,11 @@ const eventSchema = object().shape({
     .required('Capacity is required')
     .positive('Capacity must be positive')
     .integer('Capacity must be an integer'),
-  isPublished: boolean(),
-  imageUrl: string().url('Image URL must be a valid URL').nullable(),
-  category: string().nullable(),
+  isPublished: boolean().default(false),
+  imageUrl: string().url('Image URL must be a valid URL').optional(),
+  category: string().optional(),
   registrationDeadline: date()
-    .nullable()
+    .optional()
     .test(
       'is-before-start',
       'Registration deadline must be before event start time',
@@ -50,7 +50,8 @@ const eventSchema = object().shape({
         );
       }
     ),
-  requireApproval: boolean(),
+  requireApproval: boolean().default(false),
+  metadata: object().optional(),
 });
 
 // Default values for creating a new event
@@ -74,11 +75,11 @@ export const useEventForm = (
 
   const {
     control,
-    handleSubmit,
+    handleSubmit: rhfHandleSubmit,
     reset,
     formState: { errors, isDirty, isValid },
   } = useForm<EventFormValues>({
-    resolver: yupResolver(eventSchema),
+    resolver: yupResolver(eventSchema as any),
     defaultValues: {
       ...defaultValues,
       ...initialValues,
@@ -132,6 +133,10 @@ export const useEventForm = (
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = (callback: (data: EventFormValues) => void) => {
+    return rhfHandleSubmit((data) => callback(data as EventFormValues));
   };
 
   return {

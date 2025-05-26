@@ -18,7 +18,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@workspace/ui/components/card';
-import { Input } from '@workspace/ui/components/input';
+
+// Import custom form components
+import { FormInput } from '@/components/ui/form-input';
+import { FormTextarea } from '@/components/ui/form-textarea';
+import { FormDateTimePicker } from '@/components/ui/form-date-time-picker';
+import { FormSelect } from '@/components/ui/form-select';
+import { FormSwitch } from '@/components/ui/form-switch';
+import { FormButton } from '@/components/ui/form-button';
 
 type EventFormClientProps = {
   eventId?: string;
@@ -105,10 +112,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
         </h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit((data) => onSubmit(data as EventFormValues))}
-        className='space-y-8'
-      >
+      <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <Card>
             <CardHeader className='pb-3'>
@@ -123,7 +127,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                   name='name'
                   control={control}
                   render={({ field }) => (
-                    <Input
+                    <FormInput
                       {...field}
                       id='name'
                       placeholder='Event Name'
@@ -141,7 +145,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                   name='description'
                   control={control}
                   render={({ field }) => (
-                    <Textarea
+                    <FormTextarea
                       {...field}
                       id='description'
                       rows={5}
@@ -161,7 +165,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='startTime'
                     control={control}
                     render={({ field }) => (
-                      <DateTimePicker
+                      <FormDateTimePicker
                         {...field}
                         id='startTime'
                         error={errors.startTime?.message}
@@ -178,7 +182,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='endTime'
                     control={control}
                     render={({ field }) => (
-                      <DateTimePicker
+                      <FormDateTimePicker
                         {...field}
                         id='endTime'
                         error={errors.endTime?.message}
@@ -200,7 +204,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='location'
                     control={control}
                     render={({ field }) => (
-                      <Input
+                      <FormInput
                         {...field}
                         id='location'
                         placeholder='Event location'
@@ -221,7 +225,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='capacity'
                     control={control}
                     render={({ field: { onChange, value } }) => (
-                      <Input
+                      <FormInput
                         id='capacity'
                         type='number'
                         className='w-full'
@@ -247,9 +251,8 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='category'
                     control={control}
                     render={({ field }) => (
-                      <Select
+                      <FormSelect
                         {...field}
-                        id='category'
                         placeholder='Select a category'
                         options={[
                           { label: 'Academic', value: 'academic' },
@@ -275,7 +278,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='registrationDeadline'
                     control={control}
                     render={({ field }) => (
-                      <DateTimePicker
+                      <FormDateTimePicker
                         {...field}
                         id='registrationDeadline'
                         error={errors.registrationDeadline?.message}
@@ -294,7 +297,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                   name='imageUrl'
                   control={control}
                   render={({ field }) => (
-                    <Input
+                    <FormInput
                       {...field}
                       id='imageUrl'
                       placeholder='https://example.com/image.jpg'
@@ -310,7 +313,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                     name='requireApproval'
                     control={control}
                     render={({ field: { value, onChange } }) => (
-                      <Switch
+                      <FormSwitch
                         id='requireApproval'
                         checked={value}
                         onCheckedChange={onChange}
@@ -331,7 +334,7 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
                       name='isPublished'
                       control={control}
                       render={({ field: { value, onChange } }) => (
-                        <Switch
+                        <FormSwitch
                           id='isPublished'
                           checked={value}
                           onCheckedChange={onChange}
@@ -359,13 +362,13 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
           >
             Cancel
           </Button>
-          <Button
+          <FormButton
             type='submit'
             disabled={shouldDisableButton}
             loading={isLoading}
           >
             {isEditMode ? 'Update Event' : 'Create Event'}
-          </Button>
+          </FormButton>
         </div>
       </form>
     </div>

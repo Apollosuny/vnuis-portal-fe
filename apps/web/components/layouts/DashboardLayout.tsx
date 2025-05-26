@@ -55,7 +55,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         router.push('/dashboard'); // Update when bookings page is available
         break;
       case 'events':
-        router.push('/dashboard'); // Update when events page is available
+        router.push(ROUTES.EVENTS); // Update when events page is available
         break;
       case 'settings':
         router.push('/dashboard'); // Update when settings page is available

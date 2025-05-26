@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@workspace/ui/lib/utils';
 
 type SpinnerProps = {
   size?: 'sm' | 'md' | 'lg';

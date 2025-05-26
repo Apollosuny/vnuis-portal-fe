@@ -1,4 +1,5 @@
 import { EventsClient } from '@/clients/admin/events/events-list.client';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 
 export const metadata = {
   title: 'Events Management',
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function EventsPage() {
-  return <EventsClient />;
+  return (
+    <DashboardLayout title='Event Management'>
+      <EventsClient />
+    </DashboardLayout>
+  );
 }
