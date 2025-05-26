@@ -6,4 +6,6 @@ export const ROUTES = {
   CREATE_FORM: '/dashboard/forms/create',
   ROOMS: '/dashboard/rooms',
   CREATE_ROOM: '/dashboard/rooms/create',
+  EVENTS: '/dashboard/events',
+  CREATE_EVENT: '/dashboard/events/create',
 };
