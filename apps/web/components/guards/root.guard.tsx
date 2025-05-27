@@ -6,28 +6,30 @@ import { PropsWithChildren, useEffect, useState } from 'react';
 import { Loader2Icon } from 'lucide-react';
 import { ROUTES } from '@/constants/router';
 
-export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const RootGuard: React.FC<PropsWithChildren> = ({ children }) => {
   const { jwt, jwtRefresh, user, isAuthenticated, isLoading } = useUserStore();
   const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Đặt timeout để đảm bảo dữ liệu được tải đầy đủ
     const timer = setTimeout(() => {
       if (!isLoading) {
-        if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
+        const isLoggedIn = jwt && jwtRefresh && user && isAuthenticated;
+
+        if (isLoggedIn) {
+          router.replace(ROUTES.DASHBOARD);
+        } else {
           router.replace(ROUTES.LOGIN);
         }
-        setCheckingAuth(false);
+
+        setIsChecking(false);
       }
-    }, 500); // Chờ 500ms
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [isLoading, jwt, jwtRefresh, user, isAuthenticated, router]);
 
-  if (isLoading || checkingAuth) {
+  if (isLoading || isChecking) {
     return (
       <div className='flex h-screen items-center justify-center'>
         <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
@@ -35,13 +37,5 @@ export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
     );
   }
 
-  if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
-    return (
-      <div className='flex h-screen items-center justify-center'>
-        <p className='text-lg'>Please login to continue</p>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
+  return null;
 };

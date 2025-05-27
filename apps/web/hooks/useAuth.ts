@@ -5,6 +5,8 @@ import { useMemo, useState } from 'react';
 import { object, string } from 'yup';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/constants/router';
 
 export type LoginValues = {
   username: string;
@@ -26,6 +28,7 @@ const schema = object().shape({
 
 export const useAuth = (onSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const {
     jwt,
     user,
@@ -62,7 +65,7 @@ export const useAuth = (onSuccess?: () => void) => {
         if (onSuccess) {
           onSuccess();
         } else {
-          window.location.href = '/dashboard';
+          router.replace(ROUTES.DASHBOARD);
         }
       }
     } catch (error) {

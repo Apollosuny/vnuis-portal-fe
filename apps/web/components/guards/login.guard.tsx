@@ -6,28 +6,32 @@ import { PropsWithChildren, useEffect, useState } from 'react';
 import { Loader2Icon } from 'lucide-react';
 import { ROUTES } from '@/constants/router';
 
-export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
-  children,
-}) => {
+export const LoginGuard: React.FC<PropsWithChildren> = ({ children }) => {
   const { jwt, jwtRefresh, user, isAuthenticated, isLoading } = useUserStore();
   const router = useRouter();
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Đặt timeout để đảm bảo dữ liệu được tải đầy đủ
+    // Chờ store được hydrate
     const timer = setTimeout(() => {
       if (!isLoading) {
-        if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
-          router.replace(ROUTES.LOGIN);
+        const isLoggedIn = jwt && jwtRefresh && user && isAuthenticated;
+
+        if (isLoggedIn) {
+          // Đã đăng nhập -> redirect về dashboard
+          router.replace(ROUTES.DASHBOARD);
+          return;
         }
-        setCheckingAuth(false);
+
+        setIsChecking(false);
       }
-    }, 500); // Chờ 500ms
+    }, 100);
 
     return () => clearTimeout(timer);
   }, [isLoading, jwt, jwtRefresh, user, isAuthenticated, router]);
 
-  if (isLoading || checkingAuth) {
+  // Hiển thị loading spinner trong khi kiểm tra auth
+  if (isLoading || isChecking) {
     return (
       <div className='flex h-screen items-center justify-center'>
         <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
@@ -35,13 +39,6 @@ export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
     );
   }
 
-  if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
-    return (
-      <div className='flex h-screen items-center justify-center'>
-        <p className='text-lg'>Please login to continue</p>
-      </div>
-    );
-  }
-
+  // Render children nếu chưa đăng nhập
   return <>{children}</>;
 };

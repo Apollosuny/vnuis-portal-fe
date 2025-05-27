@@ -8,7 +8,7 @@ export const useLogout = () => {
 
   const onLogout = () => {
     clean();
-    router.push(ROUTES.LOGIN);
+    router.replace(ROUTES.LOGIN);
   };
 
   return { onLogout };
