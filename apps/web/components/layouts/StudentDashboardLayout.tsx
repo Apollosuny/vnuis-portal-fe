@@ -8,8 +8,10 @@ import {
   LogOut,
   Settings,
   User,
-  BookOpen,
+  FileText,
   GraduationCap,
+  DoorOpen,
+  Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
@@ -30,8 +32,9 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   const { onLogout } = useLogout();
 
   const getActiveTab = () => {
-    if (pathname.includes('/courses')) return 'courses';
-    if (pathname.includes('/schedule')) return 'schedule';
+    if (pathname.includes('/forms')) return 'forms';
+    if (pathname.includes('/rooms')) return 'rooms';
+    if (pathname.includes('/bookings')) return 'bookings';
     if (pathname.includes('/events')) return 'events';
     if (pathname.includes('/settings')) return 'settings';
     return 'overview';
@@ -44,17 +47,20 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
       case 'overview':
         router.push(ROUTES.STUDENT_DASHBOARD);
         break;
-      case 'courses':
-        router.push('/student-dashboard/courses');
+      case 'forms':
+        router.push(ROUTES.STUDENT_FORMS);
         break;
-      case 'schedule':
-        router.push('/student-dashboard/schedule');
+      case 'rooms':
+        router.push(ROUTES.STUDENT_ROOMS);
+        break;
+      case 'bookings':
+        router.push(ROUTES.STUDENT_BOOKINGS);
         break;
       case 'events':
-        router.push('/student-dashboard/events');
+        router.push(ROUTES.STUDENT_EVENTS);
         break;
       case 'settings':
-        router.push('/student-dashboard/settings');
+        router.push(ROUTES.STUDENT_SETTINGS);
         break;
     }
   };
@@ -62,9 +68,10 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   const getPageTitle = () => {
     if (title) return title;
 
-    if (pathname.includes('/courses')) return 'My Courses';
-    if (pathname.includes('/schedule')) return 'My Schedule';
-    if (pathname.includes('/events')) return 'Events';
+    if (pathname.includes('/forms')) return 'Administrative Forms';
+    if (pathname.includes('/rooms')) return 'Room Directory';
+    if (pathname.includes('/bookings')) return 'My Bookings';
+    if (pathname.includes('/events')) return 'Event Registration';
     if (pathname.includes('/settings')) return 'Settings';
 
     return 'Student Dashboard';
@@ -89,16 +96,22 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               onClick={() => handleNavigation('overview')}
             />
             <SidebarItem
-              icon={<BookOpen size={20} />}
-              label='My Courses'
-              active={activeTab === 'courses'}
-              onClick={() => handleNavigation('courses')}
+              icon={<FileText size={20} />}
+              label='Forms'
+              active={activeTab === 'forms'}
+              onClick={() => handleNavigation('forms')}
             />
             <SidebarItem
-              icon={<Calendar size={20} />}
-              label='My Schedule'
-              active={activeTab === 'schedule'}
-              onClick={() => handleNavigation('schedule')}
+              icon={<DoorOpen size={20} />}
+              label='Room Directory'
+              active={activeTab === 'rooms'}
+              onClick={() => handleNavigation('rooms')}
+            />
+            <SidebarItem
+              icon={<Clock size={20} />}
+              label='My Bookings'
+              active={activeTab === 'bookings'}
+              onClick={() => handleNavigation('bookings')}
             />
             <SidebarItem
               icon={<Calendar size={20} />}

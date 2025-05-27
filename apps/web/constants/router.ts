@@ -12,8 +12,9 @@ export const ROUTES = {
 
   // Student routes
   STUDENT_DASHBOARD: '/student-dashboard',
-  STUDENT_COURSES: '/student-dashboard/courses',
-  STUDENT_SCHEDULE: '/student-dashboard/schedule',
+  STUDENT_FORMS: '/student-dashboard/forms',
+  STUDENT_ROOMS: '/student-dashboard/rooms',
+  STUDENT_BOOKINGS: '/student-dashboard/bookings',
   STUDENT_EVENTS: '/student-dashboard/events',
   STUDENT_SETTINGS: '/student-dashboard/settings',
 };
