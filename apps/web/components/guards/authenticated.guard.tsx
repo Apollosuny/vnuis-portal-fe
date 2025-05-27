@@ -13,35 +13,35 @@ export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
 
-  useEffect(() => {
-    // Đặt timeout để đảm bảo dữ liệu được tải đầy đủ
-    const timer = setTimeout(() => {
-      if (!isLoading) {
-        if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
-          router.replace(ROUTES.LOGIN);
-        }
-        setCheckingAuth(false);
-      }
-    }, 500); // Chờ 500ms
+  // useEffect(() => {
+  //   // Đặt timeout để đảm bảo dữ liệu được tải đầy đủ
+  //   const timer = setTimeout(() => {
+  //     if (!isLoading) {
+  //       if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
+  //         router.replace(ROUTES.LOGIN);
+  //       }
+  //       setCheckingAuth(false);
+  //     }
+  //   }, 500); // Chờ 500ms
 
-    return () => clearTimeout(timer);
-  }, [isLoading, jwt, jwtRefresh, user, isAuthenticated, router]);
+  //   return () => clearTimeout(timer);
+  // }, [isLoading, jwt, jwtRefresh, user, isAuthenticated, router]);
 
-  if (isLoading || checkingAuth) {
-    return (
-      <div className='flex h-screen items-center justify-center'>
-        <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
-      </div>
-    );
-  }
+  // if (isLoading || checkingAuth) {
+  //   return (
+  //     <div className='flex h-screen items-center justify-center'>
+  //       <Loader2Icon className='h-8 w-8 animate-spin text-primary' />
+  //     </div>
+  //   );
+  // }
 
-  if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
-    return (
-      <div className='flex h-screen items-center justify-center'>
-        <p className='text-lg'>Please login to continue</p>
-      </div>
-    );
-  }
+  // if (!jwt || !jwtRefresh || !user || !isAuthenticated) {
+  //   return (
+  //     <div className='flex h-screen items-center justify-center'>
+  //       <p className='text-lg'>Please login to continue</p>
+  //     </div>
+  //   );
+  // }
 
   return <>{children}</>;
 };
