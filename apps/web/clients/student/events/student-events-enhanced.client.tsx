@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { eventApi } from '@/api/event.api';
-import { Event, EventRegistration } from '@/types/event.types';
+import {
+  Event,
+  EventRegistration,
+  EventRegistrationStatus,
+} from '@/types/event.types';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
 import { DateTime } from 'luxon';
 import { Calendar, Clock, MapPin, Users, FileCheck } from 'lucide-react';
-import { useEventRegistration } from '@/hooks/useEvent';
 import { Badge } from '@workspace/ui/components/badge';
 import {
   Card,
@@ -20,6 +22,114 @@ import {
 import { Button } from '@workspace/ui/components/button';
 // Import mock data
 import { mockEvents, mockRegistrations } from './mock-events';
+
+// Mock version of useEventRegistration hook for local testing
+const useMockEventRegistration = (eventId: string, onSuccess?: () => void) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check if event is full by counting registrations
+  const isEventFull = (eventId: string) => {
+    const event = mockEvents.find((e) => e.id === eventId);
+    if (!event) return false;
+
+    const approvedRegistrations = mockRegistrations.filter(
+      (reg) =>
+        reg.eventId === eventId &&
+        (reg.status === EventRegistrationStatus.APPROVED ||
+          reg.status === EventRegistrationStatus.ATTENDED)
+    );
+
+    return approvedRegistrations.length >= event.capacity;
+  };
+
+  // Get remaining spots for an event
+  const getRemainingSpots = (eventId: string) => {
+    const event = mockEvents.find((e) => e.id === eventId);
+    if (!event) return 0;
+
+    const approvedRegistrations = mockRegistrations.filter(
+      (reg) =>
+        reg.eventId === eventId &&
+        (reg.status === EventRegistrationStatus.APPROVED ||
+          reg.status === EventRegistrationStatus.ATTENDED)
+    );
+
+    return Math.max(0, event.capacity - approvedRegistrations.length);
+  };
+
+  const handleRegister = async (additionalInfo?: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+
+      // Check if event is full
+      if (isEventFull(eventId)) {
+        toast.error('This event has reached maximum capacity.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Create a new mock registration
+      const newRegistration = {
+        id: `reg-${Math.random().toString(36).substring(2, 9)}`,
+        eventId,
+        status: EventRegistrationStatus.PENDING,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        studentId: 'current-user',
+        additionalInfo,
+      };
+
+      // Add to mockRegistrations (this is just for the current session)
+      mockRegistrations.push(newRegistration as any);
+
+      toast.success('Event registration successful');
+      onSuccess?.();
+    } catch (error) {
+      toast.error(getAPIErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = async (registrationId: string) => {
+    try {
+      setIsLoading(true);
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Find and update the registration status
+      const regIndex = mockRegistrations.findIndex(
+        (reg) => reg.id === registrationId
+      );
+      if (regIndex >= 0) {
+        const registration = mockRegistrations[regIndex];
+        if (registration) {
+          registration.status = EventRegistrationStatus.CANCELLED;
+          registration.updatedAt = new Date().toISOString();
+        }
+      }
+
+      toast.success('Registration cancelled successfully');
+      onSuccess?.();
+    } catch (error) {
+      toast.error(getAPIErrorMessage(error));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    isLoading,
+    handleRegister,
+    handleCancel,
+    getRemainingSpots,
+    isEventFull,
+  };
+};
 
 export const StudentEventsClient = () => {
   const router = useRouter();
@@ -172,10 +282,13 @@ const EventCard = ({
   isPast,
   onSuccess,
 }: EventCardProps) => {
-  const { isLoading, handleRegister, handleCancel } = useEventRegistration(
-    event.id,
-    onSuccess
-  );
+  // Using a mock version of the registration hook for the local implementation
+  const { isLoading, handleRegister, handleCancel, getRemainingSpots } =
+    useMockEventRegistration(event.id, onSuccess);
+
+  const remainingSpots = getRemainingSpots(event.id);
+  const isFull = remainingSpots === 0;
+  const isLimitedSpots = remainingSpots <= 5;
 
   const getRegistrationBadge = () => {
     if (!registration) return null;
@@ -201,6 +314,18 @@ const EventCard = ({
         {registration.status}
       </Badge>
     );
+  };
+
+  // Show rejection message if applicable
+  const getRejectionMessage = () => {
+    if (registration?.status === 'REJECTED' && registration.remarks) {
+      return (
+        <div className='mt-2 text-sm text-red-500 p-2 bg-red-50 rounded-md'>
+          Reason: {registration.remarks}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -250,7 +375,20 @@ const EventCard = ({
 
         <div className='flex items-center gap-2 text-sm'>
           <Users className='h-4 w-4 text-gray-500' />
-          <span>{event.capacity} attendees</span>
+          <span>
+            {event.capacity} attendees
+            {!isPast && isLimitedSpots && (
+              <span
+                className={
+                  isFull
+                    ? 'text-red-500 ml-1 font-semibold'
+                    : 'text-amber-500 ml-1 font-semibold'
+                }
+              >
+                ({isFull ? 'Full' : `${remainingSpots} spots left`})
+              </span>
+            )}
+          </span>
         </div>
 
         {event.registrationDeadline && (
@@ -269,16 +407,19 @@ const EventCard = ({
           {event.description}
         </p>
 
+        {/* Show rejection message if applicable */}
+        {getRejectionMessage()}
+
         <div className='pt-3 flex justify-between items-center'>
           {!isPast && (
             <div>
               {canRegister ? (
                 <Button
-                  disabled={isLoading}
+                  disabled={isLoading || isFull}
                   // loading={isLoading}
                   onClick={() => handleRegister()}
                 >
-                  Register
+                  {isFull ? 'Event Full' : 'Register'}
                 </Button>
               ) : (
                 registration &&
