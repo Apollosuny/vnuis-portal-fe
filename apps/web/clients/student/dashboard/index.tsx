@@ -74,7 +74,7 @@ const OverviewPanel: React.FC = () => {
     <div className='space-y-6'>
       <section>
         <h2 className='text-2xl font-semibold mb-4'>Welcome Back, Student!</h2>
-        <p className='text-gray-600 mb-6'>
+        <p className='text-muted-foreground mb-6'>
           Here's an overview of your academic progress and upcoming activities.
         </p>
 
@@ -119,19 +119,19 @@ const OverviewPanel: React.FC = () => {
               ].map((booking, i) => (
                 <li
                   key={i}
-                  className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                  className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
                 >
                   <div>
                     <p className='font-medium'>{booking.name}</p>
-                    <p className='text-sm text-gray-500'>
+                    <p className='text-sm text-muted-foreground'>
                       {booking.date}, {booking.time}
                     </p>
                   </div>
                   <span
                     className={`text-xs py-1 px-2 rounded ${
                       booking.status === 'Confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100'
                     }`}
                   >
                     {booking.status}
@@ -162,19 +162,19 @@ const OverviewPanel: React.FC = () => {
               ].map((form, i) => (
                 <li
                   key={i}
-                  className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                  className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
                 >
                   <div>
                     <p className='font-medium'>{form.name}</p>
-                    <p className='text-sm text-gray-500'>{form.date}</p>
+                    <p className='text-sm text-muted-foreground'>{form.date}</p>
                   </div>
                   <span
                     className={`text-xs py-1 px-2 rounded ${
                       form.status === 'Approved'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
                         : form.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-blue-100 text-blue-800'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
                     }`}
                   >
                     {form.status}
@@ -214,19 +214,19 @@ const OverviewPanel: React.FC = () => {
             ].map((event, i) => (
               <li
                 key={i}
-                className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
               >
                 <div>
                   <p className='font-medium'>{event.name}</p>
-                  <p className='text-sm text-gray-500'>
+                  <p className='text-sm text-muted-foreground'>
                     {event.date} • {event.location}
                   </p>
                 </div>
                 <span
                   className={`text-xs py-1 px-2 rounded ${
                     event.registration === 'Registered'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
                   }`}
                 >
                   {event.registration}
@@ -276,19 +276,19 @@ const FormsPanel: React.FC = () => (
             ].map((form, i) => (
               <li
                 key={i}
-                className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
               >
                 <div>
                   <p className='font-medium'>{form.name}</p>
-                  <p className='text-sm text-gray-500'>{form.date}</p>
+                  <p className='text-sm text-muted-foreground'>{form.date}</p>
                 </div>
                 <span
                   className={`text-xs py-1 px-2 rounded ${
                     form.status === 'Approved'
-                      ? 'bg-green-100 text-green-800'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
                       : form.status === 'Rejected'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-blue-100 text-blue-800'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
                   }`}
                 >
                   {form.status}
@@ -325,13 +325,15 @@ const FormsPanel: React.FC = () => (
             ].map((form, i) => (
               <li
                 key={i}
-                className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
               >
                 <div>
                   <p className='font-medium'>{form.name}</p>
-                  <p className='text-sm text-gray-500'>{form.description}</p>
+                  <p className='text-sm text-muted-foreground'>
+                    {form.description}
+                  </p>
                 </div>
-                <span className='text-xs bg-primary-100 text-primary-800 py-1 px-2 rounded'>
+                <span className='text-xs bg-primary/10 text-primary py-1 px-2 rounded'>
                   Submit
                 </span>
               </li>
@@ -390,7 +392,11 @@ const RoomsPanel: React.FC = () => (
             <CardTitle className='flex justify-between items-center'>
               <span>{room.name}</span>
               <span
-                className={`text-xs py-1 px-2 rounded ${room.availableSlots > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                className={`text-xs py-1 px-2 rounded ${
+                  room.availableSlots > 0
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                }`}
               >
                 {room.availableSlots > 0 ? 'Available' : 'Fully Booked'}
               </span>
@@ -412,8 +418,8 @@ const RoomsPanel: React.FC = () => (
                 disabled={room.availableSlots === 0}
                 className={`mt-2 w-full py-1.5 px-3 text-sm rounded-md ${
                   room.availableSlots > 0
-                    ? 'bg-primary text-white hover:bg-primary-600'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'bg-muted text-muted-foreground cursor-not-allowed'
                 }`}
               >
                 {room.availableSlots > 0 ? 'Book Room' : 'Unavailable'}
@@ -455,14 +461,16 @@ const BookingsPanel: React.FC = () => (
             ].map((booking, i) => (
               <li
                 key={i}
-                className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
               >
                 <div>
                   <div className='flex items-center gap-2'>
                     <p className='font-medium'>{booking.name}</p>
-                    <span className='text-xs text-gray-500'>#{booking.id}</span>
+                    <span className='text-xs text-muted-foreground'>
+                      #{booking.id}
+                    </span>
                   </div>
-                  <p className='text-sm text-gray-500'>
+                  <p className='text-sm text-muted-foreground'>
                     {booking.date}, {booking.time}
                   </p>
                 </div>
@@ -470,13 +478,13 @@ const BookingsPanel: React.FC = () => (
                   <span
                     className={`text-xs py-1 px-2 rounded ${
                       booking.status === 'Confirmed'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100'
                     }`}
                   >
                     {booking.status}
                   </span>
-                  <button className='text-xs bg-red-50 text-red-800 px-2 py-1 rounded hover:bg-red-100'>
+                  <button className='text-xs bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded hover:bg-red-100 dark:hover:bg-red-900/50'>
                     Cancel
                   </button>
                 </div>
@@ -519,22 +527,24 @@ const BookingsPanel: React.FC = () => (
             ].map((booking, i) => (
               <li
                 key={i}
-                className='flex justify-between items-center p-3 bg-gray-50 rounded-md'
+                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
               >
                 <div>
                   <div className='flex items-center gap-2'>
                     <p className='font-medium'>{booking.name}</p>
-                    <span className='text-xs text-gray-500'>#{booking.id}</span>
+                    <span className='text-xs text-muted-foreground'>
+                      #{booking.id}
+                    </span>
                   </div>
-                  <p className='text-sm text-gray-500'>
+                  <p className='text-sm text-muted-foreground'>
                     {booking.date}, {booking.time}
                   </p>
                 </div>
                 <span
                   className={`text-xs py-1 px-2 rounded ${
                     booking.status === 'Completed'
-                      ? 'bg-gray-100 text-gray-800'
-                      : 'bg-red-100 text-red-800'
+                      ? 'bg-muted text-muted-foreground'
+                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
                   }`}
                 >
                   {booking.status}

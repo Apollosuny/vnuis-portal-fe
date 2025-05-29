@@ -12,7 +12,9 @@ import {
   GraduationCap,
   DoorOpen,
   Clock,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
@@ -79,11 +81,11 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
 
   return (
     <AuthenticatedGuard>
-      <div className='flex h-screen bg-gray-50'>
+      <div className='flex h-screen bg-background'>
         {/* Sidebar */}
-        <div className='w-64 bg-white shadow-md hidden md:flex flex-col'>
-          <div className='px-6 py-5 border-b'>
-            <h1 className='text-xl font-semibold text-gray-800 flex items-center gap-2'>
+        <div className='w-64 bg-card shadow-md hidden md:flex flex-col'>
+          <div className='px-6 py-5 border-b border-border'>
+            <h1 className='text-xl font-semibold text-foreground flex items-center gap-2'>
               <GraduationCap className='text-primary' />
               Student Portal
             </h1>
@@ -126,10 +128,10 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               onClick={() => handleNavigation('settings')}
             />
           </div>
-          <div className='mt-auto p-4 border-t'>
+          <div className='mt-auto p-4 border-t border-border'>
             <Button
               variant='ghost'
-              className='w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50'
+              className='w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50/50'
               onClick={onLogout}
             >
               <LogOut className='mr-2 h-4 w-4' />
@@ -141,11 +143,12 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
         {/* Main Content */}
         <div className='flex-1 flex flex-col overflow-hidden'>
           {/* Header */}
-          <header className='bg-white shadow-sm py-4 px-6 flex items-center justify-between'>
-            <h1 className='text-2xl font-semibold text-gray-800'>
+          <header className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'>
+            <h1 className='text-2xl font-semibold text-foreground'>
               {getPageTitle()}
             </h1>
             <div className='flex items-center space-x-4'>
+              <ThemeToggle />
               <Button
                 variant='ghost'
                 size='icon'
@@ -157,7 +160,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
           </header>
 
           {/* Page Content */}
-          <main className='flex-1 overflow-auto p-6 bg-gray-50'>
+          <main className='flex-1 overflow-auto p-6 bg-background'>
             {children}
           </main>
         </div>
@@ -183,8 +186,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
     <button
       className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
         active
-          ? 'text-primary-600 bg-primary-50'
-          : 'text-gray-600 hover:text-primary-600 hover:bg-gray-100'
+          ? 'text-primary bg-primary/10'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
       }`}
       onClick={onClick}
     >
@@ -200,6 +203,22 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
         />
       )}
     </button>
+  );
+};
+
+// Theme toggle component
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant='ghost'
+      size='icon'
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      title='Toggle theme'
+    >
+      {theme === 'dark' ? <Calendar size={20} /> : <Moon size={20} />}
+    </Button>
   );
 };
 
