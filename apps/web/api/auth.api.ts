@@ -15,3 +15,21 @@ export const login = async (
   });
   return res.data;
 };
+
+/**
+ * Refresh JWT token using refresh token
+ * @param refreshToken - The refresh token to use
+ * @returns Promise with new tokens
+ */
+export const refreshToken = async (
+  refreshToken: string
+): Promise<{
+  jwt: string;
+}> => {
+  const res = await nexusAxios.get('/auth/refresh', {
+    headers: {
+      Authorization: refreshToken,
+    },
+  });
+  return res.data;
+};
