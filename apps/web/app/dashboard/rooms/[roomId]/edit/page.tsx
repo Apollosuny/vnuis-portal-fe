@@ -1,6 +1,6 @@
 import { AdminGuard } from '@/components/guards/admin.guard';
 import { AuthenticatedGuard } from '../../../../../components/guards/authenticated.guard';
-import { EditRoomClient } from '@/clients/room/EditRoomClient';
+import { EditRoomClient } from '@/clients/admin/room/EditRoomClient';
 
 export const metadata = {
   title: 'Edit Room - VirtuUni Nexus',

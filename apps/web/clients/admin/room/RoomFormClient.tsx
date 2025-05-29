@@ -1,13 +1,13 @@
 'use client';
 
 import { Controller } from 'react-hook-form';
-
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, Loader2Icon } from 'lucide-react';
 import Link from 'next/link';
 import { RoomFormValues, useCreateRoom, useUpdateRoom } from '@/hooks/useRoom';
 import { Room, RoomType } from '@/types/room.types';
 import { ROUTES } from '@/constants/router';
+import { RoomTimeSlotForm } from '@/components/rooms/RoomTimeSlotForm';
 
 type RoomFormClientProps = {
   room?: Room | null;
@@ -28,7 +28,7 @@ export const RoomFormClient = ({
     handleSubmit,
     handleCreateRoom,
   } = useCreateRoom((newRoom) => {
-    router.push(`/rooms/${newRoom.roomId}`);
+    router.push(`/dashboard/rooms/${newRoom.roomId}`);
   });
 
   const {
@@ -39,7 +39,7 @@ export const RoomFormClient = ({
     handleSubmit: handleEditSubmit,
     handleUpdateRoom,
   } = useUpdateRoom(room || null, (updatedRoom) => {
-    router.push(`/rooms/${updatedRoom.roomId}`);
+    router.push(`/dashboard/rooms/${updatedRoom.roomId}`);
   });
 
   // Use the appropriate form controller and handler based on whether we're editing or creating
@@ -49,15 +49,18 @@ export const RoomFormClient = ({
   const isDisabled = isEditing ? updateDisabled : createDisabled;
 
   // Create onSubmit handlers
-  const onCreateSubmit = handleSubmit((data: RoomFormValues) =>
-    handleCreateRoom(data)
-  );
-  const onUpdateSubmit = handleEditSubmit((data: RoomFormValues) =>
-    handleUpdateRoom(data)
-  );
+  const onCreateSubmit = async (data: any) => {
+    await handleCreateRoom(data as RoomFormValues);
+  };
+
+  const onUpdateSubmit = async (data: any) => {
+    await handleUpdateRoom(data as RoomFormValues);
+  };
 
   // Use the appropriate submit handler
-  const submitHandler = isEditing ? onUpdateSubmit : onCreateSubmit;
+  const submitHandler = isEditing
+    ? handleEditSubmit(onUpdateSubmit)
+    : handleSubmit(onCreateSubmit);
 
   return (
     <div className='container mx-auto py-6'>
@@ -265,6 +268,21 @@ export const RoomFormClient = ({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Time Slot Form */}
+          <div className='pt-4 border-t border-gray-200 dark:border-gray-700'>
+            <Controller
+              name='timeSlots'
+              control={formControl}
+              render={({ field }) => (
+                <RoomTimeSlotForm
+                  value={field.value || []}
+                  onChange={field.onChange}
+                  errors={formErrors}
+                />
+              )}
+            />
           </div>
 
           <div className='flex justify-end mt-6'>

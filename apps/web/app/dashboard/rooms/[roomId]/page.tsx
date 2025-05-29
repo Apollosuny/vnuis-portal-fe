@@ -1,4 +1,4 @@
-import { RoomDetailClient } from '../../../clients/room/RoomDetailClient';
+import { RoomDetailClient } from '@/clients/admin/room/RoomDetailClient';
 import { AuthenticatedGuard } from '../../../../components/guards/authenticated.guard';
 
 export const metadata = {
