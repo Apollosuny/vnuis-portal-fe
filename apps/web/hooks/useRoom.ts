@@ -314,6 +314,7 @@ export const useRoomOperations = () => {
           roomId,
           currentDate
         );
+        console.log('Fetched time slots:', timeSlots);
         if (timeSlots && Array.isArray(timeSlots)) {
           // Convert TimeSlotRange to RoomTimeSlot format
           room.timeSlots = timeSlots.map((slot, index) => ({

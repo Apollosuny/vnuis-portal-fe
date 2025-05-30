@@ -23,6 +23,7 @@ interface TimeSlotComponentProps {
 // Helper function to normalize time from ISO format to HH:MM
 const normalizeTime = (timeString: string | undefined): string => {
   if (!timeString) return '';
+
   // If it's an ISO date string, extract just the time part
   if (typeof timeString === 'string' && timeString.includes('T')) {
     const timeParts = timeString.split('T');
@@ -30,6 +31,26 @@ const normalizeTime = (timeString: string | undefined): string => {
       return timeParts[1].substring(0, 5);
     }
   }
+
+  // Handle potential JSON date objects that might be stringified
+  if (
+    typeof timeString === 'string' &&
+    timeString.startsWith('"') &&
+    timeString.endsWith('"')
+  ) {
+    try {
+      const parsed = JSON.parse(timeString);
+      if (typeof parsed === 'string' && parsed.includes('T')) {
+        const timeParts = parsed.split('T');
+        if (timeParts.length > 1 && timeParts[1]) {
+          return timeParts[1].substring(0, 5);
+        }
+      }
+    } catch (e) {
+      // Ignore parse errors, continue with original string
+    }
+  }
+
   return timeString;
 };
 

@@ -74,7 +74,7 @@ export const RoomListClient = () => {
           {filteredRooms.map((room) => (
             <Link
               key={room.roomId}
-              href={`/rooms/${room.roomId}`}
+              href={`/dashboard/rooms/${room.roomId}`}
               className='block border rounded-lg overflow-hidden hover:shadow-md transition'
             >
               <div className='p-4'>

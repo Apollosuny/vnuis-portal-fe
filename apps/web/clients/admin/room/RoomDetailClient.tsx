@@ -74,6 +74,8 @@ export const RoomDetailClient = ({ roomId }: RoomDetailClientProps) => {
     );
   }
 
+  console.log('Selected Room:', selectedRoom);
+
   return (
     <div className='container mx-auto py-6'>
       <div className='mb-6'>
@@ -174,9 +176,25 @@ export const RoomDetailClient = ({ roomId }: RoomDetailClientProps) => {
                 {selectedRoom.timeSlots.map((slot) => (
                   <div key={slot.id} className='p-3 border rounded-lg'>
                     <p className='font-medium'>
-                      {new Date(slot.startTime).toLocaleTimeString()} -{' '}
-                      {new Date(slot.endTime).toLocaleTimeString()}
+                      {/* Hiển thị thời gian trực tiếp mà không chuyển đổi date */}
+                      {slot.startTime
+                        ? typeof slot.startTime === 'string'
+                          ? slot.startTime
+                          : new Date(slot.startTime as any).toLocaleTimeString()
+                        : 'N/A'}{' '}
+                      -{' '}
+                      {slot.endTime
+                        ? typeof slot.endTime === 'string'
+                          ? slot.endTime
+                          : new Date(slot.endTime as any).toLocaleTimeString()
+                        : 'N/A'}
                     </p>
+                    {slot.dows && slot.dows.length > 0 && (
+                      <p className='text-sm text-gray-500 mt-1'>
+                        Days:{' '}
+                        {Array.isArray(slot.dows) ? slot.dows.join(', ') : ''}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
