@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { DateTime } from 'luxon';
 import { roomApi } from '../api/room.api';
 import { roomTimeSlotApi } from '../api/room-time-slot.api';
 import { useRoomStore } from '../stores/room.store';
@@ -13,23 +14,47 @@ import {
   RoomType,
   UpdateRoomDto,
 } from '../types/room.types';
-import {
-  CreateTimeSlotDto,
-  TimeSlotFormValues,
-} from '../types/room-time-slot.types';
+import { TimeSlotFormValues } from '../types/room-time-slot.types';
 import { toast } from 'sonner';
 
-// Helper function to normalize time from ISO format to HH:MM
+// Helper function to normalize time from ISO format to HH:MM using Luxon
 const normalizeTime = (timeString: string | undefined): string => {
   if (!timeString) return '';
-  // If it's an ISO date string, extract just the time part
-  if (typeof timeString === 'string' && timeString.includes('T')) {
-    const timeParts = timeString.split('T');
-    if (timeParts.length > 1 && timeParts[1]) {
-      return timeParts[1].substring(0, 5);
-    }
+
+  // If it's already in HH:MM format, return as is
+  if (/^\d{1,2}:\d{2}$/.test(timeString)) {
+    return timeString;
   }
-  return timeString;
+
+  try {
+    // Use Luxon to parse and convert timezone
+    let dateTime: DateTime;
+
+    // Check if it's an ISO string
+    if (timeString.includes('T') || timeString.includes('Z')) {
+      // Parse ISO string as UTC
+      dateTime = DateTime.fromISO(timeString, { zone: 'utc' });
+    } else {
+      // Try parsing with other formats
+      dateTime = DateTime.fromFormat(timeString, 'HH:mm', { zone: 'utc' });
+
+      // If unsuccessful, try with ISO format
+      if (!dateTime.isValid) {
+        dateTime = DateTime.fromISO(timeString, { zone: 'utc' });
+      }
+    }
+
+    if (!dateTime.isValid) {
+      console.warn('Invalid time format in normalizeTime:', timeString);
+      return timeString;
+    }
+
+    // Convert to local timezone and return HH:mm format
+    return dateTime.toLocal().toFormat('HH:mm');
+  } catch (err) {
+    console.error('Error converting time with Luxon in normalizeTime:', err);
+    return timeString;
+  }
 };
 
 // Form value types
@@ -297,39 +322,104 @@ export const useRoomOperations = () => {
     }
   };
 
-  const fetchRoomById = async (roomId: string) => {
+  const fetchRoomById = async (
+    roomId: string,
+    includeBookings: boolean = true
+  ) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Get room details
-      const room = await roomApi.getRoom(roomId);
+      // Get room details with time slots and optional bookings using the details endpoint
+      const room = await roomApi.getRoomWithDetails(
+        roomId,
+        true,
+        includeBookings
+      );
+      console.log('Fetched room with details:', room);
 
-      // Also get the time slots and add them to the room object
-      try {
-        // Create a current date for time slot fetching
-        const currentDate = new Date().toISOString().split('T')[0] || '';
-        // Call the API to get time slots
-        const timeSlots = await roomTimeSlotApi.getAvailableTimeSlots(
-          roomId,
-          currentDate
-        );
-        console.log('Fetched time slots:', timeSlots);
-        if (timeSlots && Array.isArray(timeSlots)) {
-          // Convert TimeSlotRange to RoomTimeSlot format
-          room.timeSlots = timeSlots.map((slot, index) => ({
-            id: `temp-id-${index}`, // Generate temporary ID
-            roomId: roomId,
-            startTime: slot.startTime,
-            endTime: slot.endTime,
-            dows: slot.dows,
-            dowsBit: 0, // Default value, not used in frontend
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }));
-        }
-      } catch (timeSlotError) {
-        console.error('Error fetching time slots:', timeSlotError);
+      // Ensure time slots are properly formatted
+      if (room.timeSlots && Array.isArray(room.timeSlots)) {
+        console.log('Raw time slots from API:', room.timeSlots);
+
+        room.timeSlots = room.timeSlots.map((slot) => {
+          // Create a properly formatted time slot object
+          const formattedSlot = {
+            ...slot,
+            // Keep the original formatted times if they exist
+            formattedStartTime:
+              slot.formattedStartTime || normalizeTime(slot.startTime),
+            formattedEndTime:
+              slot.formattedEndTime || normalizeTime(slot.endTime),
+            // Make sure startTime and endTime are properly formatted
+            startTime: normalizeTime(slot.startTime),
+            endTime: normalizeTime(slot.endTime),
+          };
+
+          // Handle dows property (days of week)
+          let hasDowsProperty = false;
+
+          // First check if we have dows property
+          if (slot.dows) {
+            hasDowsProperty = true;
+
+            if (Array.isArray(slot.dows)) {
+              // If it's already an array, use it directly
+              formattedSlot.dows = slot.dows;
+            } else if (typeof slot.dows === 'string') {
+              // If it's a string, wrap it in an array
+              formattedSlot.dows = [slot.dows as string];
+            } else if (typeof slot.dows === 'object' && slot.dows !== null) {
+              // If it's an object (possibly a getter result), try to extract values
+              try {
+                const values = Object.values(slot.dows);
+                if (Array.isArray(values) && values.length > 0) {
+                  formattedSlot.dows = values.map((v) => String(v));
+                } else {
+                  formattedSlot.dows = [];
+                  hasDowsProperty = false;
+                }
+              } catch (e) {
+                console.error('Error processing dows object:', e);
+                formattedSlot.dows = [];
+                hasDowsProperty = false;
+              }
+            } else {
+              formattedSlot.dows = [];
+              hasDowsProperty = false;
+            }
+          } else {
+            formattedSlot.dows = [];
+            hasDowsProperty = false;
+          }
+
+          // If no valid dows found or dows is empty, try to derive from dowsBit
+          if (!hasDowsProperty || formattedSlot.dows.length === 0) {
+            if (typeof slot.dowsBit === 'number' && slot.dowsBit > 0) {
+              console.log('Converting dowsBit to days:', slot.dowsBit);
+              const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+              const derivedDows: string[] = [];
+
+              // Process each bit (0 = Sunday, 1 = Monday, etc.)
+              for (let i = 0; i < 7; i++) {
+                // Check if the bit at position i is set and ensure dayMap[i] exists
+                if ((slot.dowsBit & (1 << i)) !== 0 && dayMap[i]) {
+                  // We know dayMap[i] is defined here because of the condition check
+                  derivedDows.push(dayMap[i] as string);
+                  console.log(`Found day at bit ${i}: ${dayMap[i]}`);
+                }
+              }
+
+              // Only use derived days if we actually found some
+              if (derivedDows.length > 0) {
+                formattedSlot.dows = derivedDows;
+                console.log('Days derived from dowsBit:', derivedDows);
+              }
+            }
+          }
+
+          return formattedSlot;
+        });
       }
 
       setSelectedRoom(room);
@@ -347,7 +437,10 @@ export const useRoomOperations = () => {
     try {
       setLoading(true);
       await roomApi.deleteRoom(roomId);
-      removeRoom(roomId);
+      // Ensure roomId is a string before calling removeRoom
+      if (roomId) {
+        removeRoom(roomId);
+      }
       toast.success('Room deleted successfully');
       return true;
     } catch (error: any) {

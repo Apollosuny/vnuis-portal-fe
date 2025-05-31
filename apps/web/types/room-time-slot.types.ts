@@ -3,6 +3,10 @@ export interface TimeSlotRange {
   startTime: string;
   endTime: string;
   dows: string[];
+  formattedStartTime?: string;
+  formattedEndTime?: string;
+  id?: string;
+  dowsBit?: number;
 }
 
 export interface CreateTimeSlotDto {

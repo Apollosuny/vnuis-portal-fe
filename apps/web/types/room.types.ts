@@ -35,6 +35,8 @@ export interface RoomTimeSlot {
   dowsBit: number;
   roomId: string;
   dows?: string[]; // Added for form compatibility
+  formattedStartTime?: string; // Added for API compatibility
+  formattedEndTime?: string; // Added for API compatibility
 }
 
 export interface RoomBooking {

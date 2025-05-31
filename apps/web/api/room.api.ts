@@ -21,6 +21,21 @@ export const roomApi = {
     return response.data;
   },
 
+  // Get room with details (time slots and optional bookings)
+  getRoomWithDetails: async (
+    roomId: string,
+    includeTimeSlots: boolean = true,
+    includeBookings: boolean = false
+  ): Promise<Room> => {
+    const response = await nexusAxios.get(`${BASE_URL}/${roomId}/details`, {
+      params: {
+        includeTimeSlots,
+        includeBookings,
+      },
+    });
+    return response.data;
+  },
+
   // Create a new room
   createRoom: async (data: CreateRoomDto): Promise<Room> => {
     const response = await nexusAxios.post(BASE_URL, data);
