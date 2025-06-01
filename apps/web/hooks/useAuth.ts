@@ -65,7 +65,11 @@ export const useAuth = (onSuccess?: () => void) => {
         if (onSuccess) {
           onSuccess();
         } else {
-          router.replace(ROUTES.DASHBOARD);
+          if (res.user.role === 'ADMIN' || res.user.role === 'SUPERADMIN') {
+            router.replace(ROUTES.DASHBOARD);
+          } else {
+            router.replace(ROUTES.STUDENT_DASHBOARD);
+          }
         }
       }
     } catch (error) {

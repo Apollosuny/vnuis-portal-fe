@@ -17,7 +17,11 @@ export const RootGuard: React.FC<PropsWithChildren> = ({ children }) => {
         const isLoggedIn = jwt && jwtRefresh && user && isAuthenticated;
 
         if (isLoggedIn) {
-          router.replace(ROUTES.DASHBOARD);
+          if (user.role === 'ADMIN' || user.role === 'SUPERADMIN') {
+            router.replace(ROUTES.DASHBOARD);
+          } else if (user.role === 'STUDENT') {
+            router.replace(ROUTES.STUDENT_DASHBOARD);
+          }
         } else {
           router.replace(ROUTES.LOGIN);
         }

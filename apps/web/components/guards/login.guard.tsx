@@ -18,8 +18,12 @@ export const LoginGuard: React.FC<PropsWithChildren> = ({ children }) => {
         const isLoggedIn = jwt && jwtRefresh && user && isAuthenticated;
 
         if (isLoggedIn) {
-          // Đã đăng nhập -> redirect về dashboard
-          router.replace(ROUTES.DASHBOARD);
+          if (user.role === 'ADMIN' || user.role === 'SUPERADMIN') {
+            router.replace(ROUTES.DASHBOARD);
+          }
+          if (user.role === 'STUDENT') {
+            router.replace(ROUTES.STUDENT_DASHBOARD);
+          }
           return;
         }
 

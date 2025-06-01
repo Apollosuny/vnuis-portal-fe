@@ -25,10 +25,10 @@ export const AuthenticatedGuard: React.FC<PropsWithChildren> = ({
         const pathname = window.location.pathname;
 
         if (pathname === '/' || pathname === ROUTES.LOGIN) {
-          const isAdmin = user.role === 'ADMIN' || user.role === 'SUPERADMIN';
-          if (isAdmin) {
+          console.log('user role', user.role);
+          if (user.role === 'ADMIN' || user.role === 'SUPERADMIN') {
             router.replace(ROUTES.DASHBOARD);
-          } else {
+          } else if (user.role === 'STUDENT') {
             router.replace(ROUTES.STUDENT_DASHBOARD);
           }
         }
