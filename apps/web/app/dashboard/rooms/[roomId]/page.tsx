@@ -1,5 +1,6 @@
 import { RoomDetailClient } from '@/clients/admin/room/RoomDetailClient';
 import { AuthenticatedGuard } from '../../../../components/guards/authenticated.guard';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 
 export const metadata = {
   title: 'Room Details - VirtuUni Nexus',
@@ -14,8 +15,10 @@ type RoomDetailPageProps = {
 
 export default function RoomDetailPage({ params }: RoomDetailPageProps) {
   return (
-    <AuthenticatedGuard>
-      <RoomDetailClient roomId={params.roomId} />
-    </AuthenticatedGuard>
+    <DashboardLayout title={`Room Details - ${params.roomId}`}>
+      <AuthenticatedGuard>
+        <RoomDetailClient roomId={params.roomId} />
+      </AuthenticatedGuard>
+    </DashboardLayout>
   );
 }

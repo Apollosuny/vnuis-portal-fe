@@ -10,13 +10,10 @@ export const metadata = {
 
 export default function CreateRoomPage() {
   return (
-    // <AuthenticatedGuard>
-    //   <AdminGuard>
-    //     <RoomFormClient />
-    //   </AdminGuard>
-    // </AuthenticatedGuard>
     <DashboardLayout title='Create Room'>
-      <RoomFormClient />
+      <AuthenticatedGuard>
+        <RoomFormClient />
+      </AuthenticatedGuard>
     </DashboardLayout>
   );
 }

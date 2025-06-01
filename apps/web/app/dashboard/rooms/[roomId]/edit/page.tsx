@@ -1,6 +1,7 @@
 import { AdminGuard } from '@/components/guards/admin.guard';
 import { AuthenticatedGuard } from '../../../../../components/guards/authenticated.guard';
 import { EditRoomClient } from '@/clients/admin/room/EditRoomClient';
+import DashboardLayout from '@/components/layouts/DashboardLayout';
 
 export const metadata = {
   title: 'Edit Room - VirtuUni Nexus',
@@ -15,10 +16,12 @@ type EditRoomPageProps = {
 
 export default function EditRoomPage({ params }: EditRoomPageProps) {
   return (
-    <AuthenticatedGuard>
-      <AdminGuard>
-        <EditRoomClient roomId={params.roomId} />
-      </AdminGuard>
-    </AuthenticatedGuard>
+    <DashboardLayout title={`Edit Room - ${params.roomId}`}>
+      <AuthenticatedGuard>
+        <AdminGuard>
+          <EditRoomClient roomId={params.roomId} />
+        </AdminGuard>
+      </AuthenticatedGuard>
+    </DashboardLayout>
   );
 }
