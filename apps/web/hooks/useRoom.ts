@@ -204,17 +204,82 @@ export const useUpdateRoom = (
       type: room?.type || RoomType.CLASSROOM,
       isAvailable: room?.isAvailable ?? true,
       timeSlots:
-        room?.timeSlots?.map((slot) => ({
-          startTime: normalizeTime(slot.startTime),
-          endTime: normalizeTime(slot.endTime),
-          dows: Array.isArray(slot.dows) ? slot.dows : [],
-        })) || [],
+        room?.timeSlots?.map((slot) => {
+          // Log the slot information before processing
+          console.log('Processing time slot in defaultValues:', slot);
+
+          // Check if dows array is empty and dowsBit is available
+          const initialDows: string[] = [];
+          if (Array.isArray(slot.dows)) {
+            // Only include valid string values
+            slot.dows.forEach((day) => {
+              if (day !== undefined && day !== null) {
+                initialDows.push(String(day));
+              }
+            });
+          }
+
+          let daysList = initialDows;
+          console.log('Initial daysList in defaultValues:', daysList);
+
+          // If dows is empty but we have dowsBit, derive days from the bit value
+          if (
+            daysList.length === 0 &&
+            typeof slot.dowsBit === 'number' &&
+            slot.dowsBit > 0
+          ) {
+            console.log(
+              'Converting dowsBit to days in defaultValues:',
+              slot.dowsBit
+            );
+            const dayMap = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const derivedDows: string[] = [];
+
+            // Process each bit (0 = Sunday, 1 = Monday, etc.)
+            for (let i = 0; i < 7; i++) {
+              if ((slot.dowsBit & (1 << i)) !== 0 && i < dayMap.length) {
+                const day = dayMap[i];
+                // Type guard to ensure day is defined
+                if (day !== undefined) {
+                  derivedDows.push(day);
+                  console.log(`Found day at bit ${i}: ${day}`);
+                }
+              }
+            }
+
+            // Use derived days if we found any
+            if (derivedDows.length > 0) {
+              daysList = derivedDows;
+              console.log(
+                'Using derived days from dowsBit in defaultValues:',
+                daysList
+              );
+            }
+          }
+
+          // Ensure all day values are uppercase for consistency
+          const uppercaseDays = daysList.map((day) => day.toUpperCase());
+
+          console.log(
+            'Final processed daysList in defaultValues:',
+            uppercaseDays
+          );
+
+          return {
+            startTime: normalizeTime(slot.startTime) || '',
+            endTime: normalizeTime(slot.endTime) || '',
+            dows: uppercaseDays,
+          };
+        }) || [],
     },
   });
 
   // When room changes, update form values
   useEffect(() => {
     if (room) {
+      // Add debugging for reset operation
+      console.log('Resetting form with room data:', room);
+
       reset({
         name: room.name,
         description: room.description || '',
@@ -223,11 +288,60 @@ export const useUpdateRoom = (
         type: room.type,
         isAvailable: room.isAvailable,
         timeSlots:
-          room.timeSlots?.map((slot) => ({
-            startTime: normalizeTime(slot.startTime),
-            endTime: normalizeTime(slot.endTime),
-            dows: Array.isArray(slot.dows) ? slot.dows : [],
-          })) || [],
+          room.timeSlots?.map((slot) => {
+            // Log the slot information before processing
+            console.log('Processing time slot in reset:', slot);
+
+            // Check if dows array is empty and dowsBit is available
+            let daysList = Array.isArray(slot.dows) ? slot.dows : [];
+            console.log('Initial daysList:', daysList);
+
+            // If dows is empty but we have dowsBit, derive days from the bit value
+            if (
+              (!daysList || daysList.length === 0) &&
+              typeof slot.dowsBit === 'number' &&
+              slot.dowsBit > 0
+            ) {
+              console.log('Converting dowsBit to days in reset:', slot.dowsBit);
+              const dayMap = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+              const derivedDows: string[] = [];
+
+              // Process each bit (0 = Sunday, 1 = Monday, etc.)
+              for (let i = 0; i < 7; i++) {
+                if ((slot.dowsBit & (1 << i)) !== 0) {
+                  // Make sure we're accessing a valid index
+                  const day = dayMap[i];
+                  if (day) {
+                    derivedDows.push(day);
+                    console.log(`Found day at bit ${i}: ${day}`);
+                  }
+                }
+              }
+
+              // Use derived days if we found any
+              if (derivedDows.length > 0) {
+                daysList = derivedDows;
+                console.log('Using derived days from dowsBit:', daysList);
+              }
+            }
+
+            // Ensure all day values are uppercase for consistency
+            daysList = daysList
+              .filter((day) => day !== undefined && day !== null)
+              .map((day) =>
+                typeof day === 'string'
+                  ? day.toUpperCase()
+                  : String(day).toUpperCase()
+              );
+
+            console.log('Final processed daysList:', daysList);
+
+            return {
+              startTime: normalizeTime(slot.startTime) || '',
+              endTime: normalizeTime(slot.endTime) || '',
+              dows: daysList,
+            };
+          }) || [],
       });
     }
   }, [room, reset]);
@@ -397,7 +511,8 @@ export const useRoomOperations = () => {
           if (!hasDowsProperty || formattedSlot.dows.length === 0) {
             if (typeof slot.dowsBit === 'number' && slot.dowsBit > 0) {
               console.log('Converting dowsBit to days:', slot.dowsBit);
-              const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+              // Use uppercase values to be consistent with our form constants
+              const dayMap = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
               const derivedDows: string[] = [];
 
               // Process each bit (0 = Sunday, 1 = Monday, etc.)

@@ -61,9 +61,11 @@ export function RoomTimeSlotForm({
 }: TimeSlotComponentProps) {
   // Normalize the initial values
   const normalizedValue = value.map((slot) => ({
-    startTime: normalizeTime(slot?.startTime),
-    endTime: normalizeTime(slot?.endTime),
-    dows: Array.isArray(slot?.dows) ? slot.dows : [],
+    startTime: normalizeTime(slot?.startTime) || '',
+    endTime: normalizeTime(slot?.endTime) || '',
+    dows: Array.isArray(slot?.dows)
+      ? slot.dows.map((d) => (typeof d === 'string' ? d.toUpperCase() : d))
+      : [],
   }));
 
   const [timeSlots, setTimeSlots] =
@@ -71,20 +73,44 @@ export function RoomTimeSlotForm({
 
   // Update local state when value prop changes from parent
   useEffect(() => {
-    const normalizedPropValues = value.map((slot) => ({
-      startTime: normalizeTime(slot?.startTime),
-      endTime: normalizeTime(slot?.endTime),
-      dows: Array.isArray(slot?.dows) ? slot.dows : [],
-    }));
+    // Add extra logging to debug day of week issues
+    console.log('RoomTimeSlotForm: Updating with value:', value);
 
+    const normalizedPropValues = value.map((slot) => {
+      // Log each slot's days information
+      console.log('Slot dows before normalization:', slot?.dows);
+
+      // Ensure we consistently use uppercase day values
+      let upperCaseDows: string[] = [];
+      if (Array.isArray(slot?.dows)) {
+        upperCaseDows = slot.dows
+          .filter((day) => day !== null && day !== undefined)
+          .map((day) =>
+            typeof day === 'string'
+              ? day.toUpperCase()
+              : String(day).toUpperCase()
+          );
+      }
+
+      console.log('Normalized uppercase days:', upperCaseDows);
+
+      return {
+        startTime: normalizeTime(slot?.startTime) || '',
+        endTime: normalizeTime(slot?.endTime) || '',
+        dows: upperCaseDows,
+      };
+    });
+
+    console.log('RoomTimeSlotForm: Normalized values:', normalizedPropValues);
     setTimeSlots(normalizedPropValues);
   }, [value]);
 
   const handleAddTimeSlot = () => {
+    // Make sure we use uppercase consistent with the DAYS_OF_WEEK constant
     const newSlot: TimeSlotFormValues = {
       startTime: '08:00',
       endTime: '10:00',
-      dows: ['MON', 'WED', 'FRI'],
+      dows: ['MON', 'WED', 'FRI'], // Already uppercase, matching our constants
     };
     const updatedSlots = [...timeSlots, newSlot];
     setTimeSlots(updatedSlots);
@@ -121,10 +147,33 @@ export function RoomTimeSlotForm({
           }
         }
 
+        // Ensure we consistently normalize dows to uppercase
+        let normalizedDows = Array.isArray(currentSlot.dows)
+          ? currentSlot.dows
+              .filter((day) => day !== null && day !== undefined)
+              .map((day) =>
+                typeof day === 'string'
+                  ? day.toUpperCase()
+                  : String(day).toUpperCase()
+              )
+          : [];
+
+        // If field is 'dows', treat it specially since we need to normalize the values
+        if (field === 'dows' && Array.isArray(formattedValue)) {
+          normalizedDows = formattedValue
+            .filter((day) => day !== null && day !== undefined)
+            .map((day) =>
+              typeof day === 'string'
+                ? day.toUpperCase()
+                : String(day).toUpperCase()
+            );
+          formattedValue = normalizedDows;
+        }
+
         updatedSlots[index] = {
           startTime: currentSlot.startTime || '',
           endTime: currentSlot.endTime || '',
-          dows: Array.isArray(currentSlot.dows) ? currentSlot.dows : [],
+          dows: normalizedDows,
           [field]: formattedValue,
         };
         setTimeSlots(updatedSlots);
@@ -137,16 +186,37 @@ export function RoomTimeSlotForm({
     if (index >= 0 && index < timeSlots.length) {
       const slot = timeSlots[index];
       if (slot) {
-        // Ensure that dows is always an array
-        const currentDows = Array.isArray(slot.dows) ? slot.dows : [];
+        // Make sure we're working with uppercase DOW values
+        const uppercaseDow = dow.toUpperCase();
+
+        // Ensure that dows is always an array and values are uppercase
+        const currentDows = Array.isArray(slot.dows)
+          ? slot.dows.map((d) => (typeof d === 'string' ? d.toUpperCase() : d))
+          : [];
+
         let newDows: string[];
 
-        if (currentDows.includes(dow)) {
-          newDows = currentDows.filter((d) => d !== dow);
+        // Case-insensitive comparison
+        if (
+          currentDows.some(
+            (d) => typeof d === 'string' && d.toUpperCase() === uppercaseDow
+          )
+        ) {
+          newDows = currentDows.filter(
+            (d) => typeof d === 'string' && d.toUpperCase() !== uppercaseDow
+          );
         } else {
-          newDows = [...currentDows, dow];
+          newDows = [...currentDows, uppercaseDow];
         }
 
+        console.log(
+          'Toggle DOW:',
+          dow,
+          'Current DOWs:',
+          currentDows,
+          'New DOWs:',
+          newDows
+        );
         updateTimeSlot(index, 'dows', newDows);
       }
     }
@@ -258,7 +328,12 @@ export function RoomTimeSlotForm({
               <div className='flex flex-wrap gap-2'>
                 {DAYS_OF_WEEK.map((day) => {
                   const isSelected =
-                    Array.isArray(slot.dows) && slot.dows.includes(day.value);
+                    Array.isArray(slot.dows) &&
+                    slot.dows.some(
+                      (dow) =>
+                        typeof dow === 'string' &&
+                        dow.toUpperCase() === day.value.toUpperCase()
+                    );
                   return (
                     <label
                       key={day.value}

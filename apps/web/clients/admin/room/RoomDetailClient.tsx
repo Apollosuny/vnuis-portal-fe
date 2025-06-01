@@ -124,17 +124,30 @@ export const RoomDetailClient = ({ roomId }: RoomDetailClientProps) => {
           // 0-6 format (0 = Sunday)
           const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
           console.log(`Normalizing numeric day: ${day} to ${dayMap[numDay]}`);
-          return dayMap[numDay] || ''; // Thêm fallback để đảm bảo luôn trả về string
+          return dayMap[numDay] || ''; // Fallback to ensure we always return a string
         } else if (numDay >= 1 && numDay <= 7) {
           // 1-7 format (1 = Monday, 7 = Sunday)
           const dayMap = ['', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
           console.log(`Normalizing numeric day: ${day} to ${dayMap[numDay]}`);
-          return dayMap[numDay] || ''; // Thêm fallback để đảm bảo luôn trả về string
+          return dayMap[numDay] || ''; // Fallback to ensure we always return a string
         }
       }
 
       // Convert to string and lowercase for string processing
       const dayStr = String(day).toLowerCase().trim();
+
+      // Also check uppercase values
+      if (typeof day === 'string') {
+        const upperDay = day.toUpperCase();
+        // Direct mapping from uppercase day values like "MON" to lowercase "mon"
+        if (upperDay === 'SUN') return 'sun';
+        if (upperDay === 'MON') return 'mon';
+        if (upperDay === 'TUE') return 'tue';
+        if (upperDay === 'WED') return 'wed';
+        if (upperDay === 'THU') return 'thu';
+        if (upperDay === 'FRI') return 'fri';
+        if (upperDay === 'SAT') return 'sat';
+      }
 
       console.log('Normalizing day:', day, 'to lowercase:', dayStr);
 
