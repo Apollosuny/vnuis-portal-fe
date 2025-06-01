@@ -7,29 +7,21 @@ import { nexusAxios } from '../configs/axios.config';
 
 const BASE_URL = '/room-time-slot';
 
+import { formatTimeFromISOString, convertTimeZone } from '../utils/date';
+
 // Global helper function to normalize time in all contexts
 const normalizeTime = (timeString: string | null | undefined): string => {
   if (!timeString) return '';
 
-  // If it's an ISO date string, extract just the time part
+  // If it's an ISO date string, use Luxon for proper timezone handling
   if (typeof timeString === 'string' && timeString.includes('T')) {
-    const timeParts = timeString.split('T');
-    if (timeParts.length > 1 && timeParts[1]) {
-      // Take just the HH:MM part
-      return timeParts[1].substring(0, 5);
-    }
+    return formatTimeFromISOString(timeString, true); // Convert from UTC to local
   }
 
-  // Make sure it's in HH:MM format with padded hours
+  // If it's just a time string (HH:MM) from UTC, convert it to local time
   if (typeof timeString === 'string' && timeString.match(/^\d{1,2}:\d{2}$/)) {
-    const parts = timeString.split(':');
-    if (parts.length === 2) {
-      const hours = parts[0];
-      const minutes = parts[1];
-      if (hours && minutes) {
-        return `${hours.padStart(2, '0')}:${minutes}`;
-      }
-    }
+    // Convert from UTC to local timezone
+    return convertTimeZone(timeString, new Date(), false);
   }
 
   return timeString;
@@ -57,9 +49,9 @@ export const roomTimeSlotApi = {
         return response.data.map(
           (slot: any): TimeSlotRange => ({
             ...slot,
-            // Always normalize time strings
-            startTime: normalizeTime(slot.startTime),
-            endTime: normalizeTime(slot.endTime),
+            // Handle both startHour/endHour and startTime/endTime fields
+            startTime: slot.startHour || normalizeTime(slot.startTime) || '',
+            endTime: slot.endHour || normalizeTime(slot.endTime) || '',
             // Ensure dows is always an array
             dows: Array.isArray(slot.dows) ? slot.dows : [],
           })

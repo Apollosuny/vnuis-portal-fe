@@ -1,10 +1,14 @@
 // Room time slot types based on the backend models
 export interface TimeSlotRange {
-  startTime: string;
-  endTime: string;
+  startHour?: string; // For API response format
+  endHour?: string; // For API response format
+  startTime: string; // For normalized format
+  endTime: string; // For normalized format
   dows: string[];
   formattedStartTime?: string;
   formattedEndTime?: string;
+  localStartTime?: string; // For local timezone display
+  localEndTime?: string; // For local timezone display
   id?: string;
   dowsBit?: number;
 }
