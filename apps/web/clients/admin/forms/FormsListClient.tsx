@@ -7,6 +7,7 @@ import { getForms } from '@/api/form.api';
 import { AdministrativeProceduresForm } from '@/types/administrative-form.types';
 import { toast } from 'sonner';
 import { Button } from '@workspace/ui/components/button';
+import { ROUTES } from '@/constants/router';
 
 export const FormsListClient = () => {
   const [forms, setForms] = useState<AdministrativeProceduresForm[]>([]);
@@ -118,13 +119,13 @@ export const FormsListClient = () => {
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                     <Link
-                      href={`/admin/forms/${form.id}`}
+                      href={`${ROUTES.FORMS}/${form.id}`}
                       className='text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 mr-4'
                     >
                       View
                     </Link>
                     <Link
-                      href={`/admin/forms/${form.id}/edit`}
+                      href={`${ROUTES.FORMS}/${form.id}/edit`}
                       className='text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-200'
                     >
                       Edit

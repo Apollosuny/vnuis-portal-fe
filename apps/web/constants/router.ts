@@ -4,6 +4,7 @@ export const ROUTES = {
   LOGIN: '/login',
   // Admin/Operator routes
   DASHBOARD: '/dashboard',
+  FORMS: '/dashboard/forms',
   CREATE_FORM: '/dashboard/forms/create',
   ROOMS: '/dashboard/rooms',
   CREATE_ROOM: '/dashboard/rooms/create',

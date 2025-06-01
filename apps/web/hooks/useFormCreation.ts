@@ -8,6 +8,7 @@ import { CreateFormValues } from '@/types/administrative-form.types';
 import { createForm } from '@/api/form.api';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/constants/router';
 
 // Create a validation schema for the form
 const schema = yup.object().shape({
@@ -133,7 +134,7 @@ export const useFormCreation = (onSuccess?: (form: any) => void) => {
         onSuccess(response);
       } else {
         // Navigate to forms list
-        router.push('/admin/forms');
+        router.push(ROUTES.FORMS);
       }
     } catch (error: any) {
       console.error('Error creating form:', error);

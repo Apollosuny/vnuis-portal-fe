@@ -7,6 +7,7 @@ import { useFormCreation } from '@/hooks/useFormCreation';
 import { Button } from '@workspace/ui/components/button';
 import { Question, Answer } from '@/types/administrative-form.types';
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/constants/router';
 
 export const FormCreationClient = () => {
   const router = useRouter();
@@ -130,7 +131,7 @@ export const FormCreationClient = () => {
       <div className='flex items-center gap-2'>
         <Button
           variant='ghost'
-          onClick={() => router.push('/dashboard/forms')}
+          onClick={() => router.push(ROUTES.FORMS)}
           className='flex items-center gap-2'
         >
           <ArrowLeft className='h-4 w-4' />
