@@ -32,6 +32,7 @@ import {
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
 import { roomApi } from '@/api/room.api';
 import { roomTimeSlotApi } from '@/api/room-time-slot.api';
+import { roomBookingApi } from '@/api/room-booking.api';
 import { Room, RoomType } from '@/types/room.types';
 import {
   formatDateForDisplay,
@@ -81,6 +82,10 @@ const RoomsPage: React.FC = () => {
   const [bookingSlot, setBookingSlot] = useState<any>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState<string | null>(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingPurpose, setBookingPurpose] = useState('');
   const [availableTimeSlots, setAvailableTimeSlots] = useState<
     Record<string, any[]>
   >({});
@@ -98,6 +103,11 @@ const RoomsPage: React.FC = () => {
         setLoading(false);
       }
     };
+
+    // Reset booking states
+    setBookingError(null);
+    setBookingSuccess(false);
+    setBookingPurpose('');
 
     fetchRooms();
   }, []);
@@ -206,10 +216,126 @@ const RoomsPage: React.FC = () => {
     setBookingSlot(null);
     setBookingDate('');
     setAvailableTimeSlots({});
+    setBookingSuccess(false);
+    setBookingError(null);
+    setBookingPurpose('');
   };
 
   const handleSelectSlot = (slot: any) => {
     setBookingSlot(slot);
+    setBookingError(null);
+  };
+
+  const handleBookRoom = async () => {
+    if (!selectedRoom || !bookingDate || !bookingSlot) {
+      setBookingError('Please select a room, date, and time slot first.');
+      return;
+    }
+
+    if (!bookingPurpose.trim()) {
+      setBookingError('Please provide a purpose for your booking.');
+      return;
+    }
+
+    setBookingLoading(true);
+    setBookingError(null);
+
+    try {
+      // Get the booking slot information
+      if (!bookingSlot || !bookingDate) {
+        setBookingError('Missing booking information. Please try again.');
+        setBookingLoading(false);
+        return;
+      }
+
+      // Format: YYYY-MM-DD
+      const dateStr = bookingDate;
+
+      // Find the time string (format: HH:MM) - prefer localStartTime as it's already converted to local timezone
+      const timeStr =
+        bookingSlot.localStartTime ||
+        bookingSlot.startTime ||
+        bookingSlot.startHour ||
+        '';
+
+      if (!timeStr) {
+        throw new Error('Invalid time slot');
+      }
+
+      // Parse the date and time components
+      const [yearStr, monthStr, dayStr] = dateStr.split('-');
+      const [hoursStr, minutesStr] = timeStr.split(':');
+
+      if (!yearStr || !monthStr || !dayStr || !hoursStr || !minutesStr) {
+        throw new Error('Invalid date or time format');
+      }
+
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const day = parseInt(dayStr, 10);
+      const hours = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+
+      if (
+        isNaN(year) ||
+        isNaN(month) ||
+        isNaN(day) ||
+        isNaN(hours) ||
+        isNaN(minutes)
+      ) {
+        throw new Error('Invalid date or time values');
+      }
+
+      // In JavaScript months are 0-indexed (0 = January, 11 = December)
+      const startTime = new Date(year, month - 1, day, hours, minutes);
+
+      // Get user's timezone offset for the API
+      const offset = new Date().getTimezoneOffset() * -1; // Convert to positive
+      const offsetHours = Math.floor(offset / 60);
+      const offsetMinutes = Math.abs(offset % 60);
+      const offsetStr = `${offsetHours}:${offsetMinutes.toString().padStart(2, '0')}`;
+
+      // Make sure we have a valid duration
+      const duration = bookingSlot.duration
+        ? bookingSlot.duration / 60 // Convert minutes to hours if duration is in minutes
+        : 1; // Default to 1 hour if no duration specified
+
+      // Call the API to book the room
+      await roomBookingApi.createBooking({
+        startTime,
+        duration,
+        purpose: bookingPurpose,
+        isRecurring: false,
+        roomId: selectedRoom.roomId,
+        offset: offsetStr,
+      });
+
+      setBookingSuccess(true);
+      setBookingError(null);
+
+      // Reset fields after successful booking
+      setBookingSlot(null);
+      setBookingPurpose('');
+
+      // Refresh available slots to reflect the new booking
+      const slots = await fetchAvailableSlots(selectedRoom.roomId, bookingDate);
+      setAvailableTimeSlots((prev) => ({
+        ...prev,
+        [bookingDate]: slots,
+      }));
+    } catch (error: any) {
+      console.error('Failed to book room:', error);
+      // Get more specific error message if available
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to book the room. Please try again.';
+
+      setBookingError(errorMessage);
+      setBookingSuccess(false);
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   const handleFeatureToggle = (feature: string) => {
@@ -641,6 +767,37 @@ const RoomsPage: React.FC = () => {
                           </>
                         )}
                       </div>
+
+                      {bookingSlot && (
+                        <div className='mt-4 border-t pt-4'>
+                          <label
+                            htmlFor='purpose'
+                            className='block mb-2 text-sm font-medium'
+                          >
+                            Purpose of booking:
+                          </label>
+                          <textarea
+                            id='purpose'
+                            className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
+                            value={bookingPurpose}
+                            onChange={(e) => setBookingPurpose(e.target.value)}
+                            placeholder='Please describe the purpose of your booking'
+                            rows={3}
+                          />
+                        </div>
+                      )}
+
+                      {bookingError && (
+                        <div className='mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm'>
+                          {bookingError}
+                        </div>
+                      )}
+
+                      {bookingSuccess && (
+                        <div className='mt-4 p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm'>
+                          Room booked successfully!
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className='flex flex-col items-center py-6 text-center'>
@@ -659,13 +816,27 @@ const RoomsPage: React.FC = () => {
                 <CardFooter>
                   <Button
                     className='w-full'
-                    disabled={!bookingSlot || !selectedRoom.isAvailable}
+                    disabled={
+                      !bookingSlot ||
+                      !selectedRoom.isAvailable ||
+                      bookingLoading
+                    }
+                    onClick={handleBookRoom}
                   >
-                    {selectedRoom.isAvailable
-                      ? bookingSlot
-                        ? 'Confirm Booking'
-                        : 'Select a Time Slot'
-                      : 'Room Unavailable'}
+                    {bookingLoading ? (
+                      <>
+                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        Processing...
+                      </>
+                    ) : selectedRoom.isAvailable ? (
+                      bookingSlot ? (
+                        'Confirm Booking'
+                      ) : (
+                        'Select a Time Slot'
+                      )
+                    ) : (
+                      'Room Unavailable'
+                    )}
                   </Button>
                 </CardFooter>
               </Card>
