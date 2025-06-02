@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -25,8 +25,15 @@ import {
   XCircle,
   ArrowLeftRight,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
+import { getForms } from '@/api/form.api';
+import { getUserFormSubmissions } from '@/api/form-submission.api';
+import { AdministrativeProceduresForm } from '@/types/administrative-form.types';
+import { AdministrativeProceduresFormSubmission } from '@/types/form-submission.types';
+import { FormSubmissionStatus } from '@/types/enums';
+import { formatDate, formatRelativeTime } from '@/utils/date-utils';
 
 // Mock form data
 const formSubmissions = [
@@ -205,7 +212,84 @@ const FormsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedForm, setSelectedForm] = useState<any>(null);
 
-  const filteredFormSubmissions = formSubmissions.filter((form) => {
+  // API data
+  const [availableApiforms, setAvailableApiForms] = useState<
+    AdministrativeProceduresForm[]
+  >([]);
+  const [userSubmissions, setUserSubmissions] = useState<
+    AdministrativeProceduresFormSubmission[]
+  >([]);
+  const [loading, setLoading] = useState({
+    forms: true,
+    submissions: true,
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch available forms
+        const formsData = await getForms();
+        setAvailableApiForms(formsData);
+        setLoading((prev) => ({ ...prev, forms: false }));
+
+        // Fetch user submissions
+        const submissionsData = await getUserFormSubmissions();
+        setUserSubmissions(submissionsData);
+        setLoading((prev) => ({ ...prev, submissions: false }));
+      } catch (err) {
+        console.error('Error fetching forms data:', err);
+        setError('Failed to load forms data. Please try again later.');
+        setLoading({ forms: false, submissions: false });
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // For backward compatibility, continue to use mock data for categories and fields
+  // that are not available in the API response
+  const enhancedSubmissions = userSubmissions.map((submission) => {
+    const mockEntry = formSubmissions.find(
+      (mock) => mock.name.toLowerCase() === submission.form?.name.toLowerCase()
+    );
+
+    return {
+      id: submission.id,
+      name: submission.form?.name || 'Unknown Form',
+      submittedDate: formatDate(submission.createdAt),
+      updatedDate: formatDate(submission.updatedAt),
+      status: mapStatusToDisplay(submission.status),
+      category: mockEntry?.category || 'Other',
+      responseTime: mockEntry?.responseTime || '3-5 business days',
+      comments: mockEntry?.comments || [],
+      // Keep original data for reference
+      originalSubmission: submission,
+    };
+  });
+
+  const enhancedAvailableForms = availableApiforms.map((form) => {
+    const mockEntry = availableForms.find(
+      (mock) => mock.name.toLowerCase() === form.name.toLowerCase()
+    );
+
+    return {
+      id: form.id,
+      name: form.name,
+      category: mockEntry?.category || 'Academic',
+      description: form.description,
+      processingTime: mockEntry?.processingTime || '3-5 business days',
+      requiredDocuments: mockEntry?.requiredDocuments || [
+        'Student ID verification',
+      ],
+      deadline: mockEntry?.deadline || 'None',
+      // Keep original data for reference
+      originalForm: form,
+    };
+  });
+
+  const filteredFormSubmissions = enhancedSubmissions.filter((form) => {
     const matchesStatus =
       selectedStatus === 'all' ||
       form.status.toLowerCase().replace(' ', '-') === selectedStatus;
@@ -222,7 +306,7 @@ const FormsPage: React.FC = () => {
     return matchesStatus && matchesCategory && matchesSearch;
   });
 
-  const filteredAvailableForms = availableForms.filter((form) => {
+  const filteredAvailableForms = enhancedAvailableForms.filter((form) => {
     const matchesCategory =
       selectedCategory === 'all' ||
       form.category.toLowerCase() === selectedCategory;
@@ -235,6 +319,22 @@ const FormsPage: React.FC = () => {
 
     return matchesCategory && matchesSearch;
   });
+
+  // Helper function to map from FormSubmissionStatus enum to display strings
+  function mapStatusToDisplay(status: FormSubmissionStatus): string {
+    switch (status) {
+      case FormSubmissionStatus.PENDING:
+        return 'Under Review';
+      case FormSubmissionStatus.APPROVED:
+        return 'Approved';
+      case FormSubmissionStatus.REJECTED:
+        return 'Rejected';
+      case FormSubmissionStatus.CANCELLED:
+        return 'Cancelled';
+      default:
+        return 'Unknown';
+    }
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -266,6 +366,20 @@ const FormsPage: React.FC = () => {
     });
   };
 
+  const handleFormSubmit = (form: AdministrativeProceduresForm) => {
+    // In a real implementation, we would redirect to a form completion page
+    // For now, just simulate a redirect by logging and alerting
+    console.log('Submitting form:', form);
+
+    // In production, we would use router.push to navigate to the form completion page
+    // router.push(`/dashboard/student/forms/${form.id}/submit`);
+
+    // For this demo, just alert
+    alert(
+      `Form submission page for ${form.name} would open here. You would navigate to /dashboard/student/forms/${form.id}/submit`
+    );
+  };
+
   return (
     <StudentDashboardLayout>
       <div className='space-y-6'>
@@ -282,6 +396,7 @@ const FormsPage: React.FC = () => {
                 className='pl-9 py-2 pr-4 border rounded-md w-48 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                disabled={loading.forms || loading.submissions}
               />
             </div>
 
@@ -336,7 +451,22 @@ const FormsPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value='my-forms' className='space-y-4'>
-              {filteredFormSubmissions.length > 0 ? (
+              {loading.submissions ? (
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <Loader2 className='h-12 w-12 text-primary mb-4 animate-spin' />
+                  <h3 className='text-lg font-medium text-gray-700'>
+                    Loading your submissions...
+                  </h3>
+                </div>
+              ) : error ? (
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <XCircle className='h-12 w-12 text-red-500 mb-4' />
+                  <h3 className='text-lg font-medium text-gray-700'>
+                    Error loading form submissions
+                  </h3>
+                  <p className='text-gray-500 mt-2 max-w-sm'>{error}</p>
+                </div>
+              ) : filteredFormSubmissions.length > 0 ? (
                 <div className='grid gap-4'>
                   {filteredFormSubmissions.map((form) => (
                     <Card
@@ -408,7 +538,22 @@ const FormsPage: React.FC = () => {
             </TabsContent>
 
             <TabsContent value='available-forms' className='space-y-4'>
-              {filteredAvailableForms.length > 0 ? (
+              {loading.forms ? (
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <Loader2 className='h-12 w-12 text-primary mb-4 animate-spin' />
+                  <h3 className='text-lg font-medium text-gray-700'>
+                    Loading available forms...
+                  </h3>
+                </div>
+              ) : error ? (
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <XCircle className='h-12 w-12 text-red-500 mb-4' />
+                  <h3 className='text-lg font-medium text-gray-700'>
+                    Error loading available forms
+                  </h3>
+                  <p className='text-gray-500 mt-2 max-w-sm'>{error}</p>
+                </div>
+              ) : filteredAvailableForms.length > 0 ? (
                 <div className='grid gap-4 md:grid-cols-2'>
                   {filteredAvailableForms.map((form) => (
                     <Card key={form.id}>
@@ -440,7 +585,11 @@ const FormsPage: React.FC = () => {
                         </div>
                       </CardContent>
                       <CardFooter className='flex justify-end'>
-                        <Button>Submit Form</Button>
+                        <Button
+                          onClick={() => handleFormSubmit(form.originalForm)}
+                        >
+                          Submit Form
+                        </Button>
                       </CardFooter>
                     </Card>
                   ))}
@@ -507,13 +656,21 @@ const FormsPage: React.FC = () => {
                       <div className='flex justify-between py-2 border-b'>
                         <span className='text-gray-600'>Submission Date</span>
                         <span className='font-medium'>
-                          {selectedForm.submittedDate}
+                          {selectedForm.originalSubmission
+                            ? formatDate(
+                                selectedForm.originalSubmission.createdAt
+                              )
+                            : selectedForm.submittedDate}
                         </span>
                       </div>
                       <div className='flex justify-between py-2 border-b'>
                         <span className='text-gray-600'>Last Updated</span>
                         <span className='font-medium'>
-                          {selectedForm.updatedDate}
+                          {selectedForm.originalSubmission
+                            ? formatDate(
+                                selectedForm.originalSubmission.updatedAt
+                              )
+                            : selectedForm.updatedDate}
                         </span>
                       </div>
                       <div className='flex justify-between py-2 border-b'>

@@ -26,3 +26,15 @@ export const getForms = async (): Promise<AdministrativeProceduresForm[]> => {
   const response = await nexusAxios.get(API_ENDPOINT);
   return response.data;
 };
+
+/**
+ * Get form by ID
+ * @param id Form ID
+ * @returns Form with the given ID
+ */
+export const getFormById = async (
+  id: string
+): Promise<AdministrativeProceduresForm> => {
+  const response = await nexusAxios.get(`${API_ENDPOINT}/${id}`);
+  return response.data;
+};
