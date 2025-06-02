@@ -293,8 +293,24 @@ export const StudentEventsClient = () => {
             <Spinner size='lg' />
           </div>
         ) : events.length === 0 ? (
-          <div className='text-center py-8 text-gray-500'>
-            No upcoming events at this time. Check back soon!
+          <div className='flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
+            <div className='mb-6 bg-primary/10 p-4 rounded-full'>
+              <Calendar className='h-12 w-12 text-primary' />
+            </div>
+            <h3 className='text-xl font-semibold text-gray-800 mb-2'>
+              No Upcoming Events
+            </h3>
+            <p className='text-gray-500 text-center max-w-md mb-6'>
+              There are no events scheduled at this time. Check back later for
+              exciting new opportunities!
+            </p>
+            <Button
+              variant='outline'
+              className='border-dashed border-2 hover:bg-primary/5 transition-all'
+              onClick={() => fetchEvents()}
+            >
+              Refresh Events
+            </Button>
           </div>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
@@ -326,6 +342,19 @@ export const StudentEventsClient = () => {
         {loading ? (
           <div className='flex justify-center items-center h-20'>
             <Spinner size='md' />
+          </div>
+        ) : events.filter((event) => isEventPast(event)).length === 0 ? (
+          <div className='flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
+            <div className='mb-5 bg-gray-100 p-3 rounded-full'>
+              <Clock className='h-10 w-10 text-gray-500' />
+            </div>
+            <h3 className='text-lg font-medium text-gray-700 mb-2'>
+              No Past Events
+            </h3>
+            <p className='text-gray-500 text-center max-w-md'>
+              You haven't attended any events yet. Check out our upcoming events
+              to start your journey!
+            </p>
           </div>
         ) : (
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
