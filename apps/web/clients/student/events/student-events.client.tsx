@@ -37,19 +37,52 @@ export const StudentEventsClient = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      // Use mock data instead of API call
-      setTimeout(() => {
-        setEvents(mockEvents);
-        setLoading(false);
-      }, 1000); // Simulate network delay
+      // Use the real API instead of mock data
+      const data = await eventApi.getEvents();
+
+      // If some fields from mock data don't exist in the API response, add them
+      const enhancedEvents = data.map((event: Event) => {
+        return {
+          ...event,
+          // Add any mock fields that might be missing from API
+          requireApproval: event.requireApproval ?? true,
+          category: event.category ?? 'General',
+          metadata: event.metadata ?? {},
+        };
+      });
+
+      setEvents(enhancedEvents);
     } catch (error) {
+      // Fallback to mock data if API fails
+      console.error('API call failed, using mock data instead:', error);
+      setEvents(mockEvents);
       toast.error(getAPIErrorMessage(error));
+    } finally {
       setLoading(false);
     }
   };
 
   const fetchMyRegistrations = async () => {
     try {
+      // Call the API to get registrations for the current user
+      const data = await eventApi.getEventRegistrations({});
+
+      // Convert to a lookup object by eventId
+      const registrationsMap = data.reduce(
+        (acc: Record<string, EventRegistration>, item: EventRegistration) => {
+          acc[item.eventId] = item;
+          return acc;
+        },
+        {}
+      );
+      setMyRegistrations(registrationsMap);
+    } catch (error) {
+      // Fall back to mock data if API fails
+      console.error(
+        'Failed to load registrations from API, using mock data:',
+        error
+      );
+
       // Filter registrations for current user (assuming studentId = 'current-user')
       const myRegs = mockRegistrations.filter(
         (reg) => reg.studentId === 'current-user'
@@ -64,8 +97,6 @@ export const StudentEventsClient = () => {
         {}
       );
       setMyRegistrations(registrationsMap);
-    } catch (error) {
-      console.error('Failed to load registrations:', error);
     }
   };
 
@@ -172,6 +203,7 @@ const EventCard = ({
   isPast,
   onSuccess,
 }: EventCardProps) => {
+  // Use actual API implementation through the useEventRegistration hook
   const { isLoading, handleRegister, handleCancel } = useEventRegistration(
     event.id,
     onSuccess

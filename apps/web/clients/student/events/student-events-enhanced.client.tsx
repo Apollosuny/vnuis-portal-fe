@@ -20,41 +20,72 @@ import {
   CardTitle,
 } from '@workspace/ui/components/card';
 import { Button } from '@workspace/ui/components/button';
-// Import mock data
+import { eventApi } from '@/api/event.api';
+// Import mock data for fallback
 import { mockEvents, mockRegistrations } from './mock-events';
 
-// Mock version of useEventRegistration hook for local testing
-const useMockEventRegistration = (eventId: string, onSuccess?: () => void) => {
+// Enhanced version of useEventRegistration hook with capacity checking
+// This combines real API calls with additional functionality
+const useEnhancedEventRegistration = (
+  eventId: string,
+  onSuccess?: () => void
+) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [eventDetails, setEventDetails] = useState<Event | null>(null);
+  const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
+
+  // Fetch event details and registrations on mount
+  useEffect(() => {
+    const fetchEventData = async () => {
+      try {
+        // Fetch event details
+        const event = await eventApi.getEvent(eventId);
+        setEventDetails(event);
+
+        // Fetch registrations for this event using our updated API method
+        // that handles the routing issue with mock data
+        const regs = await eventApi.getEventRegistrations({ eventId });
+        console.log(`Loaded ${regs.length} registrations for event ${eventId}`);
+        setRegistrations(regs);
+      } catch (error) {
+        console.error('Error fetching event data:', error);
+
+        // Fallback to mock data if API fails
+        const mockEvent = mockEvents.find((e) => e.id === eventId);
+        if (mockEvent) setEventDetails(mockEvent);
+
+        const mockRegs = mockRegistrations.filter((r) => r.eventId === eventId);
+        setRegistrations(mockRegs);
+      }
+    };
+
+    fetchEventData();
+  }, [eventId]);
 
   // Check if event is full by counting registrations
-  const isEventFull = (eventId: string) => {
-    const event = mockEvents.find((e) => e.id === eventId);
-    if (!event) return false;
+  const isEventFull = () => {
+    if (!eventDetails) return false;
 
-    const approvedRegistrations = mockRegistrations.filter(
+    const approvedRegistrations = registrations.filter(
       (reg) =>
-        reg.eventId === eventId &&
-        (reg.status === EventRegistrationStatus.APPROVED ||
-          reg.status === EventRegistrationStatus.ATTENDED)
+        reg.status === EventRegistrationStatus.APPROVED ||
+        reg.status === EventRegistrationStatus.ATTENDED
     );
 
-    return approvedRegistrations.length >= event.capacity;
+    return approvedRegistrations.length >= eventDetails.capacity;
   };
 
   // Get remaining spots for an event
-  const getRemainingSpots = (eventId: string) => {
-    const event = mockEvents.find((e) => e.id === eventId);
-    if (!event) return 0;
+  const getRemainingSpots = () => {
+    if (!eventDetails) return 0;
 
-    const approvedRegistrations = mockRegistrations.filter(
+    const approvedRegistrations = registrations.filter(
       (reg) =>
-        reg.eventId === eventId &&
-        (reg.status === EventRegistrationStatus.APPROVED ||
-          reg.status === EventRegistrationStatus.ATTENDED)
+        reg.status === EventRegistrationStatus.APPROVED ||
+        reg.status === EventRegistrationStatus.ATTENDED
     );
 
-    return Math.max(0, event.capacity - approvedRegistrations.length);
+    return Math.max(0, eventDetails.capacity - approvedRegistrations.length);
   };
 
   const handleRegister = async (additionalInfo?: Record<string, any>) => {
@@ -62,33 +93,44 @@ const useMockEventRegistration = (eventId: string, onSuccess?: () => void) => {
       setIsLoading(true);
 
       // Check if event is full
-      if (isEventFull(eventId)) {
+      if (isEventFull()) {
         toast.error('This event has reached maximum capacity.');
-        setIsLoading(false);
         return;
       }
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Create a new mock registration
-      const newRegistration = {
-        id: `reg-${Math.random().toString(36).substring(2, 9)}`,
+      // Use the real API to register
+      await eventApi.registerEvent({
         eventId,
-        status: EventRegistrationStatus.PENDING,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        studentId: 'current-user',
         additionalInfo,
-      };
-
-      // Add to mockRegistrations (this is just for the current session)
-      mockRegistrations.push(newRegistration as any);
+      });
 
       toast.success('Event registration successful');
       onSuccess?.();
     } catch (error) {
+      console.error('Registration error:', error);
       toast.error(getAPIErrorMessage(error));
+
+      // Fallback to mock registration if API fails
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Using mock registration fallback');
+
+        // Create a new mock registration
+        const newRegistration = {
+          id: `reg-${Math.random().toString(36).substring(2, 9)}`,
+          eventId,
+          status: EventRegistrationStatus.PENDING,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          studentId: 'current-user',
+          additionalInfo,
+        };
+
+        // Add to mockRegistrations (this is just for the current session)
+        mockRegistrations.push(newRegistration as any);
+
+        toast.success('Event registration successful (mock)');
+        onSuccess?.();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -98,25 +140,34 @@ const useMockEventRegistration = (eventId: string, onSuccess?: () => void) => {
     try {
       setIsLoading(true);
 
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Find and update the registration status
-      const regIndex = mockRegistrations.findIndex(
-        (reg) => reg.id === registrationId
-      );
-      if (regIndex >= 0) {
-        const registration = mockRegistrations[regIndex];
-        if (registration) {
-          registration.status = EventRegistrationStatus.CANCELLED;
-          registration.updatedAt = new Date().toISOString();
-        }
-      }
+      // Use the real API to cancel registration
+      await eventApi.cancelRegistration(registrationId);
 
       toast.success('Registration cancelled successfully');
       onSuccess?.();
     } catch (error) {
+      console.error('Cancellation error:', error);
       toast.error(getAPIErrorMessage(error));
+
+      // Fallback to mock cancellation if API fails
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Using mock cancellation fallback');
+
+        // Find and update the registration status
+        const regIndex = mockRegistrations.findIndex(
+          (reg) => reg.id === registrationId
+        );
+        if (regIndex >= 0) {
+          const registration = mockRegistrations[regIndex];
+          if (registration) {
+            registration.status = EventRegistrationStatus.CANCELLED;
+            registration.updatedAt = new Date().toISOString();
+          }
+        }
+
+        toast.success('Registration cancelled successfully (mock)');
+        onSuccess?.();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -128,6 +179,8 @@ const useMockEventRegistration = (eventId: string, onSuccess?: () => void) => {
     handleCancel,
     getRemainingSpots,
     isEventFull,
+    eventDetails,
+    registrations,
   };
 };
 
@@ -147,20 +200,55 @@ export const StudentEventsClient = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      // Use mock data instead of API call
-      setTimeout(() => {
-        setEvents(mockEvents);
-        setLoading(false);
-      }, 1000); // Simulate network delay
+      // Use real API call with fallback to mock data
+      const data = await eventApi.getEvents();
+
+      // If some fields from mock data don't exist in the API response, add them
+      const enhancedEvents = data.map((event: Event) => {
+        return {
+          ...event,
+          // Add any mock fields that might be missing from API
+          requireApproval: event.requireApproval ?? true,
+          category: event.category ?? 'General',
+          metadata: event.metadata ?? {},
+        };
+      });
+
+      setEvents(enhancedEvents);
     } catch (error) {
+      console.error('API call failed, using mock data instead:', error);
+      setEvents(mockEvents);
       toast.error(getAPIErrorMessage(error));
+    } finally {
       setLoading(false);
     }
   };
 
   const fetchMyRegistrations = async () => {
     try {
-      // Filter registrations for current user (assuming studentId = 'current-user')
+      // Call API to get registrations for the current user
+      const data = await eventApi.getEventRegistrations({});
+
+      // Filter for the current user if the API doesn't do that already
+      // For now, our modified API implementation returns mock data
+      const myRegs = data.filter((reg) => reg.studentId === 'current-user');
+
+      // Convert to a lookup object by eventId
+      const registrationsMap = myRegs.reduce(
+        (acc: Record<string, EventRegistration>, item: EventRegistration) => {
+          acc[item.eventId] = item;
+          return acc;
+        },
+        {}
+      );
+
+      console.log('Registrations loaded:', myRegs.length);
+      setMyRegistrations(registrationsMap);
+    } catch (error) {
+      console.error('Failed to load registrations:', error);
+
+      // Since our API implementation already falls back to mock data,
+      // we shouldn't need this fallback, but keeping it just in case
       const myRegs = mockRegistrations.filter(
         (reg) => reg.studentId === 'current-user'
       );
@@ -174,8 +262,6 @@ export const StudentEventsClient = () => {
         {}
       );
       setMyRegistrations(registrationsMap);
-    } catch (error) {
-      console.error('Failed to load registrations:', error);
     }
   };
 
@@ -282,12 +368,14 @@ const EventCard = ({
   isPast,
   onSuccess,
 }: EventCardProps) => {
-  // Using a mock version of the registration hook for the local implementation
+  // Using the enhanced registration hook that combines API with additional functionality
   const { isLoading, handleRegister, handleCancel, getRemainingSpots } =
-    useMockEventRegistration(event.id, onSuccess);
+    useEnhancedEventRegistration(event.id, onSuccess);
 
-  const remainingSpots = getRemainingSpots(event.id);
-  const isFull = remainingSpots === 0;
+  const remainingSpots = getRemainingSpots();
+  const isFull =
+    remainingSpots === 0 ||
+    useEnhancedEventRegistration(event.id).isEventFull();
   const isLimitedSpots = remainingSpots <= 5;
 
   const getRegistrationBadge = () => {
