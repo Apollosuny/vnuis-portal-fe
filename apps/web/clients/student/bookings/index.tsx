@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { DateTime } from 'luxon';
 import {
   Card,
   CardContent,
@@ -28,108 +29,37 @@ import {
   XCircle,
 } from 'lucide-react';
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
-
-// Mock data for bookings
-const bookings = [
-  {
-    id: 'BK-1001',
-    roomName: 'Study Room 101',
-    roomId: 'R001',
-    building: 'Main Library',
-    floor: '1st Floor',
-    date: 'May 28, 2025',
-    startTime: '13:00',
-    endTime: '15:00',
-    status: 'Confirmed',
-    createdAt: 'May 25, 2025',
-    participants: 3,
-    purpose: 'Group Project Discussion',
-    amenities: ['Whiteboard', 'Projector'],
-    notes: 'Please bring HDMI adapter for laptop connection.',
-  },
-  {
-    id: 'BK-1002',
-    roomName: 'Conference Room A',
-    roomId: 'R002',
-    building: 'Business School',
-    floor: '2nd Floor',
-    date: 'June 3, 2025',
-    startTime: '10:00',
-    endTime: '12:00',
-    status: 'Pending',
-    createdAt: 'May 26, 2025',
-    participants: 6,
-    purpose: 'Team Presentation Practice',
-    amenities: ['Video conferencing', 'Smart board'],
-    notes: '',
-  },
-  {
-    id: 'BK-0982',
-    roomName: 'Library Quiet Room',
-    roomId: 'R006',
-    building: 'Main Library',
-    floor: '2nd Floor',
-    date: 'May 15, 2025',
-    startTime: '09:00',
-    endTime: '11:00',
-    status: 'Completed',
-    createdAt: 'May 12, 2025',
-    participants: 1,
-    purpose: 'Individual Study',
-    amenities: ['Individual carrels', 'Reading lamps'],
-    notes: '',
-  },
-  {
-    id: 'BK-0975',
-    roomName: 'Study Room 102',
-    roomId: 'R003',
-    building: 'Main Library',
-    floor: '1st Floor',
-    date: 'May 10, 2025',
-    startTime: '14:00',
-    endTime: '16:00',
-    status: 'Cancelled',
-    createdAt: 'May 5, 2025',
-    cancelledAt: 'May 8, 2025',
-    participants: 4,
-    purpose: 'Group Assignment',
-    amenities: ['Whiteboard', 'PC workstations'],
-    notes: '',
-    cancellationReason: 'Changed plans',
-  },
-  {
-    id: 'BK-0968',
-    roomName: 'Group Room B',
-    roomId: 'R005',
-    building: 'Science Building',
-    floor: 'Ground Floor',
-    date: 'May 5, 2025',
-    startTime: '13:00',
-    endTime: '15:00',
-    status: 'Completed',
-    createdAt: 'May 1, 2025',
-    participants: 6,
-    purpose: 'Study Group for Finals',
-    amenities: ['Whiteboard', 'TV Screen'],
-    notes: '',
-  },
-];
+import { useRoomBookings } from '@/hooks/useRoomBookings';
+import type { RoomBookingResponse } from '@/api/room-booking.api';
 
 // Filter options
 const statusFilters = [
   { value: 'all', label: 'All' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'pending', label: 'Pending' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'APPROVED', label: 'Approved' },
+  { value: 'REJECTED', label: 'Rejected' },
+  { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
 const BookingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [selectedBooking, setSelectedBooking] =
+    useState<RoomBookingResponse | null>(null);
+  const {
+    loading,
+    error,
+    bookings,
+    pagination,
+    fetchMyBookings,
+    cancelBooking,
+  } = useRoomBookings();
+
+  useEffect(() => {
+    // Load initial bookings
+    fetchMyBookings(1, 10);
+  }, [fetchMyBookings]);
 
   // Filter bookings based on active tab and filters
   const filteredBookings = bookings
@@ -137,19 +67,19 @@ const BookingsPage: React.FC = () => {
       // Filter by active tab
       if (
         activeTab === 'current' &&
-        (booking.status === 'Confirmed' || booking.status === 'Pending')
+        (booking.status === 'APPROVED' || booking.status === 'PENDING')
       ) {
-        // Current tab shows upcoming bookings (Confirmed or Pending)
-        const today = new Date();
-        const bookingDate = new Date(booking.date);
+        // Current tab shows upcoming bookings (Approved or Pending)
+        const bookingDate = DateTime.fromISO(booking.startTime);
+        const today = DateTime.now();
         return bookingDate >= today;
       }
 
       if (
         activeTab === 'history' &&
-        (booking.status === 'Completed' || booking.status === 'Cancelled')
+        (booking.status === 'REJECTED' || booking.status === 'CANCELLED')
       ) {
-        // History tab shows past bookings (Completed or Cancelled)
+        // History tab shows past bookings
         return true;
       }
 
@@ -163,21 +93,20 @@ const BookingsPage: React.FC = () => {
       // Apply search filter
       const matchesSearch =
         !searchQuery ||
-        booking.roomName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.room?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.building.toLowerCase().includes(searchQuery.toLowerCase());
+        booking.room?.location
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
 
       // Apply status filter
       const matchesStatus =
-        selectedStatus === 'all' ||
-        (selectedStatus === 'upcoming' &&
-          (booking.status === 'Confirmed' || booking.status === 'Pending')) ||
-        booking.status.toLowerCase() === selectedStatus.toLowerCase();
+        selectedStatus === 'all' || booking.status === selectedStatus;
 
       return matchesSearch && matchesStatus;
     });
 
-  const handleBookingClick = (booking: any) => {
+  const handleBookingClick = (booking: RoomBookingResponse) => {
     setSelectedBooking(booking);
   };
 
@@ -187,14 +116,14 @@ const BookingsPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'Confirmed':
+      case 'APPROVED':
         return <CheckCircle className='h-4 w-4 text-green-500' />;
-      case 'Pending':
+      case 'PENDING':
         return <Clock className='h-4 w-4 text-amber-500' />;
-      case 'Completed':
-        return <CheckCircle className='h-4 w-4 text-blue-500' />;
-      case 'Cancelled':
-        return <XCircle className='h-4 w-4 text-red-500' />;
+      case 'REJECTED':
+        return <AlertTriangle className='h-4 w-4 text-red-500' />;
+      case 'CANCELLED':
+        return <XCircle className='h-4 w-4 text-gray-500' />;
       default:
         return <AlertTriangle className='h-4 w-4 text-gray-500' />;
     }
@@ -202,38 +131,44 @@ const BookingsPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Confirmed':
+      case 'APPROVED':
         return 'bg-green-100 text-green-800';
-      case 'Pending':
+      case 'PENDING':
         return 'bg-amber-100 text-amber-800';
-      case 'Completed':
-        return 'bg-gray-100 text-gray-800';
-      case 'Cancelled':
+      case 'REJECTED':
         return 'bg-red-100 text-red-800';
+      case 'CANCELLED':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleCancelBooking = (e: React.MouseEvent, bookingId: string) => {
+  const handleCancelBooking = async (
+    e: React.MouseEvent,
+    bookingId: string
+  ) => {
     e.stopPropagation();
-    // In real app, this would open a confirmation modal
-    console.log('Cancelling booking:', bookingId);
+    await cancelBooking(bookingId);
   };
 
   const getUpcomingBookingsCount = () => {
     return bookings.filter(
       (booking) =>
-        (booking.status === 'Confirmed' || booking.status === 'Pending') &&
-        new Date(booking.date) >= new Date()
+        (booking.status === 'APPROVED' || booking.status === 'PENDING') &&
+        DateTime.fromISO(booking.startTime) >= DateTime.now()
     ).length;
   };
 
   const getHistoryBookingsCount = () => {
     return bookings.filter(
       (booking) =>
-        booking.status === 'Completed' || booking.status === 'Cancelled'
+        booking.status === 'REJECTED' || booking.status === 'CANCELLED'
     ).length;
+  };
+
+  const formatDateTime = (isoString: string) => {
+    return DateTime.fromISO(isoString).toLocaleString(DateTime.DATETIME_MED);
   };
 
   return (
@@ -271,10 +206,6 @@ const BookingsPage: React.FC = () => {
                   </select>
                   <Filter className='absolute right-2.5 top-2.5 h-4 w-4 text-gray-400 pointer-events-none' />
                 </div>
-
-                <Button size='sm' className='flex-1 md:flex-none'>
-                  Apply
-                </Button>
               </div>
             </div>
 
@@ -299,360 +230,174 @@ const BookingsPage: React.FC = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value='current' className='space-y-4'>
-                {filteredBookings.length > 0 ? (
-                  <div className='space-y-4'>
-                    {filteredBookings.map((booking) => (
-                      <Card
-                        key={booking.id}
-                        className='hover:shadow-md transition-shadow cursor-pointer'
-                        onClick={() => handleBookingClick(booking)}
-                      >
-                        <CardHeader className='pb-2'>
-                          <div className='flex justify-between items-center'>
-                            <div>
-                              <CardTitle>{booking.roomName}</CardTitle>
-                              <CardDescription>
-                                Booking #{booking.id}
-                              </CardDescription>
-                            </div>
-                            <div className='flex items-center gap-2'>
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${getStatusColor(booking.status)}`}
-                              >
-                                {getStatusIcon(booking.status)}
-                                {booking.status}
-                              </span>
-                              {booking.status !== 'Cancelled' &&
-                                booking.status !== 'Completed' && (
-                                  <button
-                                    onClick={(e) =>
-                                      handleCancelBooking(e, booking.id)
-                                    }
-                                    className='text-xs bg-red-50 text-red-800 px-2 py-1 rounded hover:bg-red-100'
-                                  >
-                                    Cancel
-                                  </button>
-                                )}
-                            </div>
+              <div className='grid gap-4'>
+                {loading && <div>Loading...</div>}
+                {error && <div className='text-red-500'>{error}</div>}
+                {!loading &&
+                  !error &&
+                  filteredBookings.map((booking) => (
+                    <Card
+                      key={booking.id}
+                      className='cursor-pointer hover:border-primary transition-colors'
+                      onClick={() => handleBookingClick(booking)}
+                    >
+                      <CardHeader>
+                        <div className='flex items-start justify-between'>
+                          <div>
+                            <CardTitle>
+                              {booking.room?.name || 'Unknown Room'}
+                            </CardTitle>
+                            <CardDescription>
+                              {booking.room?.location}
+                            </CardDescription>
                           </div>
-                        </CardHeader>
-                        <CardContent className='pb-2'>
-                          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Calendar className='h-3 w-3' /> Date
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.date}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Clock className='h-3 w-3' /> Time
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.startTime} - {booking.endTime}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <MapPin className='h-3 w-3' /> Location
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.building}, {booking.floor}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Users className='h-3 w-3' /> Participants
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.participants} people
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className='pt-1'>
-                          <p className='text-sm text-gray-500'>
-                            {booking.purpose}
-                          </p>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className='flex flex-col items-center justify-center py-12 text-center'>
-                    <div className='rounded-full bg-gray-100 p-6 mb-4'>
-                      <Calendar className='h-12 w-12 text-gray-400' />
-                    </div>
-                    <h3 className='text-lg font-medium text-gray-700'>
-                      No current bookings
-                    </h3>
-                    <p className='text-gray-500 mt-2 max-w-sm'>
-                      You don't have any upcoming room bookings. Head to the
-                      Room Directory to book a room.
-                    </p>
-                    <Button className='mt-4'>Book a Room</Button>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value='history' className='space-y-4'>
-                {filteredBookings.length > 0 ? (
-                  <div className='space-y-4'>
-                    {filteredBookings.map((booking) => (
-                      <Card
-                        key={booking.id}
-                        className='hover:shadow-md transition-shadow cursor-pointer'
-                        onClick={() => handleBookingClick(booking)}
-                      >
-                        <CardHeader className='pb-2'>
-                          <div className='flex justify-between items-center'>
-                            <div>
-                              <CardTitle>{booking.roomName}</CardTitle>
-                              <CardDescription>
-                                Booking #{booking.id}
-                              </CardDescription>
-                            </div>
+                          <div className='flex items-center gap-2'>
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs ${getStatusColor(booking.status)}`}
+                              className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
+                                booking.status
+                              )}`}
                             >
                               {getStatusIcon(booking.status)}
                               {booking.status}
                             </span>
                           </div>
-                        </CardHeader>
-                        <CardContent className='pb-2'>
-                          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Calendar className='h-3 w-3' /> Date
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.date}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Clock className='h-3 w-3' /> Time
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.startTime} - {booking.endTime}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <MapPin className='h-3 w-3' /> Location
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.building}, {booking.floor}
-                              </span>
-                            </div>
-                            <div className='flex flex-col'>
-                              <span className='text-xs text-gray-500 flex items-center gap-1'>
-                                <Users className='h-3 w-3' /> Participants
-                              </span>
-                              <span className='text-sm font-medium'>
-                                {booking.participants} people
-                              </span>
-                            </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='grid gap-2'>
+                          <div className='flex items-center gap-2'>
+                            <Calendar className='h-4 w-4 text-gray-500' />
+                            <span>{formatDateTime(booking.startTime)}</span>
                           </div>
-                        </CardContent>
-                        <CardFooter className='pt-1'>
-                          <p className='text-sm text-gray-500'>
-                            {booking.purpose}
-                          </p>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className='flex flex-col items-center justify-center py-12 text-center'>
-                    <div className='rounded-full bg-gray-100 p-6 mb-4'>
-                      <Clock className='h-12 w-12 text-gray-400' />
-                    </div>
-                    <h3 className='text-lg font-medium text-gray-700'>
-                      No booking history
-                    </h3>
-                    <p className='text-gray-500 mt-2 max-w-sm'>
-                      You don't have any previous bookings.
-                    </p>
-                    <Button className='mt-4'>Book a Room</Button>
-                  </div>
-                )}
-              </TabsContent>
+                          <div className='flex items-center gap-2'>
+                            <Clock className='h-4 w-4 text-gray-500' />
+                            <span>
+                              {DateTime.fromISO(booking.endTime).toFormat(
+                                'HH:mm'
+                              )}{' '}
+                              ({booking.duration} hours)
+                            </span>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <MapPin className='h-4 w-4 text-gray-500' />
+                            <span>{booking.room?.location}</span>
+                          </div>
+                          {booking.attendees && (
+                            <div className='flex items-center gap-2'>
+                              <Users className='h-4 w-4 text-gray-500' />
+                              <span>{booking.attendees} participants</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className='flex justify-between'>
+                        <span className='text-sm text-gray-500'>
+                          Booked on {formatDateTime(booking.createdAt)}
+                        </span>
+                        {booking.status === 'PENDING' && (
+                          <Button
+                            variant='destructive'
+                            size='sm'
+                            onClick={(e) => handleCancelBooking(e, booking.id)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  ))}
+              </div>
             </Tabs>
           </>
         ) : (
-          // Booking detail view
           <div className='space-y-6'>
-            <Button variant='outline' onClick={handleCloseDetail}>
-              ← Back to Bookings
-            </Button>
+            <div className='flex items-center justify-between'>
+              <Button variant='ghost' onClick={handleCloseDetail}>
+                ← Back to bookings
+              </Button>
+            </div>
 
             <Card>
               <CardHeader>
-                <div className='flex justify-between items-start'>
+                <div className='flex items-start justify-between'>
                   <div>
-                    <CardTitle className='text-xl'>
-                      {selectedBooking.roomName}
+                    <CardTitle>
+                      {selectedBooking.room?.name || 'Unknown Room'}
                     </CardTitle>
                     <CardDescription>
-                      Booking #{selectedBooking.id}
+                      {selectedBooking.room?.location}
                     </CardDescription>
                   </div>
-                  <div className='flex flex-col items-end'>
+                  <div className='flex items-center gap-2'>
                     <span
-                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${getStatusColor(selectedBooking.status)}`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
+                        selectedBooking.status
+                      )}`}
                     >
                       {getStatusIcon(selectedBooking.status)}
                       {selectedBooking.status}
                     </span>
-                    <span className='text-xs text-gray-500 mt-1'>
-                      Created on {selectedBooking.createdAt}
-                    </span>
                   </div>
                 </div>
               </CardHeader>
-
-              <CardContent className='space-y-6'>
-                <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-                  <Card className='shadow-sm'>
-                    <CardHeader className='pb-2'>
-                      <CardTitle className='text-sm uppercase text-gray-600'>
-                        When
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className='flex items-center gap-2 mb-2'>
-                        <Calendar className='h-5 w-5 text-primary' />
-                        <span className='font-medium'>
-                          {selectedBooking.date}
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Clock className='h-5 w-5 text-primary' />
-                        <span className='font-medium'>
-                          {selectedBooking.startTime} -{' '}
-                          {selectedBooking.endTime}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className='shadow-sm'>
-                    <CardHeader className='pb-2'>
-                      <CardTitle className='text-sm uppercase text-gray-600'>
-                        Where
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className='flex items-center gap-2 mb-2'>
-                        <MapPin className='h-5 w-5 text-primary' />
-                        <span className='font-medium'>
-                          {selectedBooking.roomName}
-                        </span>
-                      </div>
-                      <div className='text-sm text-gray-500 pl-7'>
-                        {selectedBooking.building}, {selectedBooking.floor}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className='shadow-sm'>
-                    <CardHeader className='pb-2'>
-                      <CardTitle className='text-sm uppercase text-gray-600'>
-                        Details
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className='flex items-center gap-2 mb-2'>
-                        <Users className='h-5 w-5 text-primary' />
-                        <span className='font-medium'>
-                          {selectedBooking.participants} participants
-                        </span>
-                      </div>
-                      <div className='text-sm text-gray-500 pl-7'>
-                        {selectedBooking.purpose}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {selectedBooking.amenities.length > 0 && (
-                  <div>
-                    <h3 className='font-medium mb-2'>Room Amenities</h3>
-                    <div className='flex flex-wrap gap-2'>
-                      {selectedBooking.amenities.map(
-                        (amenity: string, index: number) => (
-                          <span
-                            key={index}
-                            className='inline-flex items-center bg-gray-100 px-2 py-1 rounded text-xs'
-                          >
-                            {amenity}
-                          </span>
-                        )
-                      )}
+              <CardContent>
+                <div className='grid gap-4'>
+                  <div className='grid gap-2'>
+                    <div className='flex items-center gap-2'>
+                      <Calendar className='h-4 w-4 text-gray-500' />
+                      <span>{formatDateTime(selectedBooking.startTime)}</span>
                     </div>
+                    <div className='flex items-center gap-2'>
+                      <Clock className='h-4 w-4 text-gray-500' />
+                      <span>
+                        {DateTime.fromISO(selectedBooking.endTime).toFormat(
+                          'HH:mm'
+                        )}{' '}
+                        ({selectedBooking.duration} hours)
+                      </span>
+                    </div>
+                    <div className='flex items-center gap-2'>
+                      <MapPin className='h-4 w-4 text-gray-500' />
+                      <span>{selectedBooking.room?.location}</span>
+                    </div>
+                    {selectedBooking.attendees && (
+                      <div className='flex items-center gap-2'>
+                        <Users className='h-4 w-4 text-gray-500' />
+                        <span>{selectedBooking.attendees} participants</span>
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {selectedBooking.notes && (
                   <div>
-                    <h3 className='font-medium mb-2'>Notes</h3>
-                    <p className='text-sm text-gray-700 bg-gray-50 p-3 rounded-md'>
-                      {selectedBooking.notes}
-                    </p>
+                    <h3 className='font-medium mb-2'>Purpose</h3>
+                    <p className='text-gray-600'>{selectedBooking.purpose}</p>
                   </div>
-                )}
 
-                {selectedBooking.status === 'Cancelled' &&
-                  selectedBooking.cancellationReason && (
-                    <div className='bg-red-50 p-4 rounded-md'>
-                      <h3 className='text-sm font-medium text-red-800 mb-2'>
-                        Cancelled Booking
-                      </h3>
-                      <p className='text-sm text-red-700'>
-                        <span className='font-medium'>Reason:</span>{' '}
-                        {selectedBooking.cancellationReason}
-                      </p>
-                      <p className='text-sm text-red-700 mt-1'>
-                        <span className='font-medium'>Cancelled on:</span>{' '}
-                        {selectedBooking.cancelledAt}
-                      </p>
+                  {selectedBooking.remarks && (
+                    <div>
+                      <h3 className='font-medium mb-2'>Remarks</h3>
+                      <p className='text-gray-600'>{selectedBooking.remarks}</p>
                     </div>
                   )}
 
-                {selectedBooking.status === 'Confirmed' && (
-                  <div className='bg-green-50 p-4 rounded-md'>
-                    <h3 className='text-sm font-medium text-green-800 mb-2'>
-                      Confirmed Booking
-                    </h3>
-                    <p className='text-sm text-green-700'>
-                      Your booking is confirmed. Please arrive on time and
-                      follow the room usage guidelines.
-                    </p>
-                  </div>
-                )}
-
-                {selectedBooking.status === 'Pending' && (
-                  <div className='bg-amber-50 p-4 rounded-md'>
-                    <h3 className='text-sm font-medium text-amber-800 mb-2'>
-                      Pending Confirmation
-                    </h3>
-                    <p className='text-sm text-amber-700'>
-                      Your booking is pending confirmation. You will receive a
-                      notification once it's confirmed.
-                    </p>
-                  </div>
-                )}
+                  {selectedBooking.handleAt && (
+                    <div className='text-sm text-gray-500'>
+                      Last updated: {formatDateTime(selectedBooking.handleAt)}
+                    </div>
+                  )}
+                </div>
               </CardContent>
-
-              <CardFooter className='flex justify-end'>
-                {(selectedBooking.status === 'Confirmed' ||
-                  selectedBooking.status === 'Pending') && (
-                  <Button variant='destructive'>Cancel Booking</Button>
+              <CardFooter className='flex justify-between'>
+                <span className='text-sm text-gray-500'>
+                  Booking ID: {selectedBooking.id}
+                </span>
+                {selectedBooking.status === 'PENDING' && (
+                  <Button
+                    variant='destructive'
+                    onClick={(e) => handleCancelBooking(e, selectedBooking.id)}
+                  >
+                    Cancel Booking
+                  </Button>
                 )}
               </CardFooter>
             </Card>

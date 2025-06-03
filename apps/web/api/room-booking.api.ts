@@ -1,7 +1,7 @@
 import { nexusAxios } from '../configs/axios.config';
 
 export interface CreateRoomBookingDto {
-  startTime: Date;
+  startTime: string;
   duration: number;
   purpose: string;
   isRecurring: boolean;
@@ -9,15 +9,43 @@ export interface CreateRoomBookingDto {
   offset: string;
 }
 
+export interface UpdateRoomBookingDto {
+  startTime?: string;
+  duration?: number;
+  purpose?: string;
+  isRecurring?: boolean;
+  attendees?: number;
+  offset: string;
+}
+
 export interface RoomBookingResponse {
   id: string;
   startTime: string;
   endTime: string;
+  duration: number;
+  purpose: string;
   status: string;
+  handleAt?: string;
+  remarks?: string;
+  attendees?: number;
+  isRecurring: boolean;
+  roomId: string;
   createdAt: string;
   updatedAt: string;
-  roomId: string;
-  userId: string;
+  room?: {
+    name: string;
+    location: string;
+  };
+}
+
+export interface RoomBookingResponseWithPagination {
+  data: RoomBookingResponse[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 const BASE_URL = '/room-booking';
@@ -31,15 +59,35 @@ export const roomBookingApi = {
     return response.data;
   },
 
-  // Cancel a room booking
-  cancelBooking: async (bookingId: string): Promise<RoomBookingResponse> => {
-    const response = await nexusAxios.delete(`${BASE_URL}/${bookingId}`);
+  // Get current user's bookings with pagination
+  getMyBookings: async (
+    page = 1,
+    limit = 10
+  ): Promise<RoomBookingResponseWithPagination> => {
+    const response = await nexusAxios.get(`${BASE_URL}/my-bookings`, {
+      params: { page, limit },
+    });
     return response.data;
   },
 
-  // Get user's bookings
-  getUserBookings: async (): Promise<RoomBookingResponse[]> => {
-    const response = await nexusAxios.get(`${BASE_URL}/user`);
+  // Get a single booking by ID
+  getBooking: async (bookingId: string): Promise<RoomBookingResponse> => {
+    const response = await nexusAxios.get(`${BASE_URL}/${bookingId}`);
+    return response.data;
+  },
+
+  // Update a booking
+  updateBooking: async (
+    bookingId: string,
+    data: UpdateRoomBookingDto
+  ): Promise<RoomBookingResponse> => {
+    const response = await nexusAxios.put(`${BASE_URL}/${bookingId}`, data);
+    return response.data;
+  },
+
+  // Cancel a booking
+  cancelBooking: async (bookingId: string): Promise<RoomBookingResponse> => {
+    const response = await nexusAxios.delete(`${BASE_URL}/${bookingId}`);
     return response.data;
   },
 };
