@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PlusIcon, Loader2Icon, SearchIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useRoomOperations } from '@/hooks/useRoom';
+import { roomApi } from '@/api/room.api';
 import { RoomType } from '@/types/room.types';
 import { ROUTES } from '@/constants/router';
 
 export const RoomListClient = () => {
-  const { rooms, isLoading, fetchRooms } = useRoomOperations();
   const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  const { data: rooms = [], isLoading } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: () => roomApi.getRooms(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
   // Filter rooms based on search term
   const filteredRooms = rooms.filter(

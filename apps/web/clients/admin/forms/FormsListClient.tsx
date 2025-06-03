@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { PlusIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { getForms } from '@/api/form.api';
 import { AdministrativeProceduresForm } from '@/types/administrative-form.types';
 import { toast } from 'sonner';
@@ -10,25 +10,20 @@ import { Button } from '@workspace/ui/components/button';
 import { ROUTES } from '@/constants/router';
 
 export const FormsListClient = () => {
-  const [forms, setForms] = useState<AdministrativeProceduresForm[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: forms = [] as AdministrativeProceduresForm[],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['forms'],
+    queryFn: getForms,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  useEffect(() => {
-    const loadForms = async () => {
-      try {
-        setIsLoading(true);
-        const formsData = await getForms();
-        setForms(formsData);
-      } catch (error) {
-        console.error('Error loading forms:', error);
-        toast.error('Failed to load forms');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadForms();
-  }, []);
+  if (error) {
+    console.error('Error loading forms:', error);
+    toast.error('Failed to load forms');
+  }
 
   return (
     <div className='space-y-6'>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import {
   Card,
@@ -29,10 +30,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
-import { useRoomBookings } from '@/hooks/useRoomBookings';
-import type { RoomBookingResponse } from '@/api/room-booking.api';
+import {
+  roomBookingApi,
+  type RoomBookingResponse,
+  type RoomBookingResponseWithPagination,
+} from '@/api/room-booking.api';
+import { toast } from 'sonner';
 
-// CSS Animation
+// Animation and filters remain unchanged
 const floatAnimation = {
   '0%, 100%': {
     transform: 'translateY(0)',
@@ -42,7 +47,6 @@ const floatAnimation = {
   },
 };
 
-// Filter options
 const statusFilters = [
   { value: 'all', label: 'All' },
   { value: 'PENDING', label: 'Pending' },
@@ -51,29 +55,69 @@ const statusFilters = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'APPROVED':
+      return 'bg-green-100 text-green-800';
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'REJECTED':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'APPROVED':
+      return <CheckCircle className='h-4 w-4 text-green-600' />;
+    case 'PENDING':
+      return <AlertTriangle className='h-4 w-4 text-yellow-600' />;
+    case 'REJECTED':
+      return <XCircle className='h-4 w-4 text-red-600' />;
+    default:
+      return null;
+  }
+};
+
+const formatDateTime = (dateStr: string) => {
+  return DateTime.fromISO(dateStr).toFormat('dd LLL yyyy HH:mm');
+};
+
 const BookingsPage: React.FC = () => {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedBooking, setSelectedBooking] =
     useState<RoomBookingResponse | null>(null);
-  const {
-    loading,
-    error,
-    bookings,
-    pagination,
-    fetchMyBookings,
-    cancelBooking,
-  } = useRoomBookings();
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
-  useEffect(() => {
-    // Load initial bookings
-    fetchMyBookings(1, 10);
-  }, [fetchMyBookings]);
+  const { data, isLoading } = useQuery<RoomBookingResponseWithPagination>({
+    queryKey: ['bookings', 'my', page, limit],
+    queryFn: async () => {
+      const response = await roomBookingApi.getMyBookings(page, limit);
+      return response;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const cancelBookingMutation = useMutation({
+    mutationFn: (bookingId: string) => roomBookingApi.cancelBooking(bookingId),
+    onSuccess: () => {
+      toast.success('Booking cancelled successfully');
+      queryClient.invalidateQueries({ queryKey: ['bookings', 'my'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to cancel booking');
+    },
+  });
 
   // Filter bookings based on active tab and filters
-  const filteredBookings = bookings
-    .filter((booking) => {
+  const filteredBookings =
+    data?.data.filter((booking: RoomBookingResponse) => {
       // Filter by active tab
       if (
         activeTab === 'current' &&
@@ -98,23 +142,42 @@ const BookingsPage: React.FC = () => {
       }
 
       return false;
-    })
-    .filter((booking) => {
-      // Apply search filter
-      const matchesSearch =
-        !searchQuery ||
-        booking.room?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.room?.location
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+    }) || [];
 
-      // Apply status filter
-      const matchesStatus =
-        selectedStatus === 'all' || booking.status === selectedStatus;
+  // Further filter by status if needed
+  const finalFilteredBookings = filteredBookings.filter(
+    (booking: RoomBookingResponse) => {
+      if (selectedStatus === 'all') return true;
+      return booking.status === selectedStatus;
+    }
+  );
 
-      return matchesSearch && matchesStatus;
-    });
+  const getUpcomingBookingsCount = () => {
+    return (
+      data?.data.filter((booking: RoomBookingResponse) => {
+        const bookingDate = DateTime.fromISO(booking.startTime);
+        const today = DateTime.now();
+        return (
+          bookingDate >= today &&
+          (booking.status === 'APPROVED' || booking.status === 'PENDING')
+        );
+      }).length || 0
+    );
+  };
+
+  const getHistoryBookingsCount = () => {
+    return (
+      data?.data.filter((booking: RoomBookingResponse) => {
+        const bookingDate = DateTime.fromISO(booking.startTime);
+        const today = DateTime.now();
+        return (
+          bookingDate < today ||
+          booking.status === 'REJECTED' ||
+          booking.status === 'CANCELLED'
+        );
+      }).length || 0
+    );
+  };
 
   const handleBookingClick = (booking: RoomBookingResponse) => {
     setSelectedBooking(booking);
@@ -124,61 +187,12 @@ const BookingsPage: React.FC = () => {
     setSelectedBooking(null);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return <CheckCircle className='h-4 w-4 text-green-500' />;
-      case 'PENDING':
-        return <Clock className='h-4 w-4 text-amber-500' />;
-      case 'REJECTED':
-        return <AlertTriangle className='h-4 w-4 text-red-500' />;
-      case 'CANCELLED':
-        return <XCircle className='h-4 w-4 text-gray-500' />;
-      default:
-        return <AlertTriangle className='h-4 w-4 text-gray-500' />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return 'bg-green-100 text-green-800';
-      case 'PENDING':
-        return 'bg-amber-100 text-amber-800';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800';
-      case 'CANCELLED':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const handleCancelBooking = async (
     e: React.MouseEvent,
     bookingId: string
   ) => {
     e.stopPropagation();
-    await cancelBooking(bookingId);
-  };
-
-  const getUpcomingBookingsCount = () => {
-    return bookings.filter(
-      (booking) =>
-        (booking.status === 'APPROVED' || booking.status === 'PENDING') &&
-        DateTime.fromISO(booking.startTime) >= DateTime.now()
-    ).length;
-  };
-
-  const getHistoryBookingsCount = () => {
-    return bookings.filter(
-      (booking) =>
-        booking.status === 'REJECTED' || booking.status === 'CANCELLED'
-    ).length;
-  };
-
-  const formatDateTime = (isoString: string) => {
-    return DateTime.fromISO(isoString).toLocaleString(DateTime.DATETIME_MED);
+    cancelBookingMutation.mutate(bookingId);
   };
 
   return (
@@ -241,22 +255,86 @@ const BookingsPage: React.FC = () => {
               </TabsList>
 
               <div className='grid gap-4'>
-                {loading ? (
+                {isLoading ? (
                   <div className='text-center py-16'>
                     <div className='inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'></div>
                     <div className='mt-4 text-lg text-gray-600'>
                       Loading your bookings...
                     </div>
                   </div>
-                ) : error ? (
-                  <div className='text-center py-16'>
-                    <AlertTriangle className='mx-auto h-12 w-12 text-red-500' />
-                    <div className='mt-4 text-lg font-semibold text-red-500'>
-                      Error Loading Bookings
-                    </div>
-                    <div className='mt-2 text-gray-600'>{error}</div>
-                  </div>
-                ) : !filteredBookings.length ? (
+                ) : finalFilteredBookings.length > 0 ? (
+                  finalFilteredBookings.map((booking) => (
+                    <Card
+                      key={booking.id}
+                      className='cursor-pointer hover:border-primary transition-colors'
+                      onClick={() => handleBookingClick(booking)}
+                    >
+                      <CardHeader>
+                        <div className='flex items-start justify-between'>
+                          <div>
+                            <CardTitle>
+                              {booking.room?.name || 'Unknown Room'}
+                            </CardTitle>
+                            <CardDescription>
+                              {booking.room?.location}
+                            </CardDescription>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
+                                booking.status
+                              )}`}
+                            >
+                              {getStatusIcon(booking.status)}
+                              {booking.status}
+                            </span>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='grid gap-2'>
+                          <div className='flex items-center gap-2'>
+                            <Calendar className='h-4 w-4 text-gray-500' />
+                            <span>{formatDateTime(booking.startTime)}</span>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <Clock className='h-4 w-4 text-gray-500' />
+                            <span>
+                              {DateTime.fromISO(booking.endTime).toFormat(
+                                'HH:mm'
+                              )}{' '}
+                              ({booking.duration} hours)
+                            </span>
+                          </div>
+                          <div className='flex items-center gap-2'>
+                            <MapPin className='h-4 w-4 text-gray-500' />
+                            <span>{booking.room?.location}</span>
+                          </div>
+                          {booking.attendees && (
+                            <div className='flex items-center gap-2'>
+                              <Users className='h-4 w-4 text-gray-500' />
+                              <span>{booking.attendees} participants</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                      <CardFooter className='flex justify-between'>
+                        <span className='text-sm text-gray-500'>
+                          Booked on {formatDateTime(booking.createdAt)}
+                        </span>
+                        {booking.status === 'PENDING' && (
+                          <Button
+                            variant='destructive'
+                            size='sm'
+                            onClick={(e) => handleCancelBooking(e, booking.id)}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  ))
+                ) : (
                   <div className='text-center py-16 px-4'>
                     <div className='max-w-md mx-auto'>
                       {activeTab === 'current' ? (
@@ -341,78 +419,6 @@ const BookingsPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                ) : (
-                  filteredBookings.map((booking) => (
-                    <Card
-                      key={booking.id}
-                      className='cursor-pointer hover:border-primary transition-colors'
-                      onClick={() => handleBookingClick(booking)}
-                    >
-                      <CardHeader>
-                        <div className='flex items-start justify-between'>
-                          <div>
-                            <CardTitle>
-                              {booking.room?.name || 'Unknown Room'}
-                            </CardTitle>
-                            <CardDescription>
-                              {booking.room?.location}
-                            </CardDescription>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
-                                booking.status
-                              )}`}
-                            >
-                              {getStatusIcon(booking.status)}
-                              {booking.status}
-                            </span>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className='grid gap-2'>
-                          <div className='flex items-center gap-2'>
-                            <Calendar className='h-4 w-4 text-gray-500' />
-                            <span>{formatDateTime(booking.startTime)}</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Clock className='h-4 w-4 text-gray-500' />
-                            <span>
-                              {DateTime.fromISO(booking.endTime).toFormat(
-                                'HH:mm'
-                              )}{' '}
-                              ({booking.duration} hours)
-                            </span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <MapPin className='h-4 w-4 text-gray-500' />
-                            <span>{booking.room?.location}</span>
-                          </div>
-                          {booking.attendees && (
-                            <div className='flex items-center gap-2'>
-                              <Users className='h-4 w-4 text-gray-500' />
-                              <span>{booking.attendees} participants</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                      <CardFooter className='flex justify-between'>
-                        <span className='text-sm text-gray-500'>
-                          Booked on {formatDateTime(booking.createdAt)}
-                        </span>
-                        {booking.status === 'PENDING' && (
-                          <Button
-                            variant='destructive'
-                            size='sm'
-                            onClick={(e) => handleCancelBooking(e, booking.id)}
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                      </CardFooter>
-                    </Card>
-                  ))
                 )}
               </div>
             </Tabs>
