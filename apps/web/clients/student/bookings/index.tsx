@@ -32,6 +32,16 @@ import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout'
 import { useRoomBookings } from '@/hooks/useRoomBookings';
 import type { RoomBookingResponse } from '@/api/room-booking.api';
 
+// CSS Animation
+const floatAnimation = {
+  '0%, 100%': {
+    transform: 'translateY(0)',
+  },
+  '50%': {
+    transform: 'translateY(-10px)',
+  },
+};
+
 // Filter options
 const statusFilters = [
   { value: 'all', label: 'All' },
@@ -231,10 +241,107 @@ const BookingsPage: React.FC = () => {
               </TabsList>
 
               <div className='grid gap-4'>
-                {loading && <div>Loading...</div>}
-                {error && <div className='text-red-500'>{error}</div>}
-                {!loading &&
-                  !error &&
+                {loading ? (
+                  <div className='text-center py-16'>
+                    <div className='inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]'></div>
+                    <div className='mt-4 text-lg text-gray-600'>
+                      Loading your bookings...
+                    </div>
+                  </div>
+                ) : error ? (
+                  <div className='text-center py-16'>
+                    <AlertTriangle className='mx-auto h-12 w-12 text-red-500' />
+                    <div className='mt-4 text-lg font-semibold text-red-500'>
+                      Error Loading Bookings
+                    </div>
+                    <div className='mt-2 text-gray-600'>{error}</div>
+                  </div>
+                ) : !filteredBookings.length ? (
+                  <div className='text-center py-16 px-4'>
+                    <div className='max-w-md mx-auto'>
+                      {activeTab === 'current' ? (
+                        <div className='space-y-6'>
+                          <div className='relative inline-block'>
+                            <Calendar className='w-16 h-16 text-primary/60 motion-safe:animate-bounce' />
+                            <div className='absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-sm font-medium'>
+                              0
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                              No Current Bookings
+                            </h3>
+                            <p className='text-gray-600 mb-6'>
+                              {selectedStatus !== 'all'
+                                ? `You don't have any ${selectedStatus.toLowerCase()} bookings at the moment.`
+                                : `Looks like you haven't booked any rooms yet. 
+                                   Start by booking a room for your study sessions or group meetings!`}
+                            </p>
+                            <div className='flex flex-col sm:flex-row gap-3 justify-center'>
+                              <Button
+                                size='lg'
+                                onClick={() =>
+                                  (window.location.href = '/student/book-room')
+                                }
+                                className='flex items-center gap-2'
+                              >
+                                <Calendar className='w-4 h-4' />
+                                Book a Room Now
+                              </Button>
+                              {selectedStatus !== 'all' && (
+                                <Button
+                                  variant='outline'
+                                  size='lg'
+                                  onClick={() => setSelectedStatus('all')}
+                                  className='flex items-center gap-2'
+                                >
+                                  <Filter className='w-4 h-4' />
+                                  Clear Filters
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className='space-y-6'>
+                          <div className='relative inline-block'>
+                            <Clock className='w-16 h-16 text-gray-400 animate-pulse' />
+                            {searchQuery || selectedStatus !== 'all' ? (
+                              <div className='absolute -top-2 -right-2 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm'>
+                                <Filter className='w-4 h-4' />
+                              </div>
+                            ) : null}
+                          </div>
+                          <div>
+                            <h3 className='text-xl font-semibold text-gray-900 mb-2'>
+                              No Booking History Found
+                            </h3>
+                            <p className='text-gray-600 mb-4'>
+                              {selectedStatus !== 'all'
+                                ? `No ${selectedStatus.toLowerCase()} bookings found in your history.`
+                                : searchQuery
+                                  ? 'No bookings match your search criteria.'
+                                  : 'Your booking history is empty. Past and cancelled bookings will appear here.'}
+                            </p>
+                            {(searchQuery || selectedStatus !== 'all') && (
+                              <Button
+                                variant='outline'
+                                onClick={() => {
+                                  setSearchQuery('');
+                                  setSelectedStatus('all');
+                                }}
+                                className='flex items-center gap-2'
+                              >
+                                <Filter className='w-4 h-4' />
+                                Clear All Filters
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
                   filteredBookings.map((booking) => (
                     <Card
                       key={booking.id}
@@ -305,7 +412,8 @@ const BookingsPage: React.FC = () => {
                         )}
                       </CardFooter>
                     </Card>
-                  ))}
+                  ))
+                )}
               </div>
             </Tabs>
           </>

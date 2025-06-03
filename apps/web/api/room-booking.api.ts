@@ -48,6 +48,11 @@ export interface RoomBookingResponseWithPagination {
   };
 }
 
+export interface RoomBookingHandleDto {
+  status: 'APPROVED' | 'REJECTED';
+  remarks?: string;
+}
+
 const BASE_URL = '/room-booking';
 
 export const roomBookingApi = {
@@ -88,6 +93,31 @@ export const roomBookingApi = {
   // Cancel a booking
   cancelBooking: async (bookingId: string): Promise<RoomBookingResponse> => {
     const response = await nexusAxios.delete(`${BASE_URL}/${bookingId}`);
+    return response.data;
+  },
+
+  // Admin/Operator Endpoints
+  getAllBookings: async (params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    search?: string;
+  }): Promise<RoomBookingResponseWithPagination> => {
+    const response = await nexusAxios.get(BASE_URL, { params });
+    return response.data;
+  },
+
+  // Handle (approve/reject) a booking request
+  handleBooking: async (
+    bookingId: string,
+    data: RoomBookingHandleDto
+  ): Promise<RoomBookingResponse> => {
+    const response = await nexusAxios.patch(
+      `${BASE_URL}/${bookingId}/handle`,
+      data
+    );
     return response.data;
   },
 };

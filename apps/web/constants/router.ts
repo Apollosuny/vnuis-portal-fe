@@ -10,6 +10,7 @@ export const ROUTES = {
   CREATE_ROOM: '/dashboard/rooms/create',
   EVENTS: '/dashboard/events',
   CREATE_EVENT: '/dashboard/events/create',
+  ADMIN_BOOKINGS: '/dashboard/admin/bookings',
 
   // Student routes
   STUDENT_DASHBOARD: '/student-dashboard',

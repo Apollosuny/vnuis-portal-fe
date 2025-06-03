@@ -141,7 +141,7 @@ export const FormsListClient = () => {
           <p className='text-gray-500 dark:text-gray-400 mb-4'>
             No forms have been created yet.
           </p>
-          <Link href='/admin/forms/create'>
+          <Link href={ROUTES.CREATE_FORM} className='flex justify-center'>
             <Button className='flex items-center gap-1'>
               <PlusIcon className='h-4 w-4' />
               Create your first form
