@@ -28,7 +28,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
-import { getForms } from '@/api/form.api';
+import { getPublishedForms } from '@/api/form.api';
 import { getUserFormSubmissions } from '@/api/form-submission.api';
 import { AdministrativeProceduresForm } from '@/types/administrative-form.types';
 import { AdministrativeProceduresFormSubmission } from '@/types/form-submission.types';
@@ -229,8 +229,8 @@ const FormsPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch available forms
-        const formsData = await getForms();
+        // Fetch published forms that are available for students
+        const formsData = await getPublishedForms();
         setAvailableApiForms(formsData);
         setLoading((prev) => ({ ...prev, forms: false }));
 
