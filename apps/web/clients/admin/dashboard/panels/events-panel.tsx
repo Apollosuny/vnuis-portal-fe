@@ -29,6 +29,12 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { eventApi } from '@/api/event.api';
+import { DateTime } from 'luxon';
+import { toast } from 'sonner';
+import { getAPIErrorMessage } from '@/utils/error';
+import { Event, EventRegistration } from '@/types/event.types';
 import {
   Select,
   SelectContent,
@@ -38,91 +44,6 @@ import {
 } from '@workspace/ui/components/select';
 import { Badge } from '@workspace/ui/components/badge';
 
-// Mock data for events
-const mockEvents = [
-  {
-    id: 'event-1',
-    name: 'Orientation Day',
-    description: 'Welcome event for new students',
-    location: 'Main Auditorium',
-    startTime: '2025-05-28T09:00:00Z',
-    endTime: '2025-05-28T12:00:00Z',
-    capacity: 200,
-    registrations: 124,
-    isPublished: true,
-    createdBy: 'Admin User',
-  },
-  {
-    id: 'event-2',
-    name: 'Career Fair',
-    description: 'Annual career fair with industry partners',
-    location: 'Exhibition Hall',
-    startTime: '2025-06-05T10:00:00Z',
-    endTime: '2025-06-05T16:00:00Z',
-    capacity: 500,
-    registrations: 320,
-    isPublished: true,
-    createdBy: 'Admin User',
-  },
-  {
-    id: 'event-3',
-    name: 'Alumni Networking Night',
-    description: 'Networking event for alumni and current students',
-    location: 'Conference Center',
-    startTime: '2025-06-12T18:00:00Z',
-    endTime: '2025-06-12T21:00:00Z',
-    capacity: 150,
-    registrations: 87,
-    isPublished: false,
-    createdBy: 'Admin User',
-  },
-  {
-    id: 'event-4',
-    name: 'Technology Workshop',
-    description: 'Hands-on workshop on emerging technologies',
-    location: 'Computer Lab Building',
-    startTime: '2025-06-15T13:30:00Z',
-    endTime: '2025-06-15T16:30:00Z',
-    capacity: 80,
-    registrations: 65,
-    isPublished: true,
-    createdBy: 'Admin User',
-  },
-  {
-    id: 'event-5',
-    name: 'End of Semester Concert',
-    description: 'Concert featuring student performances',
-    location: 'Outdoor Amphitheater',
-    startTime: '2025-06-22T19:00:00Z',
-    endTime: '2025-06-22T22:00:00Z',
-    capacity: 300,
-    registrations: 210,
-    isPublished: true,
-    createdBy: 'Admin User',
-  },
-];
-
-const mockRegistrations = [
-  {
-    id: 'reg-1',
-    eventId: 'event-1',
-    status: 'PENDING',
-    studentName: 'John Doe',
-  },
-  {
-    id: 'reg-2',
-    eventId: 'event-1',
-    status: 'APPROVED',
-    studentName: 'Jane Smith',
-  },
-  {
-    id: 'reg-3',
-    eventId: 'event-2',
-    status: 'PENDING',
-    studentName: 'Mike Johnson',
-  },
-];
-
 const EventsPanel: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [publishedFilter, setPublishedFilter] = useState('ALL');
@@ -130,8 +51,34 @@ const EventsPanel: React.FC = () => {
     'events'
   );
 
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ['events'],
+    queryFn: async () => {
+      try {
+        return await eventApi.getEvents();
+      } catch (error) {
+        console.error('Failed to load events:', error);
+        toast.error(getAPIErrorMessage(error));
+        return [];
+      }
+    },
+  });
+
+  const { data: registrations = [] } = useQuery({
+    queryKey: ['eventRegistrations'],
+    queryFn: async () => {
+      try {
+        return await eventApi.getEventRegistrations({});
+      } catch (error) {
+        console.error('Failed to load registrations:', error);
+        toast.error(getAPIErrorMessage(error));
+        return [];
+      }
+    },
+  });
+
   // Filter events based on search term and publication status
-  const filteredEvents = mockEvents.filter((event) => {
+  const filteredEvents = events.filter((event: Event) => {
     const matchesSearch =
       event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,30 +94,26 @@ const EventsPanel: React.FC = () => {
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date);
+    return DateTime.fromISO(dateString).toFormat('MMM d, yyyy');
   };
 
   // Format time for display
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+    return DateTime.fromISO(dateString).toFormat('hh:mm a');
   };
 
   // Calculate registration percentage
-  const getRegistrationPercentage = (
-    registrations: number,
-    capacity: number
-  ) => {
-    return Math.round((registrations / capacity) * 100);
+  const getRegistrationPercentage = (eventId: string, capacity: number) => {
+    const eventRegistrations = registrations.filter(
+      (reg: EventRegistration) =>
+        reg.eventId === eventId && reg.status === 'APPROVED'
+    );
+    return Math.round((eventRegistrations.length / capacity) * 100);
   };
+
+  if (eventsLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className='space-y-6'>
@@ -202,158 +145,201 @@ const EventsPanel: React.FC = () => {
           </div>
         </div>
 
-        <div className='flex items-center gap-2'>
+        <div className='flex gap-2 w-full sm:w-auto'>
           <Button
             variant={viewMode === 'events' ? 'default' : 'outline'}
             onClick={() => setViewMode('events')}
-            className='flex items-center gap-2'
           >
-            <Calendar className='size-4' />
-            <span>Events</span>
+            Events
           </Button>
           <Button
             variant={viewMode === 'registrations' ? 'default' : 'outline'}
             onClick={() => setViewMode('registrations')}
-            className='flex items-center gap-2'
           >
-            <Users className='size-4' />
-            <span>Registrations</span>
-          </Button>
-          <Button className='flex items-center gap-2'>
-            <Plus className='size-4' />
-            <span>Create Event</span>
+            Registrations
           </Button>
         </div>
       </div>
 
-      {viewMode === 'events' ? (
-        <Card>
-          <CardHeader className='px-6'>
-            <div className='flex justify-between items-center'>
-              <CardTitle className='flex items-center gap-2'>
-                <BarChart4 className='size-5' />
-                <span>Events Management</span>
-              </CardTitle>
-              <Badge className='bg-primary'>
-                {filteredEvents.length} Events
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className='px-6'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Event Name</TableHead>
-                  <TableHead>Date & Location</TableHead>
-                  <TableHead>Registrations</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className='text-right'>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEvents.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      <div className='font-medium'>{event.name}</div>
-                      <div className='text-xs text-muted-foreground'>
-                        {event.description}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex flex-col'>
-                        <span>{formatDate(event.startTime)}</span>
-                        <span className='text-xs text-muted-foreground'>
-                          {formatTime(event.startTime)} -{' '}
-                          {formatTime(event.endTime)}
-                        </span>
-                        <span className='text-xs text-muted-foreground flex items-center gap-1 mt-1'>
-                          <MapPin className='size-3' /> {event.location}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex flex-col gap-1'>
-                        <div className='flex justify-between text-sm'>
-                          <span>
-                            {event.registrations}/{event.capacity}
-                          </span>
-                          <span>
-                            {getRegistrationPercentage(
-                              event.registrations,
-                              event.capacity
-                            )}
-                            %
-                          </span>
-                        </div>
-                        <div className='w-full bg-muted rounded-full h-2'>
-                          <div
-                            className='bg-primary h-2 rounded-full'
-                            style={{
-                              width: `${getRegistrationPercentage(event.registrations, event.capacity)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {event.isPublished ? (
-                        <Badge className='bg-emerald-500'>Published</Badge>
-                      ) : (
-                        <Badge className='bg-amber-500'>Draft</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <div className='flex justify-end gap-2'>
-                        {!event.isPublished ? (
-                          <Button variant='outline' size='sm' className='h-8'>
-                            Publish
-                          </Button>
-                        ) : (
-                          <Button variant='outline' size='sm' className='h-8'>
-                            Unpublish
-                          </Button>
-                        )}
-                        <Button variant='outline' size='sm' className='h-8'>
-                          Edit
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter className='px-6 border-t flex justify-between'>
-            <div className='text-sm text-muted-foreground'>
-              Showing {filteredEvents.length} of {mockEvents.length} events
-            </div>
-            <div className='flex items-center gap-2'>
-              <Button variant='outline' size='sm' disabled>
-                Previous
-              </Button>
-              <Button variant='outline' size='sm' disabled>
-                Next
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className='px-6'>
-            <div className='flex justify-between items-center'>
-              <CardTitle className='flex items-center gap-2'>
-                <Users className='size-5' />
-                <span>Event Registrations</span>
-              </CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className='px-6'>
-            <div className='text-center text-muted-foreground p-8'>
-              Registration list would be shown here
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div>
+        {viewMode === 'events' ? (
+          <Card>
+            <CardHeader>
+              <div className='flex items-center justify-between'>
+                <CardTitle>Registered Events</CardTitle>
+                <Button
+                  variant='default'
+                  className='shrink-0'
+                  onClick={() => {
+                    // Navigate to create event page
+                  }}
+                >
+                  <Plus className='h-4 w-4 mr-1' />
+                  New Event
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className='relative w-full overflow-auto'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Event Name</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Registrations</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEvents.map((event: Event) => {
+                      const registrationCount = registrations.filter(
+                        (reg: EventRegistration) =>
+                          reg.eventId === event.id && reg.status === 'APPROVED'
+                      ).length;
+                      const percentage = getRegistrationPercentage(
+                        event.id,
+                        event.capacity
+                      );
+
+                      return (
+                        <TableRow key={event.id}>
+                          <TableCell className='font-medium w-[250px]'>
+                            <div className='truncate'>{event.name}</div>
+                            <div className='text-sm text-muted-foreground line-clamp-2'>
+                              {event.description}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className='flex items-center gap-1'>
+                              <Calendar className='h-4 w-4 text-muted-foreground' />
+                              <div>
+                                <div>{formatDate(event.startTime)}</div>
+                                <div className='text-muted-foreground text-sm'>
+                                  {formatTime(event.startTime)}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className='flex items-center gap-1'>
+                              <MapPin className='h-4 w-4 text-muted-foreground' />
+                              <span>{event.location}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className='w-[160px]'>
+                            <div>
+                              <div className='flex items-center gap-1 text-sm'>
+                                <Users className='h-4 w-4 text-muted-foreground' />
+                                <span>
+                                  {registrationCount}/{event.capacity}
+                                </span>
+                              </div>
+                              <div className='mt-1 h-2 w-full rounded-full bg-secondary'>
+                                <div
+                                  className='h-full rounded-full bg-primary'
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                event.isPublished ? 'default' : 'secondary'
+                              }
+                            >
+                              {event.isPublished ? (
+                                <CheckCircle className='h-3 w-3 mr-1' />
+                              ) : (
+                                <X className='h-3 w-3 mr-1' />
+                              )}
+                              {event.isPublished ? 'Published' : 'Draft'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size='sm'
+                              variant='ghost'
+                              onClick={() => {
+                                // Navigate to event details/edit page
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+            <CardFooter className='flex justify-between border-t pt-6'>
+              <div className='flex items-center gap-2'>
+                <BarChart4 className='h-4 w-4 text-muted-foreground' />
+                <span className='text-sm text-muted-foreground'>
+                  Showing {filteredEvents.length} events
+                </span>
+              </div>
+            </CardFooter>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Registrations</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='relative w-full overflow-auto'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Event</TableHead>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {registrations.map((reg: EventRegistration) => {
+                      const event = events.find(
+                        (e: Event) => e.id === reg.eventId
+                      );
+                      if (!event) return null;
+
+                      return (
+                        <TableRow key={reg.id}>
+                          <TableCell>{event.name}</TableCell>
+                          <TableCell>Student {reg.studentId}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                reg.status === 'APPROVED'
+                                  ? 'default'
+                                  : reg.status === 'PENDING'
+                                    ? 'secondary'
+                                    : 'destructive'
+                              }
+                            >
+                              {reg.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button size='sm' variant='ghost'>
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

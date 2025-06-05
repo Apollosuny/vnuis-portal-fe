@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from '@workspace/ui/components/card';
 import { Button } from '@workspace/ui/components/button';
-import { mockEvents, mockRegistrations } from './mock-events';
 
 export const StudentEventsClient = () => {
   const router = useRouter();
@@ -36,9 +35,9 @@ export const StudentEventsClient = () => {
           metadata: event.metadata ?? {},
         }));
       } catch (error) {
-        console.error('API call failed, using mock data instead:', error);
+        console.error('Failed to load events:', error);
         toast.error(getAPIErrorMessage(error));
-        return mockEvents;
+        return [];
       }
     },
   });
@@ -56,17 +55,9 @@ export const StudentEventsClient = () => {
           {}
         );
       } catch (error) {
-        console.error('Failed to load registrations, using mock data:', error);
-        const myRegs = mockRegistrations.filter(
-          (reg) => reg.studentId === 'current-user'
-        );
-        return myRegs.reduce(
-          (acc: Record<string, EventRegistration>, item: EventRegistration) => {
-            acc[item.eventId] = item;
-            return acc;
-          },
-          {}
-        );
+        console.error('Failed to load registrations:', error);
+        toast.error(getAPIErrorMessage(error));
+        return {};
       }
     },
   });

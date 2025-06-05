@@ -83,36 +83,8 @@ export const eventApi = {
   },
 
   getEventRegistrations: async (params?: QueryEventRegistrationDto) => {
-    try {
-      // Fix for the UUID parsing error with the event/registrations route
-      // We'll use the mock data temporarily until the backend route issue is fixed
-      console.log('Using mock event registrations data temporarily');
-
-      // Import is needed at function level to avoid circular dependencies
-      const { mockRegistrations } = await import(
-        '@/clients/student/events/mock-events'
-      );
-
-      // Filter based on any provided params
-      let filteredRegs = [...mockRegistrations];
-
-      if (params?.eventId) {
-        filteredRegs = filteredRegs.filter(
-          (reg) => reg.eventId === params.eventId
-        );
-      }
-
-      if (params?.status) {
-        filteredRegs = filteredRegs.filter(
-          (reg) => reg.status === params.status
-        );
-      }
-
-      return filteredRegs;
-    } catch (error) {
-      console.error('Error fetching event registrations:', error);
-      return [];
-    }
+    const response = await nexusAxios.get('/events/registrations', { params });
+    return response.data;
   },
 
   getEventRegistration: async (id: string) => {
@@ -125,6 +97,11 @@ export const eventApi = {
     return response.data;
   },
 
+  cancelRegistration: async (id: string) => {
+    const response = await nexusAxios.put(`/events/registrations/${id}/cancel`);
+    return response.data;
+  },
+
   updateRegistrationStatus: async (
     id: string,
     data: UpdateRegistrationStatusDto
@@ -133,11 +110,6 @@ export const eventApi = {
       `/events/registrations/${id}/status`,
       data
     );
-    return response.data;
-  },
-
-  cancelRegistration: async (id: string) => {
-    const response = await nexusAxios.put(`/events/registrations/${id}/cancel`);
     return response.data;
   },
 };
