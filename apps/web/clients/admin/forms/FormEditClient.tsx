@@ -1,18 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { PlusIcon, TrashIcon, SaveIcon, ArrowLeft } from 'lucide-react';
-import { Controller } from 'react-hook-form';
-import { useFormCreation } from '@/hooks/useFormCreation';
-import { Button } from '@workspace/ui/components/button';
-import { Question, Answer } from '@/types/administrative-form.types';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Controller } from 'react-hook-form';
+import { Button } from '@workspace/ui/components/button';
+import { Trash as TrashIcon, Save as SaveIcon } from 'lucide-react';
+import { ArrowLeft, PlusIcon, Loader2 } from 'lucide-react';
+
+import { Question } from '@/types/administrative-form.types';
 import { ROUTES } from '@/constants/router';
+import { useFormEdit } from '@/hooks/useFormEdit';
 
-export const FormCreationClient = () => {
+export const FormEditClient = () => {
   const router = useRouter();
-  const [questionCount, setQuestionCount] = useState(1);
-
   const {
     control,
     errors,
@@ -22,18 +22,35 @@ export const FormCreationClient = () => {
     setValue,
     getValues,
     shouldDisableButton,
-    handleCreateForm,
-  } = useFormCreation();
+    handleUpdateForm,
+    questionCount,
+    setQuestionCount,
+    form,
+  } = useFormEdit();
 
   const formData = watch('data');
 
+  useEffect(() => {
+    if (form && form.data.questions) {
+      setQuestionCount(form.data.questions.length);
+    }
+  }, [form, setQuestionCount]);
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+      </div>
+    );
+  }
+
   const addQuestion = () => {
     const currentQuestions = getValues('data.questions') || [];
-    const newQuestion: Question = {
+    const newQuestion = {
       id: currentQuestions.length + 1,
       title: '',
       type: 'text',
-      answers: [],
+      answers: [] as { id: number; type: string; content: string }[],
     };
 
     setValue('data.questions', [...currentQuestions, newQuestion]);
@@ -41,17 +58,22 @@ export const FormCreationClient = () => {
   };
 
   const removeQuestion = (index: number) => {
-    const currentQuestions = getValues('data.questions') || [];
-    // Create a properly typed array of Question objects
-    const updatedQuestions = currentQuestions
+    const formData = getValues('data.questions') || [];
+    const updatedQuestions = formData
       .filter((_, i) => i !== index)
       .map((q, i) => {
+        // Ensure answers is always an array
+        const answers = Array.isArray(q.answers) ? q.answers : [];
         return {
           id: i + 1, // Reindex
-          title: q.title,
-          type: q.type,
-          answers: q.answers,
-        };
+          title: q.title || '',
+          type: q.type || 'text',
+          answers: answers.map((a) => ({
+            id: a.id,
+            type: a.type || 'option',
+            content: a.content || '',
+          })),
+        } as Question;
       });
 
     setValue('data.questions', updatedQuestions);
@@ -62,7 +84,7 @@ export const FormCreationClient = () => {
     const currentQuestions = getValues('data.questions') || [];
     const currentAnswers = currentQuestions[questionIndex]?.answers || [];
 
-    const newAnswer: Answer = {
+    const newAnswer = {
       id: currentAnswers.length + 1,
       type: 'option',
       content: '',
@@ -71,11 +93,10 @@ export const FormCreationClient = () => {
     const updatedQuestions = [...currentQuestions];
     if (updatedQuestions[questionIndex]) {
       const question = updatedQuestions[questionIndex];
-      // Ensure all required properties are present and have proper types
       updatedQuestions[questionIndex] = {
-        id: question.id, // id is already required by the schema
-        title: question.title ?? '', // Use nullish coalescing to provide default value
-        type: question.type ?? 'text', // Use nullish coalescing to provide default value
+        id: question.id,
+        title: question.title ?? '',
+        type: question.type ?? 'text',
         answers: [...currentAnswers, newAnswer],
       };
 
@@ -85,29 +106,31 @@ export const FormCreationClient = () => {
 
   const removeAnswer = (questionIndex: number, answerIndex: number) => {
     const currentQuestions = getValues('data.questions') || [];
+    if (!currentQuestions[questionIndex]) return;
 
-    if (currentQuestions[questionIndex]) {
-      const question = currentQuestions[questionIndex];
-      const currentAnswers = question.answers;
-      const updatedAnswers = currentAnswers
-        .filter((_, i) => i !== answerIndex)
-        .map((a, i) => ({ ...a, id: i + 1 })); // Reindex
+    const question = currentQuestions[questionIndex];
+    const answers = Array.isArray(question.answers) ? question.answers : [];
+    const updatedAnswers = answers
+      .filter((_, i) => i !== answerIndex)
+      .map((a, i) => ({
+        id: i + 1, // Reindex
+        type: a.type || 'option',
+        content: a.content || '',
+      }));
 
-      const updatedQuestions = [...currentQuestions];
-      // Explicitly create a valid Question object
-      updatedQuestions[questionIndex] = {
-        id: question.id,
-        title: question.title,
-        type: question.type,
-        answers: updatedAnswers,
-      };
+    const updatedQuestions = [...currentQuestions];
+    updatedQuestions[questionIndex] = {
+      id: question.id,
+      title: question.title || '',
+      type: question.type || 'text',
+      answers: updatedAnswers,
+    } as Question;
 
-      setValue('data.questions', updatedQuestions);
-    }
+    setValue('data.questions', updatedQuestions);
   };
 
   const onSubmit = (data: any) => {
-    handleCreateForm(data);
+    handleUpdateForm(data);
   };
 
   const questionTypes = [
@@ -127,15 +150,14 @@ export const FormCreationClient = () => {
 
   return (
     <div className='space-y-6'>
-      {/* Back button */}
       <div className='flex items-center gap-2'>
         <Button
           variant='ghost'
-          onClick={() => router.push(ROUTES.FORMS)}
+          onClick={() => router.back()}
           className='flex items-center gap-2'
         >
           <ArrowLeft className='h-4 w-4' />
-          Back to Forms
+          Back
         </Button>
       </div>
 
@@ -190,7 +212,7 @@ export const FormCreationClient = () => {
                         id='slug'
                         type='text'
                         className='w-full bg-background border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors'
-                        placeholder='Enter form slug (URL-friendly identifier)'
+                        placeholder='Enter form slug'
                       />
                       {errors.slug && (
                         <p className='text-destructive text-sm mt-1'>
@@ -283,14 +305,10 @@ export const FormCreationClient = () => {
                         {...field}
                         id='fileUrl'
                         type='text'
+                        value={field.value ?? ''}
                         className='w-full bg-background border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors'
                         placeholder='Enter file URL if applicable'
                       />
-                      {errors.fileUrl && (
-                        <p className='text-destructive text-sm mt-1'>
-                          {errors.fileUrl.message}
-                        </p>
-                      )}
                     </div>
                   )}
                 />
@@ -394,8 +412,8 @@ export const FormCreationClient = () => {
                     type='button'
                     variant='destructive'
                     onClick={() => removeQuestion(index)}
-                    className='text-sm'
                     size='sm'
+                    className='text-sm'
                   >
                     <TrashIcon className='h-4 w-4' />
                     Remove
@@ -444,7 +462,6 @@ export const FormCreationClient = () => {
                           className='w-full bg-background border border-input text-foreground rounded-md p-3 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors'
                           onChange={(e) => {
                             field.onChange(e);
-                            // Reset answers if changing to a type that doesn't use them
                             if (
                               e.target.value === 'text' ||
                               e.target.value === 'textarea'
@@ -513,7 +530,7 @@ export const FormCreationClient = () => {
                             render={({ field: answersField }) => (
                               <div className='space-y-3'>
                                 {(answersField.value || []).map(
-                                  (answer, answerIndex) => (
+                                  (answer: any, answerIndex: number) => (
                                     <div
                                       key={answerIndex}
                                       className='flex items-center gap-3'
@@ -588,7 +605,7 @@ export const FormCreationClient = () => {
               ) : (
                 <>
                   <SaveIcon className='h-4 w-4' />
-                  Save Form
+                  Update Form
                 </>
               )}
             </Button>
