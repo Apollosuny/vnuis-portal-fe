@@ -48,3 +48,15 @@ export const getFormSubmissions = async (
   const response = await nexusAxios.get(`${API_ENDPOINT}/form/${formId}`);
   return response.data;
 };
+
+/**
+ * Get form submission by ID
+ * @param id Submission ID
+ * @returns Form submission with the given ID
+ */
+export const getSubmissionById = async (
+  id: string
+): Promise<AdministrativeProceduresFormSubmission> => {
+  const response = await nexusAxios.get(`${API_ENDPOINT}/${id}`);
+  return response.data;
+};

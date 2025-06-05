@@ -55,20 +55,34 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
       form.data.questions.forEach((question, qIndex) => {
         const questionId = question.id || qIndex;
 
-        if (question.type === 'multiple-choice' && question.answers) {
-          // For radio buttons, get the selected value
+        if (question.type === 'checkbox' && question.answers) {
+          // For radio buttons (single selection), get the selected value
           const selectedValue = formData.get(
             `question-${question.id || qIndex}`
           );
           if (selectedValue) {
-            // Format as expected by backend for multiple choice
+            // Format as expected by backend for single selection
             formValues[questionId] = { value: selectedValue };
           }
+        } else if (question.type === 'multiple-choice' && question.answers) {
+          // For checkboxes (multiple selections), collect multiple selected values
+          const checkedValues: string[] = [];
+          question.answers.forEach((answer, aIndex) => {
+            const checkboxName = `question-${question.id || qIndex}-${answer.id || aIndex}`;
+            if (formData.get(checkboxName)) {
+              checkedValues.push(
+                answer.id?.toString() || answer.content || aIndex.toString()
+              );
+            }
+          });
+          if (checkedValues.length > 0) {
+            formValues[questionId] = { value: checkedValues };
+          }
         } else {
-          // For text inputs and textareas
+          // For text inputs, textareas, and select dropdowns
           const value = formData.get(`question-${question.id || qIndex}`);
           if (value) {
-            // Format as expected by backend for text/textarea
+            // Format as expected by backend for text/textarea/select
             formValues[questionId] = { value };
           }
         }
@@ -85,6 +99,7 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
         result: formValues,
       });
 
+      // Navigate back to forms list on success
       router.push('/student-dashboard/forms?tab=my-forms');
     } catch (err: any) {
       console.error('Error submitting form:', err);
@@ -181,9 +196,9 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                                 className='flex items-center'
                               >
                                 <input
-                                  type='radio'
-                                  name={`question-${question.id || qIndex}`}
-                                  id={`answer-${answer.id || aIndex}`}
+                                  type='checkbox'
+                                  name={`question-${question.id || qIndex}-${answer.id || aIndex}`}
+                                  id={`checkbox-${question.id || qIndex}-${answer.id || aIndex}`}
                                   value={
                                     answer.id ||
                                     answer.content ||
@@ -192,7 +207,7 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                                   className='mr-2'
                                 />
                                 <label
-                                  htmlFor={`answer-${answer.id || aIndex}`}
+                                  htmlFor={`checkbox-${question.id || qIndex}-${answer.id || aIndex}`}
                                 >
                                   {answer.content}
                                 </label>
@@ -200,6 +215,52 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                             ))}
                           </div>
                         )}
+
+                      {question.type === 'checkbox' && question.answers && (
+                        <div className='space-y-2'>
+                          {question.answers.map((answer, aIndex) => (
+                            <div
+                              key={answer.id || aIndex}
+                              className='flex items-center'
+                            >
+                              <input
+                                type='radio'
+                                name={`question-${question.id || qIndex}`}
+                                id={`answer-${answer.id || aIndex}`}
+                                value={
+                                  answer.id ||
+                                  answer.content ||
+                                  aIndex.toString()
+                                }
+                                className='mr-2'
+                              />
+                              <label htmlFor={`answer-${answer.id || aIndex}`}>
+                                {answer.content}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {question.type === 'select' && question.answers && (
+                        <select
+                          name={`question-${question.id || qIndex}`}
+                          className='w-full p-2 border rounded-md'
+                          required
+                        >
+                          <option value=''>-- Select an option --</option>
+                          {question.answers.map((answer, aIndex) => (
+                            <option
+                              key={answer.id || aIndex}
+                              value={
+                                answer.id || answer.content || aIndex.toString()
+                              }
+                            >
+                              {answer.content}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   ))
                 ) : (
