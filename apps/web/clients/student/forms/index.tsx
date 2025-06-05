@@ -34,6 +34,7 @@ import { AdministrativeProceduresForm } from '@/types/administrative-form.types'
 import { AdministrativeProceduresFormSubmission } from '@/types/form-submission.types';
 import { FormSubmissionStatus } from '@/types/enums';
 import { formatDate, formatRelativeTime } from '@/utils/date-utils';
+import { useRouter } from 'next/navigation';
 
 // Mock form data
 const formSubmissions = [
@@ -206,6 +207,7 @@ const categoryFilters = [
 ];
 
 const FormsPage: React.FC = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('my-forms');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -350,7 +352,7 @@ const FormsPage: React.FC = () => {
   };
 
   const handleFormClick = (form: any) => {
-    setSelectedForm(form);
+    router.push(`/student-dashboard/forms/${form.id}`);
   };
 
   const handleCloseDetail = () => {
@@ -367,17 +369,7 @@ const FormsPage: React.FC = () => {
   };
 
   const handleFormSubmit = (form: AdministrativeProceduresForm) => {
-    // In a real implementation, we would redirect to a form completion page
-    // For now, just simulate a redirect by logging and alerting
-    console.log('Submitting form:', form);
-
-    // In production, we would use router.push to navigate to the form completion page
-    // router.push(`/dashboard/student/forms/${form.id}/submit`);
-
-    // For this demo, just alert
-    alert(
-      `Form submission page for ${form.name} would open here. You would navigate to /dashboard/student/forms/${form.id}/submit`
-    );
+    router.push(`/student-dashboard/forms/${form.id}/submit`);
   };
 
   return (
