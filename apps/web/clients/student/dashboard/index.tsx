@@ -14,8 +14,13 @@ import {
   DoorOpen,
   Clock,
   GraduationCap,
+  Loader2,
 } from 'lucide-react';
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
+import { FormStats } from '@/components/dashboard/FormStats';
+import { RoomStats } from '@/components/dashboard/RoomStats';
+import { UpcomingEventsCard } from '@/components/dashboard/UpcomingEventsCard';
+import { useStudentDashboardStats } from '@/hooks/useStudentDashboardStats';
 
 const StudentDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -43,32 +48,21 @@ const StudentDashboardPage: React.FC = () => {
 };
 
 const OverviewPanel: React.FC = () => {
-  const stats = [
-    {
-      title: 'Pending Forms',
-      value: 2,
-      change: 'Awaiting action',
-      icon: <FileText className='text-primary' />,
-    },
-    {
-      title: 'Upcoming Events',
-      value: 3,
-      change: 'Registered',
-      icon: <Calendar className='text-primary' />,
-    },
-    {
-      title: 'Room Bookings',
-      value: 1,
-      change: 'This week',
-      icon: <DoorOpen className='text-primary' />,
-    },
-    {
-      title: 'Completed Forms',
-      value: 5,
-      change: 'This semester',
-      icon: <BarChart4 className='text-primary' />,
-    },
-  ];
+  const { stats, formSubmissionsByMonth, roomBookingsByStatus, isLoading } =
+    useStudentDashboardStats();
+
+  if (isLoading) {
+    return (
+      <div className='flex justify-center items-center min-h-[400px]'>
+        <div className='flex flex-col items-center gap-2'>
+          <Loader2 className='w-8 h-8 animate-spin text-primary' />
+          <p className='text-sm text-muted-foreground'>
+            Loading dashboard data...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-6'>
@@ -79,7 +73,32 @@ const OverviewPanel: React.FC = () => {
         </p>
 
         <div className='grid gap-6 md:grid-cols-2 lg:grid-cols-4'>
-          {stats.map((stat, i) => (
+          {[
+            {
+              title: 'Pending Forms',
+              value: stats.pendingForms,
+              change: 'Awaiting action',
+              icon: <FileText className='text-primary' />,
+            },
+            {
+              title: 'Upcoming Events',
+              value: stats.upcomingEvents,
+              change: 'Registered',
+              icon: <Calendar className='text-primary' />,
+            },
+            {
+              title: 'Room Bookings',
+              value: stats.roomBookings,
+              change: 'This week',
+              icon: <DoorOpen className='text-primary' />,
+            },
+            {
+              title: 'Completed Forms',
+              value: stats.completedForms,
+              change: 'This semester',
+              icon: <BarChart4 className='text-primary' />,
+            },
+          ].map((stat, i) => (
             <Card key={i} className='overflow-hidden'>
               <CardHeader className='pb-2 pt-4 px-4 flex flex-row items-start justify-between space-y-0'>
                 <CardTitle className='text-sm font-medium'>
@@ -97,145 +116,22 @@ const OverviewPanel: React.FC = () => {
       </section>
 
       <section className='grid gap-6 md:grid-cols-2'>
-        <Card>
-          <CardHeader>
-            <CardTitle>My Bookings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className='space-y-3'>
-              {[
-                {
-                  name: 'Study Room 101',
-                  date: 'May 28, 2025',
-                  time: '13:00 - 15:00',
-                  status: 'Confirmed',
-                },
-                {
-                  name: 'Conference Room A',
-                  date: 'June 3, 2025',
-                  time: '10:00 - 12:00',
-                  status: 'Pending',
-                },
-              ].map((booking, i) => (
-                <li
-                  key={i}
-                  className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
-                >
-                  <div>
-                    <p className='font-medium'>{booking.name}</p>
-                    <p className='text-sm text-muted-foreground'>
-                      {booking.date}, {booking.time}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs py-1 px-2 rounded ${
-                      booking.status === 'Confirmed'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                        : 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100'
-                    }`}
-                  >
-                    {booking.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>My Forms</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className='space-y-3'>
-              {[
-                {
-                  name: 'Tuition Discount Application',
-                  date: 'Submitted: May 20, 2025',
-                  status: 'Under Review',
-                },
-                {
-                  name: 'Absence Report',
-                  date: 'Submitted: May 15, 2025',
-                  status: 'Approved',
-                },
-              ].map((form, i) => (
-                <li
-                  key={i}
-                  className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
-                >
-                  <div>
-                    <p className='font-medium'>{form.name}</p>
-                    <p className='text-sm text-muted-foreground'>{form.date}</p>
-                  </div>
-                  <span
-                    className={`text-xs py-1 px-2 rounded ${
-                      form.status === 'Approved'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                        : form.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                    }`}
-                  >
-                    {form.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <FormStats
+          submissionStats={{
+            pending: stats.pendingForms,
+            completed: stats.completedForms,
+          }}
+          submissionsByMonth={formSubmissionsByMonth}
+        />
+        <RoomStats
+          bookingStats={{
+            thisWeek: stats.roomBookings,
+          }}
+          bookingsByStatus={roomBookingsByStatus}
+        />
       </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Events</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className='space-y-3'>
-            {[
-              {
-                name: 'Career Development Workshop',
-                date: 'May 29, 2025',
-                location: 'Main Auditorium',
-                registration: 'Open',
-              },
-              {
-                name: 'Student Exchange Program Info Session',
-                date: 'June 2, 2025',
-                location: 'Virtual Meeting',
-                registration: 'Open',
-              },
-              {
-                name: 'Annual Science Fair',
-                date: 'June 10, 2025',
-                location: 'Science Building',
-                registration: 'Registered',
-              },
-            ].map((event, i) => (
-              <li
-                key={i}
-                className='flex justify-between items-center p-3 bg-muted/50 rounded-md'
-              >
-                <div>
-                  <p className='font-medium'>{event.name}</p>
-                  <p className='text-sm text-muted-foreground'>
-                    {event.date} • {event.location}
-                  </p>
-                </div>
-                <span
-                  className={`text-xs py-1 px-2 rounded ${
-                    event.registration === 'Registered'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                  }`}
-                >
-                  {event.registration}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+      <UpcomingEventsCard upcomingCount={stats.upcomingEvents} events={[]} />
     </div>
   );
 };
