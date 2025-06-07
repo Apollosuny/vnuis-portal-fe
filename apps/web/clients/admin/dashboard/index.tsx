@@ -21,30 +21,8 @@ import { FormSubmissionStatus } from '@/types/enums';
 import { RoomBookingStatus } from '@/types/room.types';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { DataTable } from '@/components/data-table';
-
-type StatsCardProps = {
-  title: string;
-  value: number;
-  href: string;
-};
-
-const StatsCard = ({ title, value, href }: StatsCardProps) => {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className='text-lg'>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className='text-3xl font-bold'>{value}</p>
-      </CardContent>
-      <CardFooter>
-        <Link href={href} className={cn(buttonVariants({ variant: 'link' }))}>
-          View Details →
-        </Link>
-      </CardFooter>
-    </Card>
-  );
-};
+import { StatsCard } from './components/StatsCard';
+import { AnalyticsCharts } from './components/AnalyticsCharts';
 
 // Format submission date
 const formatSubmissionDate = (date: string) => {
@@ -148,6 +126,13 @@ export default function AdminDashboard() {
             href='/admin-dashboard/rooms'
           />
         </div>
+
+        {/* Analytics Charts */}
+        <AnalyticsCharts
+          formSubmissions={formSubmissions}
+          bookings={bookings}
+          events={events}
+        />
 
         {/* Recent Form Submissions */}
         <Card>
