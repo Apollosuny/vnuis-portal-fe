@@ -2,6 +2,7 @@
 
 import { Button } from '@workspace/ui/components/button';
 import { AuthenticatedGuard } from '@/components/guards/authenticated.guard';
+import Image from 'next/image';
 import {
   BarChart4,
   BadgeCheck,
@@ -34,6 +35,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const { onLogout } = useLogout();
+  const { theme } = useTheme();
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -86,9 +88,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className='flex h-screen w-full overflow-hidden'>
         {/* Sidebar */}
         <div className='h-full w-64 bg-sidebar flex flex-col text-sidebar-foreground border-r'>
-          <div className='p-4 border-b border-sidebar-border flex items-center gap-2'>
-            <SquareStackIcon className='size-6' />
-            <h1 className='text-xl font-semibold'>VirtuUni Nexus</h1>
+          <div className='p-4 border-b border-sidebar-border flex items-center justify-center'>
+            <div className='relative h-12 w-48'>
+              <Image
+                src='/assets/logos/logo.jpg'
+                alt='VirtuUni Nexus Logo'
+                fill
+                className={`object-contain ${theme === 'dark' ? 'filter invert' : ''}`}
+                priority
+              />
+            </div>
           </div>
           <div className='flex flex-col flex-1 p-2 gap-1'>
             <SidebarItem

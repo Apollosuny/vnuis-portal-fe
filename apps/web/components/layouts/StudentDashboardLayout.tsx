@@ -2,6 +2,7 @@
 
 import { Button } from '@workspace/ui/components/button';
 import { AuthenticatedGuard } from '@/components/guards/authenticated.guard';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Calendar,
@@ -32,6 +33,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   const pathname = usePathname();
   const router = useRouter();
   const { onLogout } = useLogout();
+  const { theme } = useTheme();
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -84,11 +86,16 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
       <div className='flex h-screen bg-background'>
         {/* Sidebar */}
         <div className='w-64 bg-card shadow-md hidden md:flex flex-col'>
-          <div className='px-6 py-5 border-b border-border'>
-            <h1 className='text-xl font-semibold text-foreground flex items-center gap-2'>
-              <GraduationCap className='text-primary' />
-              Student Portal
-            </h1>
+          <div className='px-6 py-5 border-b border-border flex items-center justify-center'>
+            <div className='relative h-12 w-48'>
+              <Image
+                src='/assets/logos/logo.jpg'
+                alt='VirtuUni Nexus Logo'
+                fill
+                className={`object-contain ${theme === 'dark' ? 'filter invert' : ''}`}
+                priority
+              />
+            </div>
           </div>
           <div className='flex flex-col flex-1 py-6 space-y-1 px-3'>
             <SidebarItem
@@ -144,9 +151,13 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
         <div className='flex-1 flex flex-col overflow-hidden'>
           {/* Header */}
           <header className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'>
-            <h1 className='text-2xl font-semibold text-foreground'>
-              {getPageTitle()}
-            </h1>
+            <div className='flex items-center'>
+              <img
+                src='/assets/logos/logo.jpg'
+                alt='VirtuUni Nexus Logo'
+                className={`h-8 w-auto ${theme === 'dark' ? 'filter invert' : ''}`}
+              />
+            </div>
             <div className='flex items-center space-x-4'>
               <ThemeToggle />
               <Button
