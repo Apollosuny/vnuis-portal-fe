@@ -25,6 +25,10 @@ export type AdministrativeProceduresFormSubmission = {
     name?: string; // Derived field, computed from firstName + lastName
     email: string;
     avatarUrl?: string;
+    user?: {
+      id: string;
+      username: string;
+    };
   };
 };
 

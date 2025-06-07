@@ -88,16 +88,59 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
       let updatedSubmission;
 
       if (actionType === 'approve') {
-        updatedSubmission = await approveFormSubmission(submission.id, remarks);
-        toast.success('Form submission approved successfully');
+        try {
+          // Check if the API is available
+          updatedSubmission = await approveFormSubmission(
+            submission.id,
+            remarks
+          );
+          toast.success('Form submission approved successfully');
+
+          // Force refetch submission to get the latest data
+          const refreshedSubmission = await getSubmissionById(submission.id);
+          if (refreshedSubmission) {
+            setSubmission(refreshedSubmission);
+          } else {
+            setSubmission(updatedSubmission);
+          }
+        } catch (err) {
+          console.error('Error approving submission:', err);
+          toast.error(
+            'Failed to approve the submission. The API endpoint may not be available.'
+          );
+          setActionLoading(false);
+          return;
+        }
       } else {
         // For rejection, remarks are typically required
         if (!remarks.trim() && actionType === 'reject') {
           toast.error('Please provide a reason for rejection');
+          setActionLoading(false);
           return;
         }
-        updatedSubmission = await rejectFormSubmission(submission.id, remarks);
-        toast.success('Form submission rejected successfully');
+        try {
+          // Check if the API is available
+          updatedSubmission = await rejectFormSubmission(
+            submission.id,
+            remarks
+          );
+          toast.success('Form submission rejected successfully');
+
+          // Force refetch submission to get the latest data
+          const refreshedSubmission = await getSubmissionById(submission.id);
+          if (refreshedSubmission) {
+            setSubmission(refreshedSubmission);
+          } else {
+            setSubmission(updatedSubmission);
+          }
+        } catch (err) {
+          console.error('Error rejecting submission:', err);
+          toast.error(
+            'Failed to reject the submission. The API endpoint may not be available.'
+          );
+          setActionLoading(false);
+          return;
+        }
       }
 
       // Update the local state with the response from the API
@@ -216,7 +259,11 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
                   <div>
                     <p className='text-sm text-muted-foreground'>Name</p>
                     <p className='font-medium'>
-                      {submission.student?.name || 'N/A'}
+                      {submission.student?.name ||
+                        (submission.student?.firstName &&
+                        submission.student?.lastName
+                          ? `${submission.student.firstName} ${submission.student.lastName}`
+                          : 'N/A')}
                     </p>
                   </div>
                   <div>
