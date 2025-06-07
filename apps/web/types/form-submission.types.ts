@@ -17,6 +17,15 @@ export type AdministrativeProceduresFormSubmission = {
   remarks: string | null;
   handleByOperatorId: string | null;
   form?: AdministrativeProceduresForm;
+  student?: {
+    id: string;
+    studentId: string;
+    firstName: string;
+    lastName: string;
+    name?: string; // Derived field, computed from firstName + lastName
+    email: string;
+    avatarUrl?: string;
+  };
 };
 
 export type SubmitFormValues = {

@@ -4,6 +4,7 @@ import { Button } from '@workspace/ui/components/button';
 import { AuthenticatedGuard } from '@/components/guards/authenticated.guard';
 import {
   BarChart4,
+  BadgeCheck,
   Calendar,
   FileText,
   LayoutDashboard,
@@ -99,6 +100,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               active={activeTab === 'forms'}
               onClick={() => handleNavigation('forms')}
             />
+            {activeTab === 'forms' && (
+              <div className='ml-6 space-y-1 mt-1'>
+                <SidebarItem
+                  icon={<FileText size={16} />}
+                  label='All Forms'
+                  active={pathname === '/dashboard/forms'}
+                  onClick={() => router.push('/dashboard/forms')}
+                  isSubItem
+                />
+                <SidebarItem
+                  icon={<BadgeCheck size={16} />}
+                  label='Form Submissions'
+                  active={pathname.includes('/dashboard/forms/submissions')}
+                  onClick={() => router.push('/dashboard/forms/submissions')}
+                  isSubItem
+                />
+              </div>
+            )}
             <SidebarItem
               icon={<DoorOpen size={18} />}
               label='Rooms'
@@ -160,7 +179,8 @@ const SidebarItem: React.FC<{
   label: string;
   active?: boolean;
   onClick?: () => void;
-}> = ({ icon, label, active, onClick }) => {
+  isSubItem?: boolean;
+}> = ({ icon, label, active, onClick, isSubItem }) => {
   return (
     <button
       className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors cursor-pointer ${

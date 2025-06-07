@@ -1,0 +1,447 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@workspace/ui/components/card';
+import { Button } from '@workspace/ui/components/button';
+import { Badge } from '@workspace/ui/components/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@workspace/ui/components/alert-dialog';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  FileText,
+  ClockIcon,
+  User,
+  Calendar,
+  Loader2,
+} from 'lucide-react';
+import {
+  getSubmissionById,
+  approveFormSubmission,
+  rejectFormSubmission,
+} from '@/api/form-submission.api';
+import { formatDate } from '@/utils/date-utils';
+import { toast } from 'sonner';
+import { FormSubmissionStatus } from '@/types/enums';
+import { AdministrativeProceduresFormSubmission } from '@/types/form-submission.types';
+
+export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
+  const router = useRouter();
+  const [submission, setSubmission] =
+    useState<AdministrativeProceduresFormSubmission | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(
+    null
+  );
+  const [actionLoading, setActionLoading] = useState(false);
+  const [remarks, setRemarks] = useState<string>('');
+
+  useEffect(() => {
+    const fetchSubmission = async () => {
+      try {
+        const data = await getSubmissionById(id);
+        setSubmission(data);
+      } catch (err) {
+        console.error('Error fetching submission:', err);
+        setError('Failed to load submission details. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubmission();
+  }, [id]);
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const openActionDialog = (action: 'approve' | 'reject') => {
+    setActionType(action);
+    setDialogOpen(true);
+  };
+
+  const handleAction = async () => {
+    if (!actionType || !submission) return;
+    setActionLoading(true);
+
+    try {
+      let updatedSubmission;
+
+      if (actionType === 'approve') {
+        updatedSubmission = await approveFormSubmission(submission.id, remarks);
+        toast.success('Form submission approved successfully');
+      } else {
+        // For rejection, remarks are typically required
+        if (!remarks.trim() && actionType === 'reject') {
+          toast.error('Please provide a reason for rejection');
+          return;
+        }
+        updatedSubmission = await rejectFormSubmission(submission.id, remarks);
+        toast.success('Form submission rejected successfully');
+      }
+
+      // Update the local state with the response from the API
+      setSubmission(updatedSubmission);
+
+      // Reset remarks field
+      setRemarks('');
+    } catch (err) {
+      console.error(`Error ${actionType}ing submission:`, err);
+      toast.error(`Failed to ${actionType} submission. Please try again.`);
+    } finally {
+      setDialogOpen(false);
+      setActionType(null);
+      setActionLoading(false);
+    }
+  };
+
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case FormSubmissionStatus.APPROVED:
+        return <Badge className='bg-emerald-500'>Approved</Badge>;
+      case FormSubmissionStatus.REJECTED:
+        return <Badge className='bg-destructive'>Rejected</Badge>;
+      case FormSubmissionStatus.PENDING:
+        return <Badge className='bg-amber-500'>Pending</Badge>;
+      case FormSubmissionStatus.CANCELLED:
+        return <Badge className='bg-slate-500'>Cancelled</Badge>;
+      default:
+        return <Badge>Unknown</Badge>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className='flex justify-center items-center py-12'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
+    return (
+      <Card className='border-destructive'>
+        <CardHeader>
+          <CardTitle className='text-destructive'>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error || 'Submission not found'}</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant='outline' onClick={handleBack}>
+            Go Back
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <div className='space-y-6'>
+        <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
+          <Button variant='ghost' onClick={handleBack} className='px-2'>
+            <ArrowLeft className='mr-2 h-4 w-4' /> Back to Submissions
+          </Button>
+
+          <div className='flex gap-2'>
+            {submission.status === FormSubmissionStatus.PENDING && (
+              <>
+                <Button
+                  variant='default'
+                  className='bg-emerald-600 hover:bg-emerald-700'
+                  onClick={() => openActionDialog('approve')}
+                >
+                  <CheckCircle2 className='mr-2 h-4 w-4' />
+                  Approve
+                </Button>
+                <Button
+                  variant='destructive'
+                  onClick={() => openActionDialog('reject')}
+                >
+                  <XCircle className='mr-2 h-4 w-4' />
+                  Reject
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Submission Overview Card */}
+        <Card>
+          <CardHeader className='border-b'>
+            <div className='flex justify-between items-start'>
+              <div>
+                <CardTitle className='flex items-center gap-2 text-xl'>
+                  <FileText className='h-5 w-5' />
+                  {submission.form?.name || 'Form Submission'}
+                </CardTitle>
+                <CardDescription className='mt-1'>
+                  Submission ID: {submission.id}
+                </CardDescription>
+              </div>
+              {renderStatusBadge(submission.status)}
+            </div>
+          </CardHeader>
+
+          <CardContent className='pt-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {/* Student Information */}
+              <div className='space-y-4'>
+                <h3 className='font-medium flex items-center gap-2'>
+                  <User className='h-4 w-4 text-muted-foreground' />
+                  Student Information
+                </h3>
+                <div className='bg-muted/40 rounded-md p-4 space-y-3'>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Name</p>
+                    <p className='font-medium'>
+                      {submission.student?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Student ID</p>
+                    <p className='font-medium'>
+                      {submission.student?.studentId || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Email</p>
+                    <p className='font-medium'>
+                      {submission.student?.email || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submission Dates */}
+              <div className='space-y-4'>
+                <h3 className='font-medium flex items-center gap-2'>
+                  <Calendar className='h-4 w-4 text-muted-foreground' />
+                  Submission Timeline
+                </h3>
+                <div className='bg-muted/40 rounded-md p-4 space-y-3'>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>
+                      Submitted On
+                    </p>
+                    <p className='font-medium'>
+                      {formatDate(submission.createdAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>
+                      Last Updated
+                    </p>
+                    <p className='font-medium'>
+                      {formatDate(submission.updatedAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-sm text-muted-foreground'>Status</p>
+                    <p className='font-medium flex items-center gap-2'>
+                      {renderStatusBadge(submission.status)}
+                      {submission.status === FormSubmissionStatus.PENDING && (
+                        <span className='text-sm text-muted-foreground'>
+                          (Awaiting review)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Form Answers */}
+            <div className='mt-8 space-y-4'>
+              <h3 className='font-medium flex items-center gap-2'>
+                <ClockIcon className='h-4 w-4 text-muted-foreground' />
+                Form Responses
+              </h3>
+
+              <Card className='border border-dashed'>
+                <CardContent className='pt-6'>
+                  {submission.result &&
+                  Object.keys(submission.result).length > 0 ? (
+                    <div className='space-y-6'>
+                      {Object.entries(submission.result).map(
+                        ([questionId, answer], index) => {
+                          const question =
+                            submission.form?.data?.questions?.find(
+                              (q) => (q.id?.toString() || '') === questionId
+                            );
+
+                          return (
+                            <div
+                              key={questionId}
+                              className='pb-4 border-b last:border-0 last:pb-0'
+                            >
+                              <p className='font-medium mb-2'>
+                                {question?.title ||
+                                  `Question ${parseInt(questionId) + 1}`}
+                              </p>
+
+                              {/* Display answer based on its type */}
+                              {answer.value ? (
+                                <p className='bg-muted/40 p-3 rounded'>
+                                  {answer.value}
+                                </p>
+                              ) : (
+                                <div className='space-y-2'>
+                                  {Object.entries(answer).map(
+                                    ([optionId, selected]) => {
+                                      const option = question?.answers?.find(
+                                        (a) =>
+                                          (a.id?.toString() || '') === optionId
+                                      );
+
+                                      if (selected) {
+                                        return (
+                                          <div
+                                            key={optionId}
+                                            className='flex items-center gap-2'
+                                          >
+                                            <CheckCircle2 className='h-4 w-4 text-emerald-500' />
+                                            <span>
+                                              {option?.content ||
+                                                `Option ${optionId}`}
+                                            </span>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+                  ) : (
+                    <div className='text-center py-6 text-muted-foreground'>
+                      No responses available for this submission
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+
+          <CardFooter className='border-t pt-6 flex justify-between'>
+            <Button variant='outline' onClick={handleBack}>
+              <ArrowLeft className='mr-2 h-4 w-4' /> Back
+            </Button>
+            <div className='flex gap-2'>
+              {submission.status === FormSubmissionStatus.PENDING && (
+                <>
+                  <Button
+                    variant='default'
+                    className='bg-emerald-600 hover:bg-emerald-700'
+                    onClick={() => openActionDialog('approve')}
+                  >
+                    Approve Submission
+                  </Button>
+                  <Button
+                    variant='destructive'
+                    onClick={() => openActionDialog('reject')}
+                  >
+                    Reject Submission
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionType === 'approve' ? 'Approve' : 'Reject'} this submission?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionType === 'approve'
+                ? 'This will approve the form submission and notify the student.'
+                : 'This will reject the form submission and notify the student.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='py-4'>
+            <label htmlFor='remarks' className='block text-sm font-medium mb-2'>
+              {actionType === 'approve'
+                ? 'Comments (optional)'
+                : 'Reason for rejection'}
+            </label>
+            <textarea
+              id='remarks'
+              rows={3}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder={
+                actionType === 'approve'
+                  ? 'Add any additional comments...'
+                  : 'Please provide a reason for rejection...'
+              }
+              required={actionType === 'reject'}
+            />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAction}
+              disabled={
+                actionLoading || (actionType === 'reject' && !remarks.trim())
+              }
+              className={
+                actionType === 'approve'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : ''
+              }
+            >
+              {actionLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Processing...
+                </>
+              ) : actionType === 'approve' ? (
+                'Approve'
+              ) : (
+                'Reject'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+};
+
+export default FormSubmissionDetailClient;

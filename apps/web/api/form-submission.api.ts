@@ -60,3 +60,35 @@ export const getSubmissionById = async (
   const response = await nexusAxios.get(`${API_ENDPOINT}/${id}`);
   return response.data;
 };
+
+/**
+ * Approve a form submission
+ * @param id Submission ID
+ * @param remarks Optional remarks for the approval
+ * @returns The updated form submission
+ */
+export const approveFormSubmission = async (
+  id: string,
+  remarks?: string
+): Promise<AdministrativeProceduresFormSubmission> => {
+  const response = await nexusAxios.post(`${API_ENDPOINT}/${id}/approve`, {
+    remarks,
+  });
+  return response.data;
+};
+
+/**
+ * Reject a form submission
+ * @param id Submission ID
+ * @param remarks Rejection reason (required)
+ * @returns The updated form submission
+ */
+export const rejectFormSubmission = async (
+  id: string,
+  remarks: string
+): Promise<AdministrativeProceduresFormSubmission> => {
+  const response = await nexusAxios.post(`${API_ENDPOINT}/${id}/reject`, {
+    remarks,
+  });
+  return response.data;
+};
