@@ -85,10 +85,29 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <AuthenticatedGuard>
-      <div className='flex h-screen w-full overflow-hidden'>
+      <motion.div
+        className='flex h-screen w-full overflow-hidden'
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Sidebar */}
-        <div className='h-full w-64 bg-sidebar flex flex-col text-sidebar-foreground border-r'>
-          <div className='p-4 border-b border-sidebar-border flex items-center justify-center'>
+        <motion.div
+          className='h-full w-64 bg-sidebar flex flex-col text-sidebar-foreground border-r'
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{
+            type: 'spring',
+            stiffness: 100,
+            damping: 15,
+            delay: 0.2,
+          }}
+        >
+          <motion.div
+            className='p-4 border-b border-sidebar-border flex items-center justify-center'
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
             <div className='relative h-12 w-48'>
               <Image
                 src='/assets/logos/logo.jpg'
@@ -98,8 +117,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 priority
               />
             </div>
-          </div>
-          <div className='flex flex-col flex-1 p-2 gap-1'>
+          </motion.div>
+          <motion.div
+            className='flex flex-col flex-1 p-2 gap-1'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+          >
             <SidebarItem
               icon={<LayoutDashboard size={18} />}
               label='Overview'
@@ -148,8 +172,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               active={activeTab === 'events'}
               onClick={() => handleNavigation('events')}
             />
-          </div>
-          <div className='p-2'>
+          </motion.div>
+          <motion.div
+            className='p-2'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
             <SidebarItem
               icon={<Settings size={18} />}
               label='Settings'
@@ -161,28 +190,57 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               label='Logout'
               onClick={onLogout}
             />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Main content */}
-        <div className='flex-1 overflow-auto bg-background'>
+        <motion.div
+          className='flex-1 overflow-auto bg-background'
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           <div className='flex flex-col h-full'>
             {/* Header */}
-            <header className='border-b p-4 flex justify-between items-center bg-background'>
-              <h1 className='text-2xl font-semibold'>{getPageTitle()}</h1>
-              <div className='flex items-center gap-2'>
+            <motion.header
+              className='border-b p-4 flex justify-between items-center bg-background'
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.3 }}
+            >
+              <motion.h1
+                className='text-2xl font-semibold'
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
+              >
+                {getPageTitle()}
+              </motion.h1>
+              <motion.div
+                className='flex items-center gap-2'
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.3 }}
+              >
                 <ThemeToggle />
                 <Button variant='ghost' size='icon'>
                   <User size={20} />
                 </Button>
-              </div>
-            </header>
+              </motion.div>
+            </motion.header>
 
             {/* Content */}
-            <main className='flex-1 p-6 overflow-auto'>{children}</main>
+            <motion.main
+              className='flex-1 p-6 overflow-auto'
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+            >
+              {children}
+            </motion.main>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </AuthenticatedGuard>
   );
 };
@@ -195,23 +253,37 @@ const SidebarItem: React.FC<{
   isSubItem?: boolean;
 }> = ({ icon, label, active, onClick, isSubItem }) => {
   return (
-    <button
+    <motion.button
       className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors cursor-pointer ${
         active
           ? 'bg-sidebar-primary text-sidebar-primary-foreground'
           : 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
       }`}
       onClick={onClick}
+      whileHover={{ scale: 1.02, x: 4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      layout
     >
-      {icon}
-      <span>{label}</span>
+      <motion.span
+        initial={{ scale: 1 }}
+        animate={{ scale: active ? 1.1 : 1, rotate: active ? 360 : 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {icon}
+      </motion.span>
+      <motion.span layout>{label}</motion.span>
       {active && (
         <motion.div
           className='absolute left-0 w-1 h-6 bg-sidebar-primary-foreground rounded-full'
           layoutId='activeIndicator'
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
         />
       )}
-    </button>
+    </motion.button>
   );
 };
 
@@ -220,14 +292,22 @@ const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <Button
-      variant='ghost'
-      size='icon'
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      title='Toggle theme'
-    >
-      {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-    </Button>
+    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+      <Button
+        variant='ghost'
+        size='icon'
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        title='Toggle theme'
+      >
+        <motion.div
+          initial={{ rotate: 0 }}
+          animate={{ rotate: theme === 'dark' ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </motion.div>
+      </Button>
+    </motion.div>
   );
 };
 

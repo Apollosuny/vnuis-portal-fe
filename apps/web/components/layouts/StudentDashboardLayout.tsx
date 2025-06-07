@@ -83,10 +83,29 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
 
   return (
     <AuthenticatedGuard>
-      <div className='flex h-screen bg-background'>
+      <motion.div
+        className='flex h-screen bg-background'
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Sidebar */}
-        <div className='w-64 bg-card shadow-md hidden md:flex flex-col'>
-          <div className='px-6 py-5 border-b border-border flex items-center justify-center'>
+        <motion.div
+          className='w-64 bg-card shadow-md hidden md:flex flex-col'
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{
+            type: 'spring',
+            stiffness: 100,
+            damping: 15,
+            delay: 0.2,
+          }}
+        >
+          <motion.div
+            className='px-6 py-5 border-b border-border flex items-center justify-center'
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
             <div className='relative h-12 w-48'>
               <Image
                 src='/assets/logos/logo.jpg'
@@ -96,8 +115,13 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
                 priority
               />
             </div>
-          </div>
-          <div className='flex flex-col flex-1 py-6 space-y-1 px-3'>
+          </motion.div>
+          <motion.div
+            className='flex flex-col flex-1 py-6 space-y-1 px-3'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+          >
             <SidebarItem
               icon={<LayoutDashboard size={20} />}
               label='Dashboard'
@@ -134,8 +158,13 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               active={activeTab === 'settings'}
               onClick={() => handleNavigation('settings')}
             />
-          </div>
-          <div className='mt-auto p-4 border-t border-border'>
+          </motion.div>
+          <motion.div
+            className='mt-auto p-4 border-t border-border'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
             <Button
               variant='ghost'
               className='w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50/50'
@@ -144,38 +173,69 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               <LogOut className='mr-2 h-4 w-4' />
               Logout
             </Button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Main Content */}
-        <div className='flex-1 flex flex-col overflow-hidden'>
+        <motion.div
+          className='flex-1 flex flex-col overflow-hidden'
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
           {/* Header */}
-          <header className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'>
-            <div className='flex items-center'>
-              <img
-                src='/assets/logos/logo.jpg'
-                alt='VirtuUni Nexus Logo'
-                className={`h-8 w-auto ${theme === 'dark' ? 'filter invert' : ''}`}
-              />
-            </div>
-            <div className='flex items-center space-x-4'>
-              <ThemeToggle />
-              <Button
-                variant='ghost'
-                size='icon'
-                className='rounded-full w-10 h-10'
+          <motion.header
+            className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.3 }}
+          >
+            <motion.div
+              className='flex items-center'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ delay: 0.6, duration: 0.3 }}
+            >
+              <motion.h1
+                className='text-2xl font-semibold'
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.3 }}
               >
-                <User size={20} />
-              </Button>
-            </div>
-          </header>
+                {getPageTitle()}
+              </motion.h1>
+            </motion.div>
+            <motion.div
+              className='flex items-center space-x-4'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.3 }}
+            >
+              <ThemeToggle />
+              <motion.div whileHover={{ scale: 1.05 }}>
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='rounded-full w-10 h-10'
+                >
+                  <User size={20} />
+                </Button>
+              </motion.div>
+            </motion.div>
+          </motion.header>
 
           {/* Page Content */}
-          <main className='flex-1 overflow-auto p-6 bg-background'>
+          <motion.main
+            className='flex-1 overflow-auto p-6 bg-background'
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.4 }}
+          >
             {children}
-          </main>
-        </div>
-      </div>
+          </motion.main>
+        </motion.div>
+      </motion.div>
     </AuthenticatedGuard>
   );
 };
@@ -194,26 +254,38 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   onClick,
 }) => {
   return (
-    <button
+    <motion.button
       className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
         active
           ? 'text-primary bg-primary/10'
           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
       }`}
       onClick={onClick}
+      whileHover={{ scale: 1.02, x: 4 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      layout
     >
-      <span className='mr-3'>{icon}</span>
-      {label}
+      <motion.span
+        className='mr-3'
+        initial={{ scale: 1 }}
+        animate={{ scale: active ? 1.1 : 1, rotate: active ? 360 : 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        {icon}
+      </motion.span>
+      <motion.span layout>{label}</motion.span>
       {active && (
         <motion.div
           layoutId='sidebar-indicator'
           className='absolute right-0 w-1 h-8 bg-primary rounded-l-md'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         />
       )}
-    </button>
+    </motion.button>
   );
 };
 
@@ -222,14 +294,22 @@ const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
 
   return (
-    <Button
-      variant='ghost'
-      size='icon'
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      title='Toggle theme'
-    >
-      {theme === 'dark' ? <Calendar size={20} /> : <Moon size={20} />}
-    </Button>
+    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+      <Button
+        variant='ghost'
+        size='icon'
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        title='Toggle theme'
+      >
+        <motion.div
+          initial={{ rotate: 0 }}
+          animate={{ rotate: theme === 'dark' ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 10 }}
+        >
+          {theme === 'dark' ? <Calendar size={20} /> : <Moon size={20} />}
+        </motion.div>
+      </Button>
+    </motion.div>
   );
 };
 
