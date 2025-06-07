@@ -57,6 +57,66 @@ export const getFormSubmissions = async (
 export const getSubmissionById = async (
   id: string
 ): Promise<AdministrativeProceduresFormSubmission> => {
-  const response = await nexusAxios.get(`${API_ENDPOINT}/${id}`);
-  return response.data;
+  try {
+    const response = await nexusAxios.get(`${API_ENDPOINT}/${id}`);
+
+    // Process student data if available
+    if (response.data.student) {
+      // If name is not set but firstName and lastName are, create name
+      if (
+        !response.data.student.name &&
+        response.data.student.firstName &&
+        response.data.student.lastName
+      ) {
+        response.data.student.name = `${response.data.student.firstName} ${response.data.student.lastName}`;
+      }
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching form submission by ID:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approve a form submission
+ * @param id Submission ID
+ * @param remarks Optional remarks for the approval
+ * @returns The updated form submission
+ */
+export const approveFormSubmission = async (
+  id: string,
+  remarks?: string
+): Promise<AdministrativeProceduresFormSubmission> => {
+  try {
+    const response = await nexusAxios.post(`${API_ENDPOINT}/${id}/approve`, {
+      remarks,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error approving form submission:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reject a form submission
+ * @param id Submission ID
+ * @param remarks Rejection reason (required)
+ * @returns The updated form submission
+ */
+export const rejectFormSubmission = async (
+  id: string,
+  remarks: string
+): Promise<AdministrativeProceduresFormSubmission> => {
+  try {
+    const response = await nexusAxios.post(`${API_ENDPOINT}/${id}/reject`, {
+      remarks,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error rejecting form submission:', error);
+    throw error;
+  }
 };

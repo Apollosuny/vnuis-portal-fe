@@ -9,6 +9,7 @@ import { createForm } from '@/api/form.api';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Create a validation schema for the form
 const schema = yup.object().shape({
@@ -81,6 +82,7 @@ const defaultValues: CreateFormValues = {
 export const useFormCreation = (onSuccess?: (form: any) => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const {
     control,
@@ -128,6 +130,9 @@ export const useFormCreation = (onSuccess?: (form: any) => void) => {
 
       // Reset form
       reset();
+
+      // Invalidate the forms query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
 
       // Call onSuccess callback if provided
       if (onSuccess) {

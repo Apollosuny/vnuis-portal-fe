@@ -17,7 +17,9 @@ export const FormsListClient = () => {
   } = useQuery({
     queryKey: ['forms'],
     queryFn: getForms,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // Always treat as stale to ensure refetch on revisit
+    refetchOnMount: true, // Refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   if (error) {

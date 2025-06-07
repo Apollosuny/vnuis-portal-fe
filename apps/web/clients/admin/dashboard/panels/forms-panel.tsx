@@ -176,13 +176,23 @@ const FormsPanel: React.FC = () => {
           </div>
         </div>
 
-        <Button
-          className='flex items-center gap-2'
-          onClick={() => router.push(ROUTES.CREATE_FORM)}
-        >
-          <Plus className='size-4' />
-          <span>Create Form</span>
-        </Button>
+        <div className='flex gap-2'>
+          <Button
+            variant='outline'
+            className='flex items-center gap-2'
+            onClick={() => router.push('/dashboard/forms/submissions')}
+          >
+            <BadgeCheck className='size-4' />
+            <span>View Submissions</span>
+          </Button>
+          <Button
+            className='flex items-center gap-2'
+            onClick={() => router.push(ROUTES.CREATE_FORM)}
+          >
+            <Plus className='size-4' />
+            <span>Create Form</span>
+          </Button>
+        </div>
       </div>
 
       <Card>
