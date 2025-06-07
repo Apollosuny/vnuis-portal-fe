@@ -75,6 +75,19 @@ export const roomBookingApi = {
     return response.data;
   },
 
+  // Get all room bookings (admin/operator only)
+  getRoomBookings: async (params?: {
+    page?: number;
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    search?: string;
+  }): Promise<RoomBookingResponseWithPagination> => {
+    const response = await nexusAxios.get(BASE_URL, { params });
+    return response.data;
+  },
+
   // Get a single booking by ID
   getBooking: async (bookingId: string): Promise<RoomBookingResponse> => {
     const response = await nexusAxios.get(`${BASE_URL}/${bookingId}`);
@@ -96,20 +109,7 @@ export const roomBookingApi = {
     return response.data;
   },
 
-  // Admin/Operator Endpoints
-  getAllBookings: async (params?: {
-    page?: number;
-    limit?: number;
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    search?: string;
-  }): Promise<RoomBookingResponseWithPagination> => {
-    const response = await nexusAxios.get(BASE_URL, { params });
-    return response.data;
-  },
-
-  // Handle (approve/reject) a booking request
+  // Approve/reject a booking (admin/operator only)
   handleBooking: async (
     bookingId: string,
     data: RoomBookingHandleDto

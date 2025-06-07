@@ -11,6 +11,7 @@ import { PlusIcon, FilterIcon, DownloadIcon, UsersIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
+import { EventAnalytics } from '@/components/admin/events/event-analytics';
 
 // Import UI components from workspace
 import { Button } from '@workspace/ui/components/button';
@@ -211,106 +212,125 @@ export const EventsClient = () => {
         </div>
       </div>
 
-      {showFilters && (
-        <Card className='mb-4'>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-lg'>Filter Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleFilter(e);
-              }}
-            >
-              <div className='space-y-2'>
-                <label htmlFor='searchTerm'>Search</label>
-                <Controller
-                  name='searchTerm'
-                  control={control}
-                  render={({ field }) => (
-                    <FormInput
-                      {...field}
-                      id='searchTerm'
-                      placeholder='Search by name or description'
+      {loading ? (
+        <div className='flex justify-center items-center py-8'>
+          <Spinner size='lg' />
+        </div>
+      ) : events.length === 0 ? (
+        <div className='text-center py-8 text-gray-500'>
+          No events found. Create your first event by clicking the &quot;Create
+          Event&quot; button.
+        </div>
+      ) : (
+        <>
+          <EventAnalytics events={events} />
+
+          {showFilters && (
+            <Card className='mb-4'>
+              <CardHeader className='pb-2'>
+                <CardTitle className='text-lg'>Filter Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleFilter(e);
+                  }}
+                >
+                  <div className='space-y-2'>
+                    <label htmlFor='searchTerm'>Search</label>
+                    <Controller
+                      name='searchTerm'
+                      control={control}
+                      render={({ field }) => (
+                        <FormInput
+                          {...field}
+                          id='searchTerm'
+                          placeholder='Search by name or description'
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
 
-              <div className='space-y-2'>
-                <label htmlFor='startDate'>Start Date</label>
-                <Controller
-                  name='startDate'
-                  control={control}
-                  render={({ field }) => (
-                    <FormDateTimePicker {...field} id='startDate' />
-                  )}
-                />
-              </div>
-
-              <div className='space-y-2'>
-                <label htmlFor='endDate'>End Date</label>
-                <Controller
-                  name='endDate'
-                  control={control}
-                  render={({ field }) => (
-                    <FormDateTimePicker {...field} id='endDate' />
-                  )}
-                />
-              </div>
-
-              <div className='space-y-2'>
-                <label htmlFor='category'>Category</label>
-                <Controller
-                  name='category'
-                  control={control}
-                  render={({ field }) => (
-                    <FormSelect
-                      {...field}
-                      options={[
-                        { label: 'All Categories', value: '' },
-                        { label: 'Academic', value: 'academic' },
-                        { label: 'Social', value: 'social' },
-                        { label: 'Cultural', value: 'cultural' },
-                        { label: 'Sports', value: 'sports' },
-                      ]}
+                  <div className='space-y-2'>
+                    <label htmlFor='startDate'>Start Date</label>
+                    <Controller
+                      name='startDate'
+                      control={control}
+                      render={({ field }) => (
+                        <FormDateTimePicker {...field} id='startDate' />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
 
-              <div className='space-y-2'>
-                <label htmlFor='isPublished'>Status</label>
-                <Controller
-                  name='isPublished'
-                  control={control}
-                  render={({ field }) => (
-                    <FormSelect
-                      {...field}
-                      value={field.value?.toString() || ''}
-                      options={[
-                        { label: 'All', value: '' },
-                        { label: 'Published', value: 'true' },
-                        { label: 'Draft', value: 'false' },
-                      ]}
+                  <div className='space-y-2'>
+                    <label htmlFor='endDate'>End Date</label>
+                    <Controller
+                      name='endDate'
+                      control={control}
+                      render={({ field }) => (
+                        <FormDateTimePicker {...field} id='endDate' />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
 
-              <div className='flex items-end space-x-2 md:col-span-2 lg:col-span-1'>
-                <FormButton type='submit' className='flex-1'>
-                  Apply Filters
-                </FormButton>
-                <Button type='button' variant='outline' onClick={resetFilter}>
-                  Reset
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+                  <div className='space-y-2'>
+                    <label htmlFor='category'>Category</label>
+                    <Controller
+                      name='category'
+                      control={control}
+                      render={({ field }) => (
+                        <FormSelect
+                          {...field}
+                          options={[
+                            { label: 'All Categories', value: '' },
+                            { label: 'Academic', value: 'academic' },
+                            { label: 'Social', value: 'social' },
+                            { label: 'Cultural', value: 'cultural' },
+                            { label: 'Sports', value: 'sports' },
+                          ]}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className='space-y-2'>
+                    <label htmlFor='isPublished'>Status</label>
+                    <Controller
+                      name='isPublished'
+                      control={control}
+                      render={({ field }) => (
+                        <FormSelect
+                          {...field}
+                          value={field.value?.toString() || ''}
+                          options={[
+                            { label: 'All', value: '' },
+                            { label: 'Published', value: 'true' },
+                            { label: 'Draft', value: 'false' },
+                          ]}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className='flex items-end space-x-2 md:col-span-2 lg:col-span-1'>
+                    <FormButton type='submit' className='flex-1'>
+                      Apply Filters
+                    </FormButton>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      onClick={resetFilter}
+                    >
+                      Reset
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <Tabs
