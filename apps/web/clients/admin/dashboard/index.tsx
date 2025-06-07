@@ -72,7 +72,7 @@ const OverviewPanel: React.FC = () => {
                 <div className='flex items-baseline gap-2'>
                   <p className='text-3xl font-semibold'>{stat.value}</p>
                   <span
-                    className={`text-xs ${stat.change.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}
+                    className={`text-xs ${stat.change.startsWith('+') ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}
                   >
                     {stat.change}
                   </span>
@@ -97,7 +97,7 @@ const OverviewPanel: React.FC = () => {
                   className='flex items-center justify-between p-2 hover:bg-muted/40 rounded-md'
                 >
                   <div className='flex items-center gap-2'>
-                    <div className='size-2 rounded-full bg-amber-500' />
+                    <div className='size-2 rounded-full bg-amber-500 dark:bg-amber-400' />
                     <span>Leave Request Form</span>
                   </div>
                   <span className='text-xs text-muted-foreground'>

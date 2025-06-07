@@ -248,7 +248,7 @@ const RoomsPanel = () => {
                           variant={room.isAvailable ? 'outline' : 'destructive'}
                           className={
                             room.isAvailable
-                              ? 'bg-green-50 text-green-700 hover:bg-green-50'
+                              ? 'bg-green-50 text-green-700 hover:bg-green-50 dark:bg-green-950 dark:text-green-400 dark:hover:bg-green-950'
                               : ''
                           }
                         >

@@ -121,11 +121,25 @@ const FormsPanel: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return <Badge className='bg-emerald-500'>Approved</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-emerald-500 border-emerald-500 bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-400 dark:bg-emerald-400/10'
+          >
+            Approved
+          </Badge>
+        );
       case 'REJECTED':
-        return <Badge className='bg-destructive'>Rejected</Badge>;
+        return <Badge variant='destructive'>Rejected</Badge>;
       case 'PENDING':
-        return <Badge className='bg-amber-500'>Pending</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-amber-500 border-amber-500 bg-amber-500/10 dark:text-amber-400 dark:border-amber-400 dark:bg-amber-400/10'
+          >
+            Pending
+          </Badge>
+        );
       default:
         return <Badge>Unknown</Badge>;
     }

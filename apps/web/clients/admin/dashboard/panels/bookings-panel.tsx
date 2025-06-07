@@ -170,15 +170,43 @@ const BookingsPanel: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return <Badge className='bg-emerald-500'>Approved</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-emerald-500 border-emerald-500 bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-400 dark:bg-emerald-400/10'
+          >
+            Approved
+          </Badge>
+        );
       case 'REJECTED':
-        return <Badge className='bg-destructive'>Rejected</Badge>;
+        return <Badge variant='destructive'>Rejected</Badge>;
       case 'PENDING':
-        return <Badge className='bg-amber-500'>Pending</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-amber-500 border-amber-500 bg-amber-500/10 dark:text-amber-400 dark:border-amber-400 dark:bg-amber-400/10'
+          >
+            Pending
+          </Badge>
+        );
       case 'CANCELLED':
-        return <Badge className='bg-gray-500'>Cancelled</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-gray-500 border-gray-500 bg-gray-500/10 dark:text-gray-400 dark:border-gray-400 dark:bg-gray-400/10'
+          >
+            Cancelled
+          </Badge>
+        );
       case 'COMPLETED':
-        return <Badge className='bg-blue-500'>Completed</Badge>;
+        return (
+          <Badge
+            variant='outline'
+            className='text-blue-500 border-blue-500 bg-blue-500/10 dark:text-blue-400 dark:border-blue-400 dark:bg-blue-400/10'
+          >
+            Completed
+          </Badge>
+        );
       default:
         return <Badge>Unknown</Badge>;
     }

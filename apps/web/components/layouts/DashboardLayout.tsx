@@ -12,7 +12,10 @@ import {
   SquareStackIcon,
   User,
   DoorOpen,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
@@ -140,6 +143,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <header className='border-b p-4 flex justify-between items-center bg-background'>
               <h1 className='text-2xl font-semibold'>{getPageTitle()}</h1>
               <div className='flex items-center gap-2'>
+                <ThemeToggle />
                 <Button variant='ghost' size='icon'>
                   <User size={20} />
                 </Button>
@@ -179,6 +183,22 @@ const SidebarItem: React.FC<{
         />
       )}
     </button>
+  );
+};
+
+// Theme toggle component
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant='ghost'
+      size='icon'
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      title='Toggle theme'
+    >
+      {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+    </Button>
   );
 };
 
