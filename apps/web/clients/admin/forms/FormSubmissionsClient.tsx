@@ -28,7 +28,10 @@ import { Button } from '@workspace/ui/components/button';
 import { Badge } from '@workspace/ui/components/badge';
 import { useRouter } from 'next/navigation';
 import { Filter, Search, FileText } from 'lucide-react';
-import { getFormSubmissions } from '@/api/form-submission.api';
+import {
+  getFormSubmissions,
+  getAllFormSubmissions,
+} from '@/api/form-submission.api';
 import { getForms } from '@/api/form.api';
 import { formatDate } from '@/utils/date-utils';
 import { AdministrativeProceduresForm } from '@/types/administrative-form.types';
@@ -45,7 +48,7 @@ export const FormSubmissionsClient = () => {
   >([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [selectedFormId, setSelectedFormId] = useState<string>('');
+  const [selectedFormId, setSelectedFormId] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
 
   // Fetch forms when component mounts
@@ -54,12 +57,6 @@ export const FormSubmissionsClient = () => {
       try {
         const formsData = await getForms();
         setForms(formsData);
-
-        // If there are forms, select the first one by default
-        if (formsData.length > 0 && formsData[0]?.id) {
-          setSelectedFormId(formsData[0].id);
-        }
-
         setLoading(false);
       } catch (err) {
         console.error('Error fetching forms:', err);
@@ -71,19 +68,30 @@ export const FormSubmissionsClient = () => {
     fetchForms();
   }, []);
 
-  // Fetch submissions when selected form changes
+  // Fetch submissions when component mounts or selected form changes
   useEffect(() => {
-    if (!selectedFormId) return;
-
     const fetchSubmissions = async () => {
       setLoading(true);
       try {
-        const submissionsData = await getFormSubmissions(selectedFormId);
+        let submissionsData;
+
+        if (selectedFormId && selectedFormId !== 'all') {
+          // Fetch submissions for a specific form
+          submissionsData = await getFormSubmissions(selectedFormId);
+        } else {
+          // Fetch all submissions across all forms
+          submissionsData = await getAllFormSubmissions();
+        }
+
         setSubmissions(submissionsData);
         setError(null);
       } catch (err) {
         console.error('Error fetching submissions:', err);
-        setError('Failed to load submissions for this form.');
+        setError(
+          selectedFormId !== 'all'
+            ? 'Failed to load submissions for this form.'
+            : 'Failed to load all submissions.'
+        );
         setSubmissions([]);
       } finally {
         setLoading(false);
@@ -102,7 +110,11 @@ export const FormSubmissionsClient = () => {
       submission.student?.studentId
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      submission.id.toLowerCase().includes(searchTerm.toLowerCase());
+      submission.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ((selectedFormId === 'all' || !selectedFormId) &&
+        submission.form?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()));
 
     const matchesStatus =
       statusFilter === 'ALL' || submission.status === statusFilter;
@@ -152,9 +164,10 @@ export const FormSubmissionsClient = () => {
             disabled={loading || forms.length === 0}
           >
             <SelectTrigger className='w-full sm:w-[300px]'>
-              <SelectValue placeholder='Select a form to view submissions' />
+              <SelectValue placeholder='Select a form to filter submissions' />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value='all'>All Forms</SelectItem>
               {forms.map((form) => (
                 <SelectItem key={form.id} value={form.id}>
                   {form.name}
@@ -227,10 +240,10 @@ export const FormSubmissionsClient = () => {
             </div>
           ) : submissions.length === 0 ? (
             <div className='text-center py-8 text-muted-foreground'>
-              {!selectedFormId ? (
-                <p>Select a form to view its submissions</p>
-              ) : (
+              {selectedFormId !== 'all' ? (
                 <p>No submissions found for this form</p>
+              ) : (
+                <p>No form submissions found in the system</p>
               )}
             </div>
           ) : (
@@ -249,10 +262,21 @@ export const FormSubmissionsClient = () => {
                   <TableRow key={submission.id}>
                     <TableCell>
                       <div className='flex flex-col'>
-                        <span>{submission.student?.name || 'N/A'}</span>
+                        <span>
+                          {submission.student
+                            ? submission.student.name ||
+                              `${submission.student.firstName} ${submission.student.lastName}`
+                            : 'N/A'}
+                        </span>
                         <span className='text-xs text-muted-foreground'>
                           {submission.student?.studentId || 'Unknown ID'}
                         </span>
+                        {(selectedFormId === 'all' || !selectedFormId) &&
+                          submission.form && (
+                            <span className='text-xs font-medium text-primary mt-1'>
+                              {submission.form.name}
+                            </span>
+                          )}
                       </div>
                     </TableCell>
                     <TableCell>

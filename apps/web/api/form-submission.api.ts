@@ -38,6 +38,17 @@ export const getUserFormSubmissions = async (): Promise<
 };
 
 /**
+ * Get all submissions across all forms (admin only)
+ * @returns List of all form submissions
+ */
+export const getAllFormSubmissions = async (): Promise<
+  AdministrativeProceduresFormSubmission[]
+> => {
+  const response = await nexusAxios.get(`${API_ENDPOINT}/all`);
+  return response.data;
+};
+
+/**
  * Get all submissions for a specific form (admin only)
  * @param formId Form ID
  * @returns List of form submissions for the given form
