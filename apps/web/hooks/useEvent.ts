@@ -8,8 +8,8 @@ import { eventApi } from '@/api/event.api';
 import { EventFormValues, EventFilterValues } from '@/types/event.types';
 import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
+import type { CreateEventDto } from '@/api/event.api';
 
-// Validation schema for event form
 const eventSchema = object({
   name: string().required('Event name is required'),
   description: string().required('Description is required'),
@@ -22,10 +22,8 @@ const eventSchema = object({
       (value, context) => {
         const { startTime } = context.parent;
         if (!startTime || !value) return true;
-        return (
-          DateTime.fromJSDate(new Date(value)) >
-          DateTime.fromJSDate(new Date(startTime))
-        );
+        // Compare timestamps to avoid timezone issues
+        return value.getTime() > startTime.getTime();
       }
     ),
   location: string().required('Location is required'),
@@ -38,28 +36,28 @@ const eventSchema = object({
   category: string().optional(),
   registrationDeadline: date()
     .optional()
+    .nullable()
     .test(
       'is-before-start',
       'Registration deadline must be before event start time',
       (value, context) => {
         const { startTime } = context.parent;
         if (!startTime || !value) return true;
-        return (
-          DateTime.fromJSDate(new Date(value)) <
-          DateTime.fromJSDate(new Date(startTime))
-        );
+        // Compare timestamps to avoid timezone issues
+        return value.getTime() < startTime.getTime();
       }
     ),
   requireApproval: boolean().default(false),
   metadata: object().optional(),
 });
 
-// Default values for creating a new event
+// Initialize defaultValues with local timezone
+const now = DateTime.local();
 const defaultValues: EventFormValues = {
   name: '',
   description: '',
-  startTime: new Date(),
-  endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+  startTime: now.toJSDate(),
+  endTime: now.plus({ hours: 2 }).toJSDate(),
   location: '',
   capacity: 50,
   isPublished: false,
@@ -92,21 +90,47 @@ export const useEventForm = (
     [isDirty, isValid, isLoading]
   );
 
+  const convertToApiFormat = (data: EventFormValues): CreateEventDto => {
+    // Convert local dates to UTC ISO strings while preserving time
+    const startTimeISO = DateTime.fromJSDate(data.startTime)
+      .setZone('utc', { keepLocalTime: true })
+      .toISO();
+    const endTimeISO = DateTime.fromJSDate(data.endTime)
+      .setZone('utc', { keepLocalTime: true })
+      .toISO();
+
+    // Make sure we have valid ISO strings for required fields
+    if (!startTimeISO || !endTimeISO) {
+      throw new Error('Invalid date format');
+    }
+
+    // Handle optional registration deadline
+    let registrationDeadlineISO: string | undefined;
+
+    if (data.registrationDeadline instanceof Date) {
+      const isoString = DateTime.fromJSDate(data.registrationDeadline)
+        .setZone('utc', { keepLocalTime: true })
+        .toISO();
+      if (isoString) {
+        registrationDeadlineISO = isoString;
+      }
+    }
+
+    return {
+      ...data,
+      startTime: startTimeISO,
+      endTime: endTimeISO,
+      registrationDeadline: registrationDeadlineISO,
+    };
+  };
+
   const handleCreateEvent = async (data: EventFormValues) => {
     try {
       setIsLoading(true);
-      await eventApi.createEvent({
-        ...data,
-        startTime: DateTime.fromJSDate(data.startTime).toISO() || '',
-        endTime: DateTime.fromJSDate(data.endTime).toISO() || '',
-        registrationDeadline: data.registrationDeadline
-          ? DateTime.fromJSDate(data.registrationDeadline).toISO() || undefined
-          : undefined,
-      });
+      const apiData = convertToApiFormat(data);
+      await eventApi.createEvent(apiData);
       toast.success('Event created successfully');
-      reset();
       onSuccess?.();
-      router.push('/dashboard/events');
     } catch (error) {
       toast.error(getAPIErrorMessage(error));
     } finally {
@@ -117,17 +141,10 @@ export const useEventForm = (
   const handleUpdateEvent = async (id: string, data: EventFormValues) => {
     try {
       setIsLoading(true);
-      await eventApi.updateEvent(id, {
-        ...data,
-        startTime: DateTime.fromJSDate(data.startTime).toISO() || '',
-        endTime: DateTime.fromJSDate(data.endTime).toISO() || '',
-        registrationDeadline: data.registrationDeadline
-          ? DateTime.fromJSDate(data.registrationDeadline).toISO() || undefined
-          : undefined,
-      });
+      const apiData = convertToApiFormat(data);
+      await eventApi.updateEvent(id, apiData);
       toast.success('Event updated successfully');
       onSuccess?.();
-      router.push('/dashboard/events');
     } catch (error) {
       toast.error(getAPIErrorMessage(error));
     } finally {
@@ -135,18 +152,12 @@ export const useEventForm = (
     }
   };
 
-  const handleSubmit = (callback: (data: EventFormValues) => void) => {
-    return rhfHandleSubmit((data) => callback(data as EventFormValues));
-  };
-
   return {
     control,
     errors,
-    isDirty,
-    isValid,
-    isLoading,
     shouldDisableButton,
-    handleSubmit,
+    isLoading,
+    handleSubmit: rhfHandleSubmit,
     handleCreateEvent,
     handleUpdateEvent,
     reset,

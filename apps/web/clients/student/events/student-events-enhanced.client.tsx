@@ -21,6 +21,12 @@ import {
 } from '@workspace/ui/components/card';
 import { Button } from '@workspace/ui/components/button';
 import { eventApi } from '@/api/event.api';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@workspace/ui/components/tabs';
 
 // Enhanced version of useEventRegistration hook with capacity checking
 // This combines real API calls with additional functionality
@@ -145,6 +151,7 @@ export const StudentEventsClient = () => {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('upcoming');
   const [myRegistrations, setMyRegistrations] = useState<
     Record<string, EventRegistration>
   >({});
@@ -206,101 +213,121 @@ export const StudentEventsClient = () => {
     return myRegistrations[eventId];
   };
 
+  const upcomingEvents = events.filter((event) => !isEventPast(event));
+  const pastEvents = events.filter((event) => isEventPast(event));
+
   return (
     <div className='space-y-6 p-4 md:p-8'>
-      <div>
-        <h1 className='text-2xl font-bold mb-4'>Upcoming Events</h1>
+      <Tabs
+        defaultValue='upcoming'
+        onValueChange={setActiveTab}
+        className='w-full'
+      >
+        <div className='flex items-center justify-between mb-6'>
+          <h1 className='text-2xl font-bold'>Event Registration</h1>
+          <TabsList className='grid w-[400px] grid-cols-2'>
+            <TabsTrigger value='upcoming' className='text-sm'>
+              Upcoming Events ({upcomingEvents.length})
+            </TabsTrigger>
+            <TabsTrigger value='past' className='text-sm'>
+              Past Events ({pastEvents.length})
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {loading ? (
           <div className='flex justify-center items-center min-h-[40vh]'>
             <Spinner size='lg' />
           </div>
-        ) : events.length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
-            <div className='mb-6 bg-primary/10 p-4 rounded-full'>
-              <Calendar className='h-12 w-12 text-primary' />
-            </div>
-            <h3 className='text-xl font-semibold text-gray-800 mb-2'>
-              No Upcoming Events
-            </h3>
-            <p className='text-gray-500 text-center max-w-md mb-6'>
-              There are no events scheduled at this time. Check back later for
-              exciting new opportunities!
-            </p>
-            <Button
-              variant='outline'
-              className='border-dashed border-2 hover:bg-primary/5 transition-all'
-              onClick={() => fetchEvents()}
+        ) : (
+          <>
+            <TabsContent
+              value='upcoming'
+              className='mt-0 space-y-4 animate-in slide-in-from-right duration-500 ease-out'
             >
-              Refresh Events
-            </Button>
-          </div>
-        ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {events
-              .filter((event) => !isEventPast(event))
-              .map((event) => {
-                const registration = getRegistration(event.id);
-                const canRegister = !registration && isRegistrationOpen(event);
+              {upcomingEvents.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-16 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
+                  <div className='mb-6 bg-primary/10 p-4 rounded-full'>
+                    <Calendar className='h-12 w-12 text-primary' />
+                  </div>
+                  <h3 className='text-xl font-semibold text-gray-800 mb-2'>
+                    No Upcoming Events
+                  </h3>
+                  <p className='text-gray-500 text-center max-w-md mb-6'>
+                    There are no events scheduled at this time. Check back later
+                    for exciting new opportunities!
+                  </p>
+                  <Button
+                    variant='outline'
+                    className='border-dashed border-2 hover:bg-primary/5 transition-all'
+                    onClick={() => fetchEvents()}
+                  >
+                    Refresh Events
+                  </Button>
+                </div>
+              ) : (
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                  {upcomingEvents.map((event) => {
+                    const registration = getRegistration(event.id);
+                    const canRegister =
+                      !registration && isRegistrationOpen(event);
 
-                return (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    registration={registration}
-                    canRegister={canRegister}
-                    onSuccess={() => {
-                      fetchMyRegistrations();
-                    }}
-                  />
-                );
-              })}
-          </div>
+                    return (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        registration={registration}
+                        canRegister={canRegister}
+                        onSuccess={() => {
+                          fetchMyRegistrations();
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent
+              value='past'
+              className='mt-0 space-y-4 animate-in slide-in-from-right duration-500 ease-out'
+            >
+              {pastEvents.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
+                  <div className='mb-5 bg-gray-100 p-3 rounded-full'>
+                    <Clock className='h-10 w-10 text-gray-500' />
+                  </div>
+                  <h3 className='text-lg font-medium text-gray-700 mb-2'>
+                    No Past Events
+                  </h3>
+                  <p className='text-gray-500 text-center max-w-md'>
+                    You haven't attended any events yet. Check out our upcoming
+                    events to start your journey!
+                  </p>
+                </div>
+              ) : (
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+                  {pastEvents.map((event) => {
+                    const registration = getRegistration(event.id);
+
+                    return (
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        registration={registration}
+                        isPast={true}
+                        onSuccess={() => {
+                          fetchMyRegistrations();
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+          </>
         )}
-      </div>
-
-      <div>
-        <h2 className='text-xl font-bold mb-4'>Past Events</h2>
-
-        {loading ? (
-          <div className='flex justify-center items-center h-20'>
-            <Spinner size='md' />
-          </div>
-        ) : events.filter((event) => isEventPast(event)).length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-gray-50 to-white rounded-lg shadow-sm border border-gray-100'>
-            <div className='mb-5 bg-gray-100 p-3 rounded-full'>
-              <Clock className='h-10 w-10 text-gray-500' />
-            </div>
-            <h3 className='text-lg font-medium text-gray-700 mb-2'>
-              No Past Events
-            </h3>
-            <p className='text-gray-500 text-center max-w-md'>
-              You haven't attended any events yet. Check out our upcoming events
-              to start your journey!
-            </p>
-          </div>
-        ) : (
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {events
-              .filter((event) => isEventPast(event))
-              .map((event) => {
-                const registration = getRegistration(event.id);
-
-                return (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    registration={registration}
-                    isPast={true}
-                    onSuccess={() => {
-                      fetchMyRegistrations();
-                    }}
-                  />
-                );
-              })}
-          </div>
-        )}
-      </div>
+      </Tabs>
     </div>
   );
 };
@@ -320,167 +347,89 @@ const EventCard = ({
   isPast,
   onSuccess,
 }: EventCardProps) => {
-  // Using the enhanced registration hook that combines API with additional functionality
+  const router = useRouter();
   const { isLoading, handleRegister, handleCancel, getRemainingSpots } =
     useEnhancedEventRegistration(event.id, onSuccess);
 
+  // Calculate remaining spots and status outside of conditional logic
   const remainingSpots = getRemainingSpots();
-  const isFull =
-    remainingSpots === 0 ||
-    useEnhancedEventRegistration(event.id).isEventFull();
-  const isLimitedSpots = remainingSpots <= 5;
+  const isFull = event.capacity && remainingSpots === 0;
+  const registrationClosed = !canRegister && !registration;
 
-  const getRegistrationBadge = () => {
-    if (!registration) return null;
-
-    let variant = 'secondary';
-    switch (registration.status) {
-      case 'APPROVED':
-        variant = 'success';
-        break;
-      case 'REJECTED':
-        variant = 'destructive';
-        break;
-      case 'CANCELLED':
-        variant = 'outline';
-        break;
-      case 'ATTENDED':
-        variant = 'default';
-        break;
+  const getRegistrationBadgeVariant = (status: EventRegistrationStatus) => {
+    switch (status) {
+      case EventRegistrationStatus.APPROVED:
+        return 'default' as const;
+      case EventRegistrationStatus.REJECTED:
+        return 'destructive' as const;
+      case EventRegistrationStatus.CANCELLED:
+        return 'outline' as const;
+      case EventRegistrationStatus.ATTENDED:
+        return 'default' as const;
+      default:
+        return 'secondary' as const;
     }
-
-    return (
-      <Badge variant={variant as any} className='ml-2'>
-        {registration.status}
-      </Badge>
-    );
-  };
-
-  // Show rejection message if applicable
-  const getRejectionMessage = () => {
-    if (registration?.status === 'REJECTED' && registration.remarks) {
-      return (
-        <div className='mt-2 text-sm text-red-500 p-2 bg-red-50 rounded-md'>
-          Reason: {registration.remarks}
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
-    <Card className={isPast ? 'opacity-80' : ''}>
-      {event.imageUrl && (
-        <div className='aspect-video w-full overflow-hidden rounded-t-lg'>
-          <img
-            src={event.imageUrl}
-            alt={event.name}
-            className='h-full w-full object-cover'
-          />
-        </div>
-      )}
-
-      <CardHeader className='pb-2'>
-        <div className='flex justify-between items-start gap-2'>
-          <CardTitle className='text-lg line-clamp-2'>{event.name}</CardTitle>
-          {getRegistrationBadge()}
-        </div>
-        {event.category && (
-          <Badge variant='outline' className='mt-1'>
-            {event.category}
-          </Badge>
-        )}
+    <Card
+      className='flex flex-col justify-between hover:shadow-lg transition-shadow cursor-pointer'
+      onClick={() => router.push(`/student-dashboard/events/${event.id}`)}
+    >
+      <CardHeader>
+        <CardTitle className='flex items-center justify-between'>
+          <span className='truncate flex-1'>{event.name}</span>
+          {event.category && (
+            <Badge variant='outline' className='ml-2 shrink-0'>
+              {event.category}
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className='space-y-3'>
-        <div className='flex items-center gap-2 text-sm'>
-          <Calendar className='h-4 w-4 text-gray-500' />
-          <span>
-            {DateTime.fromISO(event.startTime).toFormat('EEEE, MMMM d, yyyy')}
-          </span>
-        </div>
-
-        <div className='flex items-center gap-2 text-sm'>
-          <Clock className='h-4 w-4 text-gray-500' />
-          <span>
-            {DateTime.fromISO(event.startTime).toFormat('h:mm a')} -{' '}
-            {DateTime.fromISO(event.endTime).toFormat('h:mm a')}
-          </span>
-        </div>
-
-        <div className='flex items-center gap-2 text-sm'>
-          <MapPin className='h-4 w-4 text-gray-500' />
-          <span>{event.location}</span>
-        </div>
-
-        <div className='flex items-center gap-2 text-sm'>
-          <Users className='h-4 w-4 text-gray-500' />
-          <span>
-            {event.capacity} attendees
-            {!isPast && isLimitedSpots && (
-              <span
-                className={
-                  isFull
-                    ? 'text-red-500 ml-1 font-semibold'
-                    : 'text-amber-500 ml-1 font-semibold'
-                }
-              >
-                ({isFull ? 'Full' : `${remainingSpots} spots left`})
-              </span>
-            )}
-          </span>
-        </div>
-
-        {event.registrationDeadline && (
-          <div className='flex items-center gap-2 text-sm'>
-            <FileCheck className='h-4 w-4 text-gray-500' />
+      <CardContent className='flex-1 space-y-4'>
+        <div className='space-y-2'>
+          <div className='flex items-center gap-2'>
+            <Calendar className='h-4 w-4 text-gray-500' />
             <span>
-              Register by{' '}
-              {DateTime.fromISO(event.registrationDeadline).toFormat(
-                'MMM d, h:mm a'
-              )}
+              {DateTime.fromISO(event.startTime).toFormat('EEEE, MMMM d, yyyy')}
             </span>
           </div>
-        )}
 
-        <p className='line-clamp-2 text-sm text-gray-600 pt-1'>
-          {event.description}
-        </p>
+          <div className='flex items-center gap-2'>
+            <Clock className='h-4 w-4 text-gray-500' />
+            <span>
+              {DateTime.fromISO(event.startTime).toFormat('h:mm a')} -{' '}
+              {DateTime.fromISO(event.endTime).toFormat('h:mm a')}
+            </span>
+          </div>
 
-        {/* Show rejection message if applicable */}
-        {getRejectionMessage()}
+          <div className='flex items-center gap-2'>
+            <MapPin className='h-4 w-4 text-gray-500' />
+            <span>{event.location}</span>
+          </div>
 
-        <div className='pt-3 flex justify-between items-center'>
-          {!isPast && (
-            <div>
-              {canRegister ? (
-                <Button
-                  disabled={isLoading || isFull}
-                  // loading={isLoading}
-                  onClick={() => handleRegister()}
-                >
-                  {isFull ? 'Event Full' : 'Register'}
-                </Button>
-              ) : (
-                registration &&
-                registration.status !== 'CANCELLED' && (
-                  <Button
-                    variant='outline'
-                    disabled={isLoading}
-                    // loading={isLoading}
-                    onClick={() => handleCancel(registration.id)}
-                  >
-                    Cancel Registration
-                  </Button>
-                )
-              )}
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center gap-2'>
+              <Users className='h-4 w-4 text-gray-500' />
+              <span>
+                {remainingSpots} / {event.capacity} spots left
+              </span>
             </div>
-          )}
-
-          <Button variant='ghost' className='text-sm' onClick={() => {}}>
-            View Details
-          </Button>
+          </div>
         </div>
+
+        {registration && (
+          <div className='mt-2'>
+            <Badge
+              variant={getRegistrationBadgeVariant(registration.status)}
+              className='w-full flex items-center justify-center'
+            >
+              <FileCheck className='h-3 w-3 mr-1' />
+              Status: {registration.status}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

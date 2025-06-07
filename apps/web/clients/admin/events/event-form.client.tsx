@@ -7,6 +7,7 @@ import { useEventForm } from '@/hooks/useEvent';
 import { eventApi } from '@/api/event.api';
 import { Event, EventFormValues } from '@/types/event.types';
 import { toast } from 'sonner';
+import { DateTime } from 'luxon';
 
 import { ArrowLeft, Calendar, Users, MapPin } from 'lucide-react';
 import { getAPIErrorMessage } from '@/utils/error';
@@ -61,13 +62,19 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
       setFetchLoading(true);
       const data = await eventApi.getEvent(id);
 
-      // Convert ISO strings to Date objects for form
+      // Convert UTC dates from API to local dates while preserving time
       const transformedData = {
         ...data,
-        startTime: new Date(data.startTime),
-        endTime: new Date(data.endTime),
+        startTime: DateTime.fromISO(data.startTime)
+          .setZone('local', { keepLocalTime: true })
+          .toJSDate(),
+        endTime: DateTime.fromISO(data.endTime)
+          .setZone('local', { keepLocalTime: true })
+          .toJSDate(),
         registrationDeadline: data.registrationDeadline
-          ? new Date(data.registrationDeadline)
+          ? DateTime.fromISO(data.registrationDeadline)
+              .setZone('local', { keepLocalTime: true })
+              .toJSDate()
           : undefined,
       };
 
@@ -82,10 +89,26 @@ export const EventFormClient = ({ eventId }: EventFormClientProps) => {
   };
 
   const onSubmit = (data: EventFormValues) => {
+    // Convert local dates to UTC before sending to API, preserving the time
+    const utcData = {
+      ...data,
+      startTime: DateTime.fromJSDate(data.startTime)
+        .setZone('utc', { keepLocalTime: true })
+        .toJSDate(),
+      endTime: DateTime.fromJSDate(data.endTime)
+        .setZone('utc', { keepLocalTime: true })
+        .toJSDate(),
+      registrationDeadline: data.registrationDeadline
+        ? DateTime.fromJSDate(data.registrationDeadline)
+            .setZone('utc', { keepLocalTime: true })
+            .toJSDate()
+        : undefined,
+    };
+
     if (isEditMode && eventId) {
-      handleUpdateEvent(eventId, data);
+      handleUpdateEvent(eventId, utcData);
     } else {
-      handleCreateEvent(data);
+      handleCreateEvent(utcData);
     }
   };
 
