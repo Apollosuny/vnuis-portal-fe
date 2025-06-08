@@ -102,7 +102,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
           }}
         >
           <motion.div
-            className='px-6 py-5 border-b border-border flex items-center justify-center'
+            className='px-6 py-5 border-b border-border flex items-center justify-center h-24'
             whileHover={{ scale: 1.02 }}
             transition={{ type: 'spring', stiffness: 400, damping: 10 }}
           >
@@ -185,7 +185,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
         >
           {/* Header */}
           <motion.header
-            className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'
+            className='h-24 bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border'
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.3 }}
