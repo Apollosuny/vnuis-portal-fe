@@ -26,9 +26,23 @@ export const FormEditClient = () => {
     questionCount,
     setQuestionCount,
     form,
+    isSlugEditable,
+    handleMakeSlugEditable,
+    isCheckingSlug,
+    isSlugUnique,
+    isInitialLoad,
   } = useFormEdit();
 
   const formData = watch('data');
+  const watchedSlug = watch('slug');
+
+  // Debug log to see the current form values
+  useEffect(() => {
+    console.log('Current slug value:', watchedSlug);
+    console.log('Form data:', getValues());
+    console.log('Loading state:', isLoading);
+    console.log('Initial load state:', isInitialLoad);
+  }, [watchedSlug, getValues, isLoading, isInitialLoad]);
 
   useEffect(() => {
     if (form && form.data.questions) {
@@ -200,25 +214,59 @@ export const FormEditClient = () => {
                   htmlFor='slug'
                   className='block text-sm font-medium mb-1 text-foreground'
                 >
-                  Slug *
+                  Slug *{' '}
+                  <span className='text-xs text-muted-foreground'>
+                    (auto-generated from name)
+                  </span>
                 </label>
                 <Controller
                   name='slug'
                   control={control}
                   render={({ field }) => (
-                    <div>
+                    <div className='relative'>
                       <input
-                        {...field}
                         id='slug'
                         type='text'
-                        className='w-full bg-background border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors'
+                        disabled={!isSlugEditable}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        className={`w-full bg-background border ${!isSlugUnique && !isInitialLoad ? 'border-destructive' : 'border-input'} text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors ${!isSlugEditable ? 'bg-muted cursor-not-allowed' : ''}`}
                         placeholder='Enter form slug'
+                        readOnly={!isSlugEditable}
                       />
+                      {!isSlugEditable && !isLoading && (
+                        <button
+                          type='button'
+                          onClick={handleMakeSlugEditable}
+                          className='absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary hover:underline'
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {isCheckingSlug && (
+                        <div className='absolute right-2 top-1/2 -translate-y-1/2'>
+                          <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent'></div>
+                        </div>
+                      )}
                       {errors.slug && (
                         <p className='text-destructive text-sm mt-1'>
                           {errors.slug.message}
                         </p>
                       )}
+                      {!errors.slug &&
+                        !isSlugUnique &&
+                        field.value !== undefined &&
+                        field.value !== null &&
+                        field.value !== '' &&
+                        !isLoading &&
+                        !isInitialLoad && (
+                          <p className='text-destructive text-sm mt-1'>
+                            This slug is already in use
+                          </p>
+                        )}
                     </div>
                   )}
                 />

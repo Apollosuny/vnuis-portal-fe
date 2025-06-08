@@ -95,3 +95,28 @@ export const deactivateForm = async (
   const response = await nexusAxios.patch(`${API_ENDPOINT}/${id}/deactivate`);
   return response.data;
 };
+
+/**
+ * Check if a slug is unique (not used by any other form)
+ * @param slug The slug to check
+ * @param currentFormId Optional current form ID (to exclude from check when updating)
+ * @returns True if the slug is unique, false if already in use
+ */
+export const checkSlugUnique = async (
+  slug: string,
+  currentFormId?: string
+): Promise<boolean> => {
+  try {
+    const response = await nexusAxios.get(
+      `${API_ENDPOINT}/check-slug/${slug}`,
+      {
+        params: currentFormId ? { currentFormId } : {},
+      }
+    );
+    return response.data.isUnique;
+  } catch (error) {
+    console.error('Error checking slug uniqueness:', error);
+    // Default to false (not unique) if there's an error to prevent slug conflicts
+    return false;
+  }
+};
