@@ -20,6 +20,7 @@ import { motion } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
 import { useLogout } from '@/hooks/useLogout';
+import { UserAvatar } from '../ui/user-avatar';
 
 interface StudentDashboardLayoutProps {
   children: React.ReactNode;
@@ -213,15 +214,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               transition={{ delay: 0.7, duration: 0.3 }}
             >
               <ThemeToggle />
-              <motion.div whileHover={{ scale: 1.05 }}>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='rounded-full w-10 h-10'
-                >
-                  <User size={20} />
-                </Button>
-              </motion.div>
+              <UserAvatar />
             </motion.div>
           </motion.header>
 
