@@ -58,6 +58,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (pathname.includes('/rooms')) return 'rooms';
     if (pathname.includes('/bookings')) return 'bookings';
     if (pathname.includes('/events')) return 'events';
+    if (pathname.includes('/students')) return 'students';
     if (pathname.includes('/settings')) return 'settings';
     return 'overview';
   };
@@ -81,6 +82,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       case 'events':
         router.push(ROUTES.EVENTS); // Update when events page is available
         break;
+      case 'students':
+        router.push(ROUTES.STUDENTS);
+        break;
       case 'settings':
         router.push('/dashboard'); // Update when settings page is available
         break;
@@ -95,6 +99,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (pathname.includes('/rooms')) return 'Room Management';
     if (pathname.includes('/bookings')) return 'Room Bookings';
     if (pathname.includes('/events')) return 'Events Management';
+    if (pathname.includes('/students')) return 'Student Management';
     if (pathname.includes('/settings')) return 'Settings';
     return 'Dashboard Overview';
   };
@@ -187,6 +192,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               label='Events'
               active={activeTab === 'events'}
               onClick={() => handleNavigation('events')}
+            />
+            <SidebarItem
+              icon={<User size={18} />}
+              label='Students'
+              active={pathname.includes('/dashboard/students')}
+              onClick={() => router.push(ROUTES.STUDENTS)}
             />
           </motion.div>
           <motion.div
