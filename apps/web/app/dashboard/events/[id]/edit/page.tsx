@@ -1,9 +1,9 @@
 import { EventFormClient } from '@/clients/admin/events/event-form.client';
 
 type EditEventPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export const metadata = {
@@ -11,6 +11,7 @@ export const metadata = {
   description: 'Edit an existing event',
 };
 
-export default function EditEventPage({ params }: EditEventPageProps) {
+export default async function EditEventPage(props: EditEventPageProps) {
+  const params = await props.params;
   return <EventFormClient eventId={params.id} />;
 }

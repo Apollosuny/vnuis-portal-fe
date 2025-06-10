@@ -7,11 +7,7 @@ export const metadata = {
   description: 'View and manage student information',
 };
 
-export default function StudentDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function StudentDetailPage() {
   return (
     <DashboardLayout title='Student Details'>
       <AuthenticatedGuard>

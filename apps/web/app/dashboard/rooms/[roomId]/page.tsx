@@ -8,12 +8,13 @@ export const metadata = {
 };
 
 type RoomDetailPageProps = {
-  params: {
+  params: Promise<{
     roomId: string;
-  };
+  }>;
 };
 
-export default function RoomDetailPage({ params }: RoomDetailPageProps) {
+export default async function RoomDetailPage(props: RoomDetailPageProps) {
+  const params = await props.params;
   return (
     <DashboardLayout title={`Room Details - ${params.roomId}`}>
       <AuthenticatedGuard>

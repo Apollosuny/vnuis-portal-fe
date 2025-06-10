@@ -302,7 +302,7 @@ const RoomsPage: React.FC = () => {
 
       // Call the API to book the room
       await roomBookingApi.createBooking({
-        startTime,
+        startTime: startTime.toISOString(),
         duration,
         purpose: bookingPurpose,
         isRecurring: false,

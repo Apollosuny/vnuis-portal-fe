@@ -1,9 +1,9 @@
 import { EventDetailsClient } from '@/clients/admin/events/event-details.client';
 
 type EventDetailsPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export const metadata = {
@@ -11,6 +11,7 @@ export const metadata = {
   description: 'View event details and manage registrations',
 };
 
-export default function EventDetailsPage({ params }: EventDetailsPageProps) {
+export default async function EventDetailsPage(props: EventDetailsPageProps) {
+  const params = await props.params;
   return <EventDetailsClient eventId={params.id} />;
 }

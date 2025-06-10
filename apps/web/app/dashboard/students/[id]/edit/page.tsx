@@ -7,11 +7,7 @@ export const metadata = {
   description: 'Edit student information',
 };
 
-export default function EditStudentPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function EditStudentPage() {
   return (
     <DashboardLayout title='Edit Student'>
       <AuthenticatedGuard>

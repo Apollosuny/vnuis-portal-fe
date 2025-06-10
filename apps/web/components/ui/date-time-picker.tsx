@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar } from '@/components/ui/calendar';
 import { DateTime } from 'luxon';
 import { CalendarIcon } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+} from '@workspace/ui/components/popover';
+import { Button } from '@workspace/ui/components/button';
+import { Calendar } from '@workspace/ui/components/calendar';
+import { Input } from '@workspace/ui/components/input';
 
 type DateTimePickerProps = {
   value?: Date;
@@ -44,7 +44,7 @@ export const DateTimePicker = ({
     if (newDate && time) {
       const [hours, minutes] = time.split(':').map(Number);
       const datetime = new Date(newDate);
-      datetime.setHours(hours, minutes);
+      datetime.setHours(hours!, minutes);
       onChange(datetime);
     }
   };
@@ -56,7 +56,7 @@ export const DateTimePicker = ({
     if (date && newTime) {
       const [hours, minutes] = newTime.split(':').map(Number);
       const datetime = new Date(date);
-      datetime.setHours(hours, minutes);
+      datetime.setHours(hours!, minutes);
       onChange(datetime);
     }
   };
