@@ -71,10 +71,8 @@ export function useSignDocumentContract(): FormApprovalHookResult {
         throw new Error('Wallet not connected');
       }
 
-      // Validation
-      if (!validateFormId(formId)) {
-        throw new Error('Form ID is too long');
-      }
+      // We're no longer validating form ID length here since we'll hash it if it's too long
+      // But still validate metadata length
       if (metadata && !validateMetadata(metadata)) {
         throw new Error('Metadata is too long');
       }

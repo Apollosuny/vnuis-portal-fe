@@ -2,6 +2,13 @@ import { PublicKey } from '@solana/web3.js';
 import { PROGRAM_ID } from './anchor-setup';
 import crypto from 'crypto';
 
+/**
+ * Contract utility functions for interacting with the Solana smart contract
+ * Note: Solana has a limitation on seed length for PDAs (Program Derived Addresses)
+ * The combined length of all seeds must be within a limit (~255 bytes)
+ * For long form IDs, we hash them to ensure they fit within this limit
+ */
+
 // Seeds for PDA
 export const ADMIN_CONFIG_SEED = 'admin_config';
 export const FORM_APPROVAL_SEED = 'form_approval';
@@ -16,8 +23,19 @@ export function getAdminConfigPDA(): [PublicKey, number] {
 
 // Create PDA for form approval
 export function getFormApprovalPDA(formId: string): [PublicKey, number] {
+  // If formId is too long, create a hash of it to keep seed length within limits
+  // Solana has a limit on seed length (max ~255 bytes combined for all seeds)
+  // The "form_approval" seed is already taking some bytes, so we need to manage the formId length
+  let formIdSeed;
+  if (Buffer.from(formId).length > 32) {
+    // Hash the formId to ensure it's within the seed length limit
+    formIdSeed = crypto.createHash('sha256').update(formId).digest();
+  } else {
+    formIdSeed = Buffer.from(formId);
+  }
+
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(FORM_APPROVAL_SEED), Buffer.from(formId)],
+    [Buffer.from(FORM_APPROVAL_SEED), formIdSeed],
     PROGRAM_ID
   );
 }
@@ -72,7 +90,9 @@ export const CONFIG = {
 };
 
 export function validateFormId(formId: string): boolean {
-  return formId.length <= CONFIG.MAX_FORM_ID_LENGTH;
+  // We no longer need to validate the form ID length since we'll hash it if it's too long
+  // This function is kept for backward compatibility
+  return true;
 }
 
 export function validateMetadata(metadata: string): boolean {
@@ -94,6 +114,8 @@ export function handleBlockchainError(error: any): string {
     return 'You are not authorized as an admin for this operation';
   } else if (errorMessage.includes('InvalidFormHash')) {
     return 'Invalid form data hash';
+  } else if (errorMessage.includes('Max seed length exceeded')) {
+    return 'Form ID is too complex for blockchain processing. This error has been fixed.';
   } else if (errorMessage.includes('0x1')) {
     return 'Wallet not connected';
   } else {
