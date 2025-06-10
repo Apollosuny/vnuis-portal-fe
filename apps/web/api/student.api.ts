@@ -1,11 +1,22 @@
 import { Student } from '@/types/user.types';
 import { nexusAxios } from '@/configs/axios.config';
 
-const BASE_URL = '/students';
+const BASE_URL = '/student';
+
+// Define response type for paginated students
+interface StudentListResponse {
+  items: Student[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 
 export const studentApi = {
-  getStudents: async (): Promise<Student[]> => {
-    const response = await nexusAxios.get<Student[]>(BASE_URL);
+  getStudents: async (): Promise<StudentListResponse> => {
+    const response = await nexusAxios.get<StudentListResponse>(BASE_URL);
     return response.data;
   },
 

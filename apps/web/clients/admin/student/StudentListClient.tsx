@@ -37,11 +37,14 @@ import { Badge } from '@workspace/ui/components/badge';
 
 export const StudentListClient = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: students = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['students'],
     queryFn: () => studentApi.getStudents(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Extract students array from response
+  const students = data?.items || [];
 
   // Filter students based on search term
   const filteredStudents = students.filter(
