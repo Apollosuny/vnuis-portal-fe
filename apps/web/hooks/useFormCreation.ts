@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
 import { useQueryClient } from '@tanstack/react-query';
+import { slugify } from '@/utils/slugify';
 
 // Create a validation schema for the form
 const schema = yup.object().shape({
@@ -97,6 +98,17 @@ export const useFormCreation = (onSuccess?: (form: any) => void) => {
     defaultValues,
     mode: 'onChange',
   });
+
+  // Watch the form name to generate slug
+  const formName = watch('name');
+
+  // Auto-generate slug from form name
+  useEffect(() => {
+    if (formName) {
+      const generatedSlug = slugify(formName);
+      setValue('slug', generatedSlug);
+    }
+  }, [formName, setValue]);
 
   const shouldDisableButton = useMemo(
     () => !isDirty || !isValid || isLoading,

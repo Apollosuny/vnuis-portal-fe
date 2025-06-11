@@ -178,7 +178,7 @@ export const FormCreationClient = () => {
                   htmlFor='slug'
                   className='block text-sm font-medium mb-1 text-foreground'
                 >
-                  Slug *
+                  Slug * (Auto-generated)
                 </label>
                 <Controller
                   name='slug'
@@ -189,8 +189,9 @@ export const FormCreationClient = () => {
                         {...field}
                         id='slug'
                         type='text'
-                        className='w-full bg-background border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors'
-                        placeholder='Enter form slug (URL-friendly identifier)'
+                        className='w-full bg-background border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors opacity-70'
+                        placeholder='Auto-generated from form name'
+                        readOnly
                       />
                       {errors.slug && (
                         <p className='text-destructive text-sm mt-1'>
