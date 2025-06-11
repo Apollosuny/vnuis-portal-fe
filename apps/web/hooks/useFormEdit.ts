@@ -17,11 +17,12 @@ export const useFormEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [form, setForm] = useState<AdministrativeProceduresForm | null>(null);
-  const [isSlugEditable, setIsSlugEditable] = useState(false);
   const [isSlugUnique, setIsSlugUnique] = useState(true);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [originalSlug, setOriginalSlug] = useState<string>();
+  // Slug should never be editable
+  const isSlugEditable = false;
 
   type FormValues = yup.InferType<typeof formSchema>;
 
@@ -103,14 +104,14 @@ export const useFormEdit = () => {
     validateSlug();
   }, [debouncedSlug, params.id, isInitialLoad, originalSlug]);
 
-  // Generate slug from name
+  // Generate slug from name - always auto-generate regardless of isSlugEditable
   useEffect(() => {
-    if (formName && !isSlugEditable) {
+    if (formName) {
       const generatedSlug = slugify(formName);
       // Ensure we never set undefined or null value
       setValue('slug', generatedSlug || '');
     }
-  }, [formName, isSlugEditable, setValue]);
+  }, [formName, setValue]);
 
   useEffect(() => {
     const fetchForm = async () => {
@@ -132,10 +133,10 @@ export const useFormEdit = () => {
         // Reset the form with the copied data
         reset(formDataCopy);
 
-        // Force the slug value to be set explicitly (with a small delay to ensure DOM is updated)
+        // Set the form name first, then let the slug be auto-generated
         setTimeout(() => {
-          setValue('slug', formDataCopy.slug);
-          console.log('Explicitly set slug to:', formDataCopy.slug);
+          // The slug will be auto-generated from the name via our effect
+          console.log('Form name loaded, slug will be auto-generated');
         }, 50);
 
         // Save the original slug for comparison
@@ -184,13 +185,12 @@ export const useFormEdit = () => {
     }
   };
 
-  // Make slug editable if needed
+  // This function now does nothing as slug should never be editable
   const handleMakeSlugEditable = () => {
-    setIsSlugEditable(true);
-    // Store current slug as original if user starts editing to avoid unnecessary validation
-    if (!originalSlug && formSlug) {
-      setOriginalSlug(formSlug);
-    }
+    // No-op function - slug is never editable
+    toast.info(
+      'Slug is automatically generated from form name and cannot be edited manually'
+    );
   };
 
   const shouldDisableButton = isLoading || !isSlugUnique;

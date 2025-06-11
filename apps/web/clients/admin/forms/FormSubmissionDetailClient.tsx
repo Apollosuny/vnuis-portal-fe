@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@workspace/ui/components/alert-dialog';
+import { Checkbox } from '@workspace/ui/components/checkbox';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -31,16 +32,15 @@ import {
   User,
   Calendar,
   Loader2,
+  Wallet,
 } from 'lucide-react';
-import {
-  getSubmissionById,
-  approveFormSubmission,
-  rejectFormSubmission,
-} from '@/api/form-submission.api';
+import { getSubmissionById } from '@/api/form-submission.api';
 import { formatDate } from '@/utils/date-utils';
 import { toast } from 'sonner';
 import { FormSubmissionStatus } from '@/types/enums';
 import { AdministrativeProceduresFormSubmission } from '@/types/form-submission.types';
+import { useFormApproval } from '@/hooks/useFormApproval';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 
 export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
   const router = useRouter();
@@ -54,6 +54,16 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
   );
   const [actionLoading, setActionLoading] = useState(false);
   const [remarks, setRemarks] = useState<string>('');
+  const [useBlockchain, setUseBlockchain] = useState(false);
+
+  const {
+    approveFormSubmission,
+    rejectFormSubmission,
+    isWalletConnected,
+    connectWallet,
+    isLoading: formApprovalLoading,
+    blockchainLoading,
+  } = useFormApproval();
 
   useEffect(() => {
     const fetchSubmission = async () => {
@@ -88,13 +98,24 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
       let updatedSubmission;
 
       if (actionType === 'approve') {
+        if (useBlockchain && !isWalletConnected) {
+          toast.error('Please connect your wallet to sign with blockchain');
+          connectWallet();
+          setActionLoading(false);
+          return;
+        }
+
         try {
-          // Check if the API is available
+          // Use the integrated form approval hook
           updatedSubmission = await approveFormSubmission(
             submission.id,
-            remarks
+            submission.result || {},
+            {
+              useBlockchain,
+              remarks,
+              metadata: `Form ${submission.form?.name} approved for ${submission.student?.name || 'student'} at ${new Date().toISOString()}`,
+            }
           );
-          toast.success('Form submission approved successfully');
 
           // Force refetch submission to get the latest data
           const refreshedSubmission = await getSubmissionById(submission.id);
@@ -105,26 +126,24 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
           }
         } catch (err) {
           console.error('Error approving submission:', err);
-          toast.error(
-            'Failed to approve the submission. The API endpoint may not be available.'
-          );
+          toast.error('Failed to approve submission. Please try again.');
           setActionLoading(false);
           return;
         }
       } else {
-        // For rejection, remarks are typically required
-        if (!remarks.trim() && actionType === 'reject') {
+        // For rejection
+        if (!remarks.trim()) {
           toast.error('Please provide a reason for rejection');
           setActionLoading(false);
           return;
         }
+
         try {
-          // Check if the API is available
+          // Use the form approval hook for consistency
           updatedSubmission = await rejectFormSubmission(
             submission.id,
             remarks
           );
-          toast.success('Form submission rejected successfully');
 
           // Force refetch submission to get the latest data
           const refreshedSubmission = await getSubmissionById(submission.id);
@@ -135,19 +154,15 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
           }
         } catch (err) {
           console.error('Error rejecting submission:', err);
-          toast.error(
-            'Failed to reject the submission. The API endpoint may not be available.'
-          );
+          toast.error('Failed to reject submission. Please try again.');
           setActionLoading(false);
           return;
         }
       }
 
-      // Update the local state with the response from the API
-      setSubmission(updatedSubmission);
-
-      // Reset remarks field
+      // Reset fields
       setRemarks('');
+      setUseBlockchain(false);
     } catch (err) {
       console.error(`Error ${actionType}ing submission:`, err);
       toast.error(`Failed to ${actionType} submission. Please try again.`);
@@ -206,28 +221,6 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
           <Button variant='ghost' onClick={handleBack} className='px-2'>
             <ArrowLeft className='mr-2 h-4 w-4' /> Back to Submissions
           </Button>
-
-          <div className='flex gap-2'>
-            {submission.status === FormSubmissionStatus.PENDING && (
-              <>
-                <Button
-                  variant='default'
-                  className='bg-emerald-600 hover:bg-emerald-700'
-                  onClick={() => openActionDialog('approve')}
-                >
-                  <CheckCircle2 className='mr-2 h-4 w-4' />
-                  Approve
-                </Button>
-                <Button
-                  variant='destructive'
-                  onClick={() => openActionDialog('reject')}
-                >
-                  <XCircle className='mr-2 h-4 w-4' />
-                  Reject
-                </Button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* Submission Overview Card */}
@@ -437,7 +430,7 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className='py-4'>
+          <div className='py-4 space-y-4'>
             <label htmlFor='remarks' className='block text-sm font-medium mb-2'>
               {actionType === 'approve'
                 ? 'Comments (optional)'
@@ -456,6 +449,48 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
               }
               required={actionType === 'reject'}
             />
+
+            {actionType === 'approve' && (
+              <div className='mt-4'>
+                <div className='flex items-center space-x-2'>
+                  <Checkbox
+                    id='use-blockchain'
+                    checked={useBlockchain}
+                    onCheckedChange={(checked) => setUseBlockchain(!!checked)}
+                  />
+                  <div className='grid gap-1'>
+                    <label
+                      htmlFor='use-blockchain'
+                      className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                    >
+                      Sign with blockchain
+                    </label>
+                    <p className='text-xs text-muted-foreground'>
+                      This will create an immutable record of this approval on
+                      Solana blockchain
+                    </p>
+                  </div>
+                </div>
+
+                {useBlockchain && !isWalletConnected && (
+                  <div className='mt-2 bg-yellow-50 p-2 rounded-md flex items-center justify-between'>
+                    <p className='text-xs text-yellow-700'>
+                      You need to connect a wallet to sign with blockchain
+                    </p>
+                    <Button
+                      variant='secondary'
+                      size='sm'
+                      onClick={connectWallet}
+                      type='button'
+                      className='flex items-center space-x-1'
+                    >
+                      <Wallet className='w-3 h-3' />
+                      <span>Connect Wallet</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -465,7 +500,11 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
             <AlertDialogAction
               onClick={handleAction}
               disabled={
-                actionLoading || (actionType === 'reject' && !remarks.trim())
+                actionLoading ||
+                formApprovalLoading ||
+                blockchainLoading ||
+                (actionType === 'reject' && !remarks.trim()) ||
+                (useBlockchain && !isWalletConnected)
               }
               className={
                 actionType === 'approve'
@@ -473,13 +512,19 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
                   : ''
               }
             >
-              {actionLoading ? (
+              {actionLoading || formApprovalLoading || blockchainLoading ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  Processing...
+                  {useBlockchain
+                    ? 'Processing Blockchain Transaction...'
+                    : 'Processing...'}
                 </>
               ) : actionType === 'approve' ? (
-                'Approve'
+                useBlockchain ? (
+                  'Approve & Sign on Blockchain'
+                ) : (
+                  'Approve'
+                )
               ) : (
                 'Reject'
               )}

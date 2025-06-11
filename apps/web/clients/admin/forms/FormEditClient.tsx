@@ -227,25 +227,16 @@ export const FormEditClient = () => {
                       <input
                         id='slug'
                         type='text'
-                        disabled={!isSlugEditable}
+                        disabled={true}
                         value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value)}
                         onBlur={field.onBlur}
                         name={field.name}
                         ref={field.ref}
-                        className={`w-full bg-background border ${!isSlugUnique && !isInitialLoad ? 'border-destructive' : 'border-input'} text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors ${!isSlugEditable ? 'bg-muted cursor-not-allowed' : ''}`}
-                        placeholder='Enter form slug'
-                        readOnly={!isSlugEditable}
+                        className='w-full bg-muted border border-input text-foreground rounded-md p-2 focus:ring-2 focus:ring-ring focus:border-transparent transition-colors opacity-70 cursor-not-allowed'
+                        placeholder='Auto-generated from form name'
+                        readOnly={true}
                       />
-                      {!isSlugEditable && !isLoading && (
-                        <button
-                          type='button'
-                          onClick={handleMakeSlugEditable}
-                          className='absolute right-2 top-1/2 -translate-y-1/2 text-xs text-primary hover:underline'
-                        >
-                          Edit
-                        </button>
-                      )}
                       {isCheckingSlug && (
                         <div className='absolute right-2 top-1/2 -translate-y-1/2'>
                           <div className='h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent'></div>
