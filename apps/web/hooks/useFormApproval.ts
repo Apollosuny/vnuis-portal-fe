@@ -46,13 +46,9 @@ export function useFormApproval(): UseFormApprovalHookResult {
       setError(null);
 
       try {
-        // First, approve the form through the normal API
-        const approvedSubmission = await approveFormSubmissionApi(
-          id,
-          options.remarks
-        );
+        // First handle blockchain signing if enabled
+        let txInfo = null;
 
-        // If blockchain signing is enabled, sign the form on blockchain too
         if (options.useBlockchain) {
           if (!isWalletConnected) {
             toast.error(
@@ -61,8 +57,8 @@ export function useFormApproval(): UseFormApprovalHookResult {
             throw new Error('Wallet not connected');
           }
 
+          // Submit the form data to blockchain FIRST
           try {
-            // Submit the form data to blockchain
             const { tx, formApprovalPda } = await signFormSubmission(
               id, // Using submission ID as formId for uniqueness
               formData,
@@ -70,28 +66,42 @@ export function useFormApproval(): UseFormApprovalHookResult {
                 `Form submission ${id} approved at ${new Date().toISOString()}`
             );
 
-            // Record the blockchain transaction in our database
-            if (!approvedSubmission.handleByOperatorId) {
-              throw new Error('Missing operator ID for blockchain approval');
-            }
-
-            await recordBlockchainApproval(id, tx, {
-              formId: id,
-              signer: new PublicKey(approvedSubmission.handleByOperatorId),
-              approvedAt: Date.now(),
-              metadata: options.metadata || '',
-            });
-
-            toast.success(
-              'Form approved and signed on blockchain successfully!'
-            );
+            // Store transaction info for later database recording
+            txInfo = {
+              tx,
+              formApprovalPda,
+              timestamp: Date.now(),
+            };
           } catch (blockchainErr: any) {
             console.error('Blockchain signing error:', blockchainErr);
-            // The form is already approved in the database, but blockchain signing failed
-            toast.error(
-              `Form approved in database, but blockchain signing failed: ${blockchainErr.message}`
+            // Do not proceed with database approval if blockchain signing fails
+            toast.error(`Blockchain signing failed: ${blockchainErr.message}`);
+            throw new Error(
+              `Blockchain signing failed: ${blockchainErr.message}`
             );
           }
+        }
+
+        // Only after successful blockchain signing (if required), approve the form in database
+        const approvedSubmission = await approveFormSubmissionApi(
+          id,
+          options.remarks
+        );
+
+        // If blockchain was used, record the transaction in our database
+        if (options.useBlockchain && txInfo) {
+          if (!approvedSubmission.handleByOperatorId) {
+            throw new Error('Missing operator ID for blockchain approval');
+          }
+
+          await recordBlockchainApproval(id, txInfo.tx, {
+            formId: id,
+            signer: new PublicKey(approvedSubmission.handleByOperatorId),
+            approvedAt: txInfo.timestamp,
+            metadata: options.metadata || '',
+          });
+
+          toast.success('Form approved and signed on blockchain successfully!');
         } else {
           toast.success('Form approved successfully.');
         }
@@ -106,7 +116,7 @@ export function useFormApproval(): UseFormApprovalHookResult {
         setIsLoading(false);
       }
     },
-    [isWalletConnected, signFormSubmission]
+    [isWalletConnected, signFormSubmission, recordBlockchainApproval]
   );
 
   const rejectFormSubmission = useCallback(

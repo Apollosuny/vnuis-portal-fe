@@ -221,28 +221,6 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
           <Button variant='ghost' onClick={handleBack} className='px-2'>
             <ArrowLeft className='mr-2 h-4 w-4' /> Back to Submissions
           </Button>
-
-          <div className='flex gap-2'>
-            {submission.status === FormSubmissionStatus.PENDING && (
-              <>
-                <Button
-                  variant='default'
-                  className='bg-emerald-600 hover:bg-emerald-700'
-                  onClick={() => openActionDialog('approve')}
-                >
-                  <CheckCircle2 className='mr-2 h-4 w-4' />
-                  Approve
-                </Button>
-                <Button
-                  variant='destructive'
-                  onClick={() => openActionDialog('reject')}
-                >
-                  <XCircle className='mr-2 h-4 w-4' />
-                  Reject
-                </Button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* Submission Overview Card */}
