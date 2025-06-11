@@ -3,11 +3,12 @@ import { AdminGuard } from '@/components/guards/admin.guard';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { Suspense } from 'react';
 
-export default function FormSubmissionDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function FormSubmissionDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   return (
     <DashboardLayout>
       <AdminGuard>

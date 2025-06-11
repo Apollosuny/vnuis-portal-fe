@@ -10,6 +10,8 @@ export const ROUTES = {
   CREATE_ROOM: '/dashboard/rooms/create',
   EVENTS: '/dashboard/events',
   CREATE_EVENT: '/dashboard/events/create',
+  STUDENTS: '/dashboard/students',
+  STUDENT_DETAIL: '/dashboard/students',
   ADMIN_BOOKINGS: '/dashboard/admin/bookings',
 
   // Student routes

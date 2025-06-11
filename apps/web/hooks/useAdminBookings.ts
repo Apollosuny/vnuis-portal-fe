@@ -29,7 +29,7 @@ export const useAdminBookings = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await roomBookingApi.getAllBookings(params);
+        const response = await roomBookingApi.getRoomBookings(params);
         setBookings(response.data);
         setPagination(response.meta);
         return response;

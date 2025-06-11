@@ -9,12 +9,13 @@ export const metadata = {
 };
 
 type EditRoomPageProps = {
-  params: {
+  params: Promise<{
     roomId: string;
-  };
+  }>;
 };
 
-export default function EditRoomPage({ params }: EditRoomPageProps) {
+export default async function EditRoomPage(props: EditRoomPageProps) {
+  const params = await props.params;
   return (
     <DashboardLayout title={`Edit Room - ${params.roomId}`}>
       <AuthenticatedGuard>
