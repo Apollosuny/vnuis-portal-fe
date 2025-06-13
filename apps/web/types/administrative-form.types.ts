@@ -25,6 +25,9 @@ export type AdministrativeProceduresForm = {
   type: string;
   isActive: boolean;
   fileUrl?: string | null;
+  pdfUrl?: string | null;
+  pdfPath?: string | null;
+  pdfFileName?: string | null;
   allowEditAfterSubmit: boolean;
   requireApproval: boolean;
   data: FormData;

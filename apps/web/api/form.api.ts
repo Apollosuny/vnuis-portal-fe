@@ -120,3 +120,21 @@ export const checkSlugUnique = async (
     return false;
   }
 };
+
+/**
+ * Updates a form with PDF attachment information
+ * @param id Form ID
+ * @param pdfData PDF attachment information
+ * @returns Updated form
+ */
+export const updateFormPdf = async (
+  id: string,
+  pdfData: {
+    pdfUrl?: string | null;
+    pdfPath?: string | null;
+    pdfFileName?: string | null;
+  }
+): Promise<AdministrativeProceduresForm> => {
+  const response = await nexusAxios.patch(`${API_ENDPOINT}/${id}/pdf`, pdfData);
+  return response.data;
+};
