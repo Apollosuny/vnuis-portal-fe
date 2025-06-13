@@ -5,7 +5,6 @@ import { AuthenticatedGuard } from '@/components/guards/authenticated.guard';
 import Image from 'next/image';
 import {
   LayoutDashboard,
-  Calendar,
   LogOut,
   Settings,
   User,
@@ -13,14 +12,22 @@ import {
   GraduationCap,
   DoorOpen,
   Clock,
+  Calendar,
   Moon,
+  Sun,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
 import { useLogout } from '@/hooks/useLogout';
+import { useUIStore } from '@/stores/ui.store';
+import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 import { UserAvatar } from '../ui/user-avatar';
+import { useEffect } from 'react';
 
 interface StudentDashboardLayoutProps {
   children: React.ReactNode;
@@ -35,6 +42,33 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   const router = useRouter();
   const { onLogout } = useLogout();
   const { theme } = useTheme();
+  const { isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } =
+    useUIStore();
+
+  // Auto-collapse sidebar on small screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Clean up
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setSidebarCollapsed]);
+
+  // Close sidebar on mobile devices when the path changes
+  useEffect(() => {
+    if (!isSidebarCollapsed && window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, [pathname, isSidebarCollapsed, setSidebarCollapsed]);
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -85,16 +119,29 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   return (
     <AuthenticatedGuard>
       <motion.div
-        className='flex h-screen bg-background'
+        className='flex h-screen bg-background overflow-hidden'
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
+        {/* Mobile Overlay */}
+        <AnimatePresence>
+          {!isSidebarCollapsed && (
+            <motion.div
+              className='fixed inset-0 bg-black/20 z-30 md:hidden'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={toggleSidebar}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Sidebar */}
         <motion.div
-          className='w-64 bg-card shadow-md hidden md:flex flex-col'
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
+          className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-card shadow-md flex flex-col fixed md:relative z-40 h-full transition-all duration-300 ease-in-out ${isSidebarCollapsed ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{
             type: 'spring',
             stiffness: 100,
@@ -102,17 +149,25 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
             delay: 0.2,
           }}
         >
+          <SidebarToggle className='hidden sm:block' />
+          <div className='flex sm:hidden absolute right-4 top-4'>
+            <Button variant='ghost' size='icon' onClick={toggleSidebar}>
+              <ChevronLeft size={18} />
+            </Button>
+          </div>
           <motion.div
-            className='px-6 py-5 border-b border-border flex items-center justify-center h-24'
+            className={`px-6 py-5 border-b border-border flex items-center justify-center h-24 ${isSidebarCollapsed ? 'px-2' : ''}`}
             whileHover={{ scale: 1.02 }}
             transition={{ type: 'spring', stiffness: 400, damping: 10 }}
           >
-            <div className='relative h-12 w-48'>
+            <div
+              className={`relative h-12 ${isSidebarCollapsed ? 'w-full' : 'w-48'}`}
+            >
               <Image
                 src='/assets/logos/logo.jpg'
                 alt='VirtuUni Nexus Logo'
                 fill
-                className={`object-contain ${theme === 'dark' ? 'filter invert' : ''}`}
+                className={`object-contain ${theme === 'dark' ? 'filter invert' : ''} ${isSidebarCollapsed ? 'scale-75' : ''}`}
                 priority
               />
             </div>
@@ -168,11 +223,13 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
           >
             <Button
               variant='ghost'
-              className='w-full justify-start text-red-500 hover:text-red-700 hover:bg-red-50/50'
+              className={`w-full ${!isSidebarCollapsed ? 'justify-start' : 'justify-center'} text-red-500 hover:text-red-700 hover:bg-red-50/50`}
               onClick={onLogout}
             >
-              <LogOut className='mr-2 h-4 w-4' />
-              Logout
+              <LogOut
+                className={`${!isSidebarCollapsed ? 'mr-2' : ''} h-4 w-4`}
+              />
+              {!isSidebarCollapsed && 'Logout'}
             </Button>
           </motion.div>
         </motion.div>
@@ -192,12 +249,20 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
             transition={{ delay: 0.5, duration: 0.3 }}
           >
             <motion.div
-              className='flex items-center'
+              className='flex items-center gap-3'
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               whileHover={{ scale: 1.02 }}
               transition={{ delay: 0.6, duration: 0.3 }}
             >
+              <Button
+                variant='ghost'
+                size='icon'
+                className='md:hidden'
+                onClick={toggleSidebar}
+              >
+                <Menu size={20} />
+              </Button>
               <motion.h1
                 className='text-2xl font-semibold'
                 initial={{ opacity: 0 }}
@@ -238,6 +303,7 @@ interface SidebarItemProps {
   label: string;
   active: boolean;
   onClick: () => void;
+  isSubItem?: boolean;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({
@@ -245,33 +311,37 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   label,
   active,
   onClick,
+  isSubItem,
 }) => {
+  const { isSidebarCollapsed } = useUIStore();
+
   return (
     <motion.button
-      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors relative ${
+      className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors cursor-pointer ${
         active
-          ? 'text-primary bg-primary/10'
-          : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-      }`}
+          ? 'bg-primary/10 text-primary'
+          : 'hover:bg-muted/50 hover:text-foreground'
+      } ${isSidebarCollapsed && !isSubItem ? 'justify-center' : ''}`}
       onClick={onClick}
-      whileHover={{ scale: 1.02, x: 4 }}
+      whileHover={{ scale: 1.02, x: isSidebarCollapsed ? 0 : 4 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
       layout
     >
       <motion.span
-        className='mr-3'
         initial={{ scale: 1 }}
         animate={{ scale: active ? 1.1 : 1, rotate: active ? 360 : 0 }}
         transition={{ duration: 0.2 }}
       >
         {icon}
       </motion.span>
-      <motion.span layout>{label}</motion.span>
+      {(!isSidebarCollapsed || isSubItem) && (
+        <motion.span layout>{label}</motion.span>
+      )}
       {active && (
         <motion.div
-          layoutId='sidebar-indicator'
-          className='absolute right-0 w-1 h-8 bg-primary rounded-l-md'
+          className={`absolute ${isSidebarCollapsed ? 'bottom-0 left-1/2 w-8 h-1 -translate-x-1/2' : 'left-0 w-1 h-6'} bg-primary rounded-full`}
+          layoutId='activeIndicator'
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -299,7 +369,7 @@ const ThemeToggle = () => {
           animate={{ rotate: theme === 'dark' ? 180 : 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 10 }}
         >
-          {theme === 'dark' ? <Calendar size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </motion.div>
       </Button>
     </motion.div>
