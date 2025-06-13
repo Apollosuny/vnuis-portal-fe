@@ -82,6 +82,7 @@ export const AnalyticsCharts = ({
   const bookingChartOptions: ApexOptions = {
     chart: {
       type: 'bar',
+      stacked: false,
     },
     xaxis: {
       categories: ['Pending', 'Approved', 'Rejected'],
@@ -91,6 +92,13 @@ export const AnalyticsCharts = ({
       bar: {
         borderRadius: 4,
         horizontal: true,
+        distributed: true,
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      style: {
+        colors: ['#fff'],
       },
     },
   };
