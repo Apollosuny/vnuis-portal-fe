@@ -7,7 +7,7 @@ import {
 import { eventApi } from '@/api/event.api';
 import { toast } from 'sonner';
 import { getAPIErrorMessage } from '@/utils/error';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 export const useEventRegistration = (
   eventId: string,
@@ -18,47 +18,42 @@ export const useEventRegistration = (
   const [eventDetails, setEventDetails] = useState<Event | null>(null);
   const queryClient = useQueryClient();
 
-  // Fetch initial data
+  // Fetch event details using React Query
+  const { data: eventData, isLoading: isEventLoading } = useQuery({
+    queryKey: ['event', eventId],
+    queryFn: async () => {
+      return await eventApi.getEvent(eventId);
+    },
+    enabled: !!eventId,
+  });
+
+  // Fetch registrations using React Query
+  const { data: registrationsData, isLoading: isRegistrationsLoading } =
+    useQuery({
+      queryKey: ['eventRegistrations', eventId],
+      queryFn: async () => {
+        return await eventApi.getEventRegistrations({ eventId });
+      },
+      enabled: !!eventId,
+    });
+
+  // Update state based on query results
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        await Promise.all([fetchEventDetails(), fetchRegistrations()]);
-      } catch (error) {
-        console.error('Error fetching event data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [eventId]);
-
-  // Fetch event details
-  const fetchEventDetails = async () => {
-    try {
-      const data = await eventApi.getEvent(eventId);
-      setEventDetails(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching event details:', error);
-      toast.error(getAPIErrorMessage(error));
-      return null;
+    if (eventData) {
+      setEventDetails(eventData);
     }
-  };
+  }, [eventData]);
 
-  // Fetch registrations
-  const fetchRegistrations = async () => {
-    try {
-      const data = await eventApi.getEventRegistrations({ eventId });
-      setRegistrations(data);
-      return data;
-    } catch (error) {
-      console.error('Error fetching registrations:', error);
-      toast.error(getAPIErrorMessage(error));
-      return [];
+  useEffect(() => {
+    if (registrationsData) {
+      setRegistrations(registrationsData);
     }
-  };
+  }, [registrationsData]);
+
+  // Update loading state based on queries
+  useEffect(() => {
+    setIsLoading(isEventLoading || isRegistrationsLoading);
+  }, [isEventLoading, isRegistrationsLoading]);
 
   // Check registration availability
   const isEventFull = useCallback(() => {
@@ -106,9 +101,7 @@ export const useEventRegistration = (
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['eventRegistrations'] });
-
-      // Refresh local state
-      await Promise.all([fetchEventDetails(), fetchRegistrations()]);
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
 
       onSuccess?.();
     } catch (error) {
@@ -130,9 +123,7 @@ export const useEventRegistration = (
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['eventRegistrations'] });
-
-      // Refresh local state
-      await Promise.all([fetchEventDetails(), fetchRegistrations()]);
+      queryClient.invalidateQueries({ queryKey: ['event', eventId] });
 
       onSuccess?.();
     } catch (error) {

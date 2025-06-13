@@ -149,8 +149,17 @@ export default function AdminDashboard() {
                 data={recentFormSubmissions}
                 columns={[
                   {
-                    accessorKey: 'student.name',
+                    accessorKey: 'student',
                     header: 'Student',
+                    cell: ({ row }) => {
+                      const student = row.getValue('student') as {
+                        firstName?: string;
+                        lastName?: string;
+                      } | null;
+                      return student
+                        ? `${student.firstName || ''} ${student.lastName || ''}`
+                        : '-';
+                    },
                   },
                   {
                     accessorKey: 'form.name',
@@ -288,8 +297,17 @@ export default function AdminDashboard() {
                 data={recentBookings}
                 columns={[
                   {
-                    accessorKey: 'student.name',
+                    accessorKey: 'student',
                     header: 'Student',
+                    cell: ({ row }) => {
+                      const student = row.getValue('student') as {
+                        firstName?: string;
+                        lastName?: string;
+                      } | null;
+                      return student
+                        ? `${student.firstName || ''} ${student.lastName || ''}`
+                        : '-';
+                    },
                   },
                   {
                     accessorKey: 'room.name',

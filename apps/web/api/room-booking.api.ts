@@ -1,3 +1,4 @@
+import { Student } from '@/types/user.types';
 import { nexusAxios } from '../configs/axios.config';
 
 export interface CreateRoomBookingDto {
@@ -36,6 +37,7 @@ export interface RoomBookingResponse {
     name: string;
     location: string;
   };
+  student?: Student;
 }
 
 export interface RoomBookingResponseWithPagination {
