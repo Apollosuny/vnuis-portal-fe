@@ -22,6 +22,7 @@ import {
   Sparkles,
   PanelRightOpen,
   PanelRight,
+  Bell,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -101,6 +102,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (pathname.includes('/bookings')) return 'bookings';
     if (pathname.includes('/events')) return 'events';
     if (pathname.includes('/students')) return 'students';
+    if (pathname.includes('/notifications')) return 'notifications';
     if (pathname.includes('/settings')) return 'settings';
     return 'overview';
   };
@@ -127,6 +129,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       case 'students':
         router.push(ROUTES.STUDENTS);
         break;
+      case 'notifications':
+        router.push('/dashboard/admin/notifications');
+        break;
       case 'settings':
         router.push('/dashboard'); // Update when settings page is available
         break;
@@ -142,6 +147,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (pathname.includes('/bookings')) return 'Room Bookings';
     if (pathname.includes('/events')) return 'Events Management';
     if (pathname.includes('/students')) return 'Student Management';
+    if (pathname.includes('/notifications')) return 'Notification Management';
     if (pathname.includes('/settings')) return 'Settings';
     return 'Dashboard Overview';
   };
@@ -322,6 +328,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 label='Students'
                 active={pathname.includes('/dashboard/students')}
                 onClick={() => router.push(ROUTES.STUDENTS)}
+              />
+              <SidebarItem
+                icon={
+                  <AnimatedIcon
+                    icon={<Bell size={18} />}
+                    animationType='pulse'
+                  />
+                }
+                label='Notifications'
+                active={activeTab === 'notifications'}
+                onClick={() => handleNavigation('notifications')}
               />
             </motion.div>
             <motion.div
