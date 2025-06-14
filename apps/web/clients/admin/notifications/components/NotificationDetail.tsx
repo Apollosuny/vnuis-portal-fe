@@ -18,73 +18,177 @@ import {
 import { Student } from '@/types/user.types';
 import { useQuery } from '@tanstack/react-query';
 import { studentApi } from '@/api/student.api';
+import { useEffect, useState } from 'react';
 
 interface NotificationDetailProps {
   notification: Notification;
   onClose: () => void;
 }
 
+// Hàm tiện ích để chuẩn hóa dữ liệu thông báo
+const normalizeNotification = (notification: Notification): Notification => {
+  // Đảm bảo type có giá trị hợp lệ và ở dạng chữ hoa
+  let type = notification.type;
+  if (type && typeof type === 'string') {
+    type = type.toUpperCase() as NotificationType;
+    if (!Object.values(NotificationType).includes(type)) {
+      type = NotificationType.GENERAL;
+    }
+  } else {
+    type = NotificationType.GENERAL;
+  }
+
+  // Đảm bảo priority có giá trị hợp lệ và ở dạng chữ hoa
+  let priority = notification.priority;
+  if (priority && typeof priority === 'string') {
+    priority = priority.toUpperCase() as NotificationPriority;
+    if (!Object.values(NotificationPriority).includes(priority)) {
+      priority = NotificationPriority.NORMAL;
+    }
+  } else {
+    priority = NotificationPriority.NORMAL;
+  }
+
+  // Đảm bảo status có giá trị hợp lệ và ở dạng chữ hoa
+  let status = notification.status;
+  if (status && typeof status === 'string') {
+    status = status.toUpperCase() as NotificationStatus;
+    if (!Object.values(NotificationStatus).includes(status)) {
+      status = NotificationStatus.DRAFT;
+    }
+  } else {
+    status = NotificationStatus.DRAFT;
+  }
+
+  // Đảm bảo targetType có giá trị hợp lệ và ở dạng chữ hoa
+  let targetType = notification.targetType;
+  if (targetType && typeof targetType === 'string') {
+    targetType = targetType.toUpperCase() as NotificationTargetType;
+    if (!Object.values(NotificationTargetType).includes(targetType)) {
+      targetType = NotificationTargetType.ALL_STUDENTS;
+    }
+  } else {
+    targetType = NotificationTargetType.ALL_STUDENTS;
+  }
+
+  // Đảm bảo createdBy được xử lý đúng cách
+  const createdBy = notification.createdBy;
+
+  return {
+    ...notification,
+    type,
+    priority,
+    status,
+    targetType,
+    // Đảm bảo createdBy luôn là một chuỗi hoặc đối tượng đã được kiểm tra
+    createdBy: createdBy || 'Không xác định',
+  };
+};
+
 export function NotificationDetail({
-  notification,
+  notification: rawNotification,
   onClose,
 }: NotificationDetailProps) {
-  const getStatusBadge = (status: NotificationStatus) => {
-    const variants = {
-      [NotificationStatus.DRAFT]: 'secondary',
-      [NotificationStatus.SCHEDULED]: 'default',
-      [NotificationStatus.SENT]: 'success',
-      [NotificationStatus.REVOKED]: 'destructive',
-    } as const;
+  // Chuẩn hóa thông báo trước khi sử dụng
+  const [notification, setNotification] = useState<Notification>(
+    normalizeNotification(rawNotification)
+  );
 
-    const labels = {
-      [NotificationStatus.DRAFT]: 'Nháp',
-      [NotificationStatus.SCHEDULED]: 'Đã lên lịch',
-      [NotificationStatus.SENT]: 'Đã gửi',
-      [NotificationStatus.REVOKED]: 'Đã thu hồi',
+  useEffect(() => {
+    // Cập nhật lại khi thông báo thay đổi
+    setNotification(normalizeNotification(rawNotification));
+  }, [rawNotification]);
+
+  const getStatusBadge = (status: NotificationStatus) => {
+    // Map uppercase DB values to our display values
+    const statusMap: Record<string, { variant: string; label: string }> = {
+      [NotificationStatus.DRAFT]: { variant: 'secondary', label: 'Nháp' },
+      [NotificationStatus.SCHEDULED]: {
+        variant: 'default',
+        label: 'Đã lên lịch',
+      },
+      [NotificationStatus.SENT]: { variant: 'success', label: 'Đã gửi' },
+      [NotificationStatus.REVOKED]: {
+        variant: 'destructive',
+        label: 'Đã thu hồi',
+      },
     };
 
-    return <Badge variant={variants[status] as any}>{labels[status]}</Badge>;
+    // In case status is not a valid enum value
+    if (!status || !Object.values(NotificationStatus).includes(status)) {
+      console.warn(`Invalid status value in NotificationDetail: ${status}`);
+      return <Badge variant='secondary'>Không xác định</Badge>;
+    }
+
+    const display = statusMap[status] || {
+      variant: 'secondary',
+      label: status,
+    };
+
+    return <Badge variant={display.variant as any}>{display.label}</Badge>;
   };
 
   const getPriorityBadge = (priority: NotificationPriority) => {
-    const variants = {
-      low: 'secondary',
-      normal: 'default',
-      high: 'warning',
-      critical: 'destructive',
-    } as const;
-
-    const labels = {
-      low: 'Thấp',
-      normal: 'Bình thường',
-      high: 'Cao',
-      critical: 'Khẩn cấp',
+    // Map uppercase DB values to our display values
+    const priorityMap: Record<string, { variant: string; label: string }> = {
+      LOW: { variant: 'secondary', label: 'Thấp' },
+      NORMAL: { variant: 'default', label: 'Bình thường' },
+      HIGH: { variant: 'warning', label: 'Cao' },
+      CRITICAL: { variant: 'destructive', label: 'Khẩn cấp' },
     };
 
-    return (
-      <Badge variant={variants[priority] as any}>{labels[priority]}</Badge>
-    );
+    // In case priority is not a valid enum value
+    if (!priority || !Object.values(NotificationPriority).includes(priority)) {
+      console.warn(`Invalid priority value in NotificationDetail: ${priority}`);
+      return <Badge variant='secondary'>Không xác định</Badge>;
+    }
+
+    const display = priorityMap[priority] || {
+      variant: 'secondary',
+      label: priority,
+    };
+
+    return <Badge variant={display.variant as any}>{display.label}</Badge>;
   };
 
   const getTypeLabel = (type: NotificationType) => {
-    const labels = {
+    const labels: Record<string, string> = {
       [NotificationType.GENERAL]: 'Tổng quát',
       [NotificationType.ACADEMIC]: 'Học tập',
       [NotificationType.EVENT]: 'Sự kiện',
       [NotificationType.SYSTEM]: 'Hệ thống',
       [NotificationType.URGENT]: 'Khẩn cấp',
     };
-    return labels[type];
+
+    // In case type is not a valid enum value
+    if (!type || !Object.values(NotificationType).includes(type)) {
+      console.warn(`Invalid type value in NotificationDetail: ${type}`);
+      return 'Không xác định';
+    }
+
+    return labels[type] || 'Không xác định';
   };
 
   const getTargetTypeLabel = (targetType: NotificationTargetType) => {
-    const labels = {
+    const labels: Record<string, string> = {
       [NotificationTargetType.ALL_STUDENTS]: 'Tất cả sinh viên',
       [NotificationTargetType.SPECIFIC_STUDENTS]: 'Sinh viên cụ thể',
       [NotificationTargetType.BY_CLASS]: 'Theo lớp',
       [NotificationTargetType.BY_MAJOR]: 'Theo ngành',
     };
-    return labels[targetType];
+
+    // In case targetType is not a valid enum value
+    if (
+      !targetType ||
+      !Object.values(NotificationTargetType).includes(targetType)
+    ) {
+      console.warn(
+        `Invalid targetType value in NotificationDetail: ${targetType}`
+      );
+      return 'Không xác định';
+    }
+
+    return labels[targetType] || 'Không xác định';
   };
 
   // Fetch students with React Query
@@ -101,6 +205,20 @@ export function NotificationDetail({
     return students.filter((student: Student) =>
       notification.readBy?.includes(student.id)
     );
+  };
+
+  // Hàm helper để hiển thị an toàn bất kỳ giá trị nào, bao gồm cả đối tượng
+  const safeDisplayValue = (value: any): string => {
+    if (value === null || value === undefined) return 'Không xác định';
+    if (typeof value === 'object') {
+      if ('username' in value) return value.username;
+      if ('firstName' in value)
+        return `${value.firstName} ${value.lastName || ''}`.trim();
+      if ('name' in value) return value.name;
+      if ('id' in value) return `ID: ${value.id}`;
+      return JSON.stringify(value);
+    }
+    return String(value);
   };
 
   const readByStudents = getReadByStudents();
@@ -158,7 +276,9 @@ export function NotificationDetail({
             </div>
             <div>
               <span className='font-medium'>Người tạo:</span>
-              <span className='ml-2'>{notification.createdBy}</span>
+              <span className='ml-2'>
+                {safeDisplayValue(notification.createdBy)}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -218,9 +338,9 @@ export function NotificationDetail({
           </CardHeader>
           <CardContent>
             <div className='flex flex-wrap gap-2'>
-              {notification.targetIds.map((targetId) => (
-                <Badge key={targetId} variant='outline'>
-                  {targetId}
+              {notification.targetIds.map((targetId, index) => (
+                <Badge key={index} variant='outline'>
+                  {safeDisplayValue(targetId)}
                 </Badge>
               ))}
             </div>
@@ -296,9 +416,7 @@ export function NotificationDetail({
                       {key.replace('_', ' ')}:
                     </span>
                     <span className='ml-2 text-sm'>
-                      {typeof value === 'object'
-                        ? JSON.stringify(value)
-                        : String(value)}
+                      {safeDisplayValue(value)}
                     </span>
                   </div>
                 ))}

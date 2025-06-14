@@ -37,6 +37,62 @@ export type QueryNotificationDto = {
 export const notificationApi = {
   getNotifications: async (params?: QueryNotificationDto) => {
     const response = await nexusAxios.get('/notifications', { params });
+
+    console.log('Raw API response:', response);
+    console.log('Notification data from API:', response.data);
+
+    // Ensure we have proper data
+    if (Array.isArray(response.data)) {
+      const processedData = response.data.map((notification: any) => {
+        // Process type field (ensure uppercase)
+        let type = notification.type;
+        if (type && typeof type === 'string') {
+          type = type.toUpperCase();
+          // If type is not a valid enum value, use default
+          if (!Object.values(NotificationType).includes(type)) {
+            type = NotificationType.GENERAL;
+          }
+        } else {
+          type = NotificationType.GENERAL;
+        }
+
+        // Process priority field (ensure uppercase)
+        let priority = notification.priority;
+        if (priority && typeof priority === 'string') {
+          priority = priority.toUpperCase();
+          // If priority is not a valid enum value, use default
+          if (!Object.values(NotificationPriority).includes(priority)) {
+            priority = NotificationPriority.NORMAL;
+          }
+        } else {
+          priority = NotificationPriority.NORMAL;
+        }
+
+        // Process status field (ensure uppercase)
+        let status = notification.status;
+        if (status && typeof status === 'string') {
+          status = status.toUpperCase();
+          // If status is not a valid enum value, use default
+          if (!Object.values(NotificationStatus).includes(status)) {
+            status = NotificationStatus.DRAFT;
+          }
+        } else {
+          status = NotificationStatus.DRAFT;
+        }
+
+        // Return the processed notification
+        return {
+          ...notification,
+          type,
+          priority,
+          status,
+        };
+      });
+
+      console.log('Processed notification data:', processedData);
+      return processedData;
+    }
+
     return response.data;
   },
 

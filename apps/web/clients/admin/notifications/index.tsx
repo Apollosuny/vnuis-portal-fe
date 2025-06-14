@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Plus,
   Send,
@@ -10,6 +10,10 @@ import {
   Eye,
   Edit,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { DateTime } from 'luxon';
 import {
@@ -60,6 +64,7 @@ export default function NotificationManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -67,17 +72,44 @@ export default function NotificationManagementPage() {
   const [editingNotification, setEditingNotification] =
     useState<Notification | null>(null);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
   // Fetch notifications using React Query
   const {
-    data: notifications = [],
+    data: notificationsData,
     isLoading: isLoadingNotifications,
     error: notificationsError,
   } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => notificationApi.getNotifications(),
+    queryFn: async () => {
+      const result = await notificationApi.getNotifications();
+      console.log('Notifications data received:', result);
+      // Check if any notification has missing fields
+      if (result && Array.isArray(result) && result.length > 0) {
+        const sample = result[0];
+        console.log('Sample notification:', sample);
+        console.log(
+          'Fields check - type:',
+          sample.type,
+          'priority:',
+          sample.priority,
+          'status:',
+          sample.status
+        );
+      }
+      return result;
+    },
     staleTime: 60000, // 1 minute
     refetchOnWindowFocus: true,
   });
+
+  // Ensure notifications is an array with proper default
+  const notifications = Array.isArray(notificationsData)
+    ? notificationsData
+    : [];
 
   // Fetch notification stats using React Query
   const {
@@ -130,8 +162,55 @@ export default function NotificationManagementPage() {
     toast.error('Failed to load notification statistics');
   }
 
+  // Process and normalize notifications data
+  const processedNotifications = notifications.map(
+    (notification: any): Notification => {
+      // Ensure type has a valid value and is uppercase
+      let type = notification.type;
+      if (type && typeof type === 'string') {
+        type = type.toUpperCase();
+        if (!Object.values(NotificationType).includes(type)) {
+          type = NotificationType.GENERAL;
+        }
+      } else {
+        type = NotificationType.GENERAL;
+      }
+
+      // Ensure priority has a valid value and is uppercase
+      let priority = notification.priority;
+      if (priority && typeof priority === 'string') {
+        priority = priority.toUpperCase();
+        if (!Object.values(NotificationPriority).includes(priority)) {
+          priority = NotificationPriority.NORMAL;
+        }
+      } else {
+        priority = NotificationPriority.NORMAL;
+      }
+
+      // Ensure status has a valid value and is uppercase
+      let status = notification.status;
+      if (status && typeof status === 'string') {
+        status = status.toUpperCase();
+        if (!Object.values(NotificationStatus).includes(status)) {
+          status = NotificationStatus.DRAFT;
+        }
+      } else {
+        status = NotificationStatus.DRAFT;
+      }
+
+      return {
+        ...notification,
+        type,
+        priority,
+        status,
+      };
+    }
+  );
+
+  console.log('Processed notifications:', processedNotifications);
+
   // Filter notifications
-  const filteredNotifications = notifications.filter(
+  const filteredNotifications = processedNotifications.filter(
     (notification: Notification) => {
       const matchesSearch =
         notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,9 +219,33 @@ export default function NotificationManagementPage() {
         statusFilter === 'all' || notification.status === statusFilter;
       const matchesType =
         typeFilter === 'all' || notification.type === typeFilter;
+      const matchesPriority =
+        priorityFilter === 'all' || notification.priority === priorityFilter;
 
-      return matchesSearch && matchesStatus && matchesType;
+      return matchesSearch && matchesStatus && matchesType && matchesPriority;
     }
+  );
+
+  // Paginate the notifications
+  useEffect(() => {
+    setTotalPages(
+      Math.max(1, Math.ceil(filteredNotifications.length / pageSize))
+    );
+    // Reset to first page when filters change
+    setPage(1);
+  }, [
+    filteredNotifications.length,
+    pageSize,
+    searchTerm,
+    statusFilter,
+    typeFilter,
+    priorityFilter,
+  ]);
+
+  const startIndex = (page - 1) * pageSize;
+  const paginatedNotifications = filteredNotifications.slice(
+    startIndex,
+    startIndex + pageSize
   );
 
   // Send notification mutation
@@ -286,52 +389,73 @@ export default function NotificationManagementPage() {
   };
 
   const getStatusBadge = (status: NotificationStatus) => {
-    const variants = {
-      [NotificationStatus.DRAFT]: 'secondary',
-      [NotificationStatus.SCHEDULED]: 'default',
-      [NotificationStatus.SENT]: 'success',
-      [NotificationStatus.REVOKED]: 'destructive',
-    } as const;
-
-    const labels = {
-      [NotificationStatus.DRAFT]: 'Draft',
-      [NotificationStatus.SCHEDULED]: 'Scheduled',
-      [NotificationStatus.SENT]: 'Sent',
-      [NotificationStatus.REVOKED]: 'Revoked',
+    // Map uppercase DB values to our display values
+    const statusMap: Record<string, { variant: string; label: string }> = {
+      [NotificationStatus.DRAFT]: { variant: 'secondary', label: 'Draft' },
+      [NotificationStatus.SCHEDULED]: {
+        variant: 'default',
+        label: 'Scheduled',
+      },
+      [NotificationStatus.SENT]: { variant: 'success', label: 'Sent' },
+      [NotificationStatus.REVOKED]: {
+        variant: 'destructive',
+        label: 'Revoked',
+      },
     };
 
-    return <Badge variant={variants[status] as any}>{labels[status]}</Badge>;
+    // In case status is not a valid enum value
+    if (!status || !Object.values(NotificationStatus).includes(status)) {
+      console.warn(`Invalid status value: ${status}`);
+      return <Badge variant='secondary'>Unknown</Badge>;
+    }
+
+    const display = statusMap[status] || {
+      variant: 'secondary',
+      label: status,
+    };
+
+    return <Badge variant={display.variant as any}>{display.label}</Badge>;
   };
 
   const getPriorityBadge = (priority: NotificationPriority) => {
-    const variants = {
-      low: 'secondary',
-      normal: 'default',
-      high: 'warning',
-      critical: 'destructive',
-    } as const;
-
-    const labels = {
-      low: 'Low',
-      normal: 'Normal',
-      high: 'High',
-      critical: 'Critical',
+    // Map uppercase DB values to our display values
+    const priorityMap: Record<string, { variant: string; label: string }> = {
+      LOW: { variant: 'secondary', label: 'Low' },
+      NORMAL: { variant: 'default', label: 'Normal' },
+      HIGH: { variant: 'warning', label: 'High' },
+      CRITICAL: { variant: 'destructive', label: 'Critical' },
     };
 
-    return (
-      <Badge variant={variants[priority] as any}>{labels[priority]}</Badge>
-    );
+    // In case priority is not a valid enum value
+    if (!priority || !Object.values(NotificationPriority).includes(priority)) {
+      console.warn(`Invalid priority value: ${priority}`);
+      return <Badge variant='secondary'>Unknown</Badge>;
+    }
+
+    const display = priorityMap[priority] || {
+      variant: 'secondary',
+      label: priority,
+    };
+
+    return <Badge variant={display.variant as any}>{display.label}</Badge>;
   };
 
   const getTypeLabel = (type: NotificationType) => {
-    const labels = {
+    const labels: Record<string, string> = {
       [NotificationType.GENERAL]: 'General',
       [NotificationType.ACADEMIC]: 'Academic',
       [NotificationType.EVENT]: 'Event',
       [NotificationType.SYSTEM]: 'System',
       [NotificationType.URGENT]: 'Urgent',
     };
-    return labels[type];
+
+    // In case type is not a valid enum value
+    if (!type || !Object.values(NotificationType).includes(type)) {
+      console.warn(`Invalid type value: ${type}`);
+      return 'Unknown';
+    }
+
+    return labels[type] || 'Unknown';
   };
 
   return (
@@ -388,10 +512,10 @@ export default function NotificationManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='all'>All Status</SelectItem>
-                  <SelectItem value='draft'>Draft</SelectItem>
-                  <SelectItem value='scheduled'>Scheduled</SelectItem>
-                  <SelectItem value='sent'>Sent</SelectItem>
-                  <SelectItem value='revoked'>Revoked</SelectItem>
+                  <SelectItem value='DRAFT'>Draft</SelectItem>
+                  <SelectItem value='SCHEDULED'>Scheduled</SelectItem>
+                  <SelectItem value='SENT'>Sent</SelectItem>
+                  <SelectItem value='REVOKED'>Revoked</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -400,11 +524,23 @@ export default function NotificationManagementPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='all'>All Types</SelectItem>
-                  <SelectItem value='general'>General</SelectItem>
-                  <SelectItem value='academic'>Academic</SelectItem>
-                  <SelectItem value='event'>Event</SelectItem>
-                  <SelectItem value='system'>System</SelectItem>
-                  <SelectItem value='urgent'>Urgent</SelectItem>
+                  <SelectItem value='GENERAL'>General</SelectItem>
+                  <SelectItem value='ACADEMIC'>Academic</SelectItem>
+                  <SelectItem value='EVENT'>Event</SelectItem>
+                  <SelectItem value='SYSTEM'>System</SelectItem>
+                  <SelectItem value='URGENT'>Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className='w-[180px]'>
+                  <SelectValue placeholder='Priority' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Priorities</SelectItem>
+                  <SelectItem value='LOW'>Low</SelectItem>
+                  <SelectItem value='NORMAL'>Normal</SelectItem>
+                  <SelectItem value='HIGH'>High</SelectItem>
+                  <SelectItem value='CRITICAL'>Critical</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -448,7 +584,7 @@ export default function NotificationManagementPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredNotifications.map((notification: Notification) => (
+                  paginatedNotifications.map((notification: Notification) => (
                     <TableRow key={notification.id}>
                       <TableCell className='font-medium max-w-xs'>
                         <div className='truncate' title={notification.title}>
@@ -457,14 +593,24 @@ export default function NotificationManagementPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant='outline'>
-                          {getTypeLabel(notification.type)}
+                          {notification.type
+                            ? getTypeLabel(notification.type)
+                            : 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {getPriorityBadge(notification.priority)}
+                        {notification.priority ? (
+                          getPriorityBadge(notification.priority)
+                        ) : (
+                          <Badge variant='secondary'>Unknown</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(notification.status)}
+                        {notification.status ? (
+                          getStatusBadge(notification.status)
+                        ) : (
+                          <Badge variant='secondary'>Unknown</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {DateTime.fromISO(notification.createdAt).toFormat(
@@ -568,6 +714,83 @@ export default function NotificationManagementPage() {
                 )}
               </TableBody>
             </Table>
+
+            {/* Pagination Controls */}
+            {filteredNotifications.length > 0 && (
+              <div className='flex items-center justify-between mt-4 space-x-2'>
+                <div className='flex items-center space-x-2'>
+                  <span className='text-sm text-muted-foreground'>
+                    Showing {startIndex + 1} to{' '}
+                    {Math.min(
+                      startIndex + pageSize,
+                      filteredNotifications.length
+                    )}{' '}
+                    of {filteredNotifications.length} notifications
+                  </span>
+                </div>
+                <div className='flex items-center space-x-2'>
+                  <Select
+                    value={pageSize.toString()}
+                    onValueChange={(value) => {
+                      setPageSize(Number(value));
+                      setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className='w-[100px]'>
+                      <SelectValue placeholder='Page size' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='5'>5 per page</SelectItem>
+                      <SelectItem value='10'>10 per page</SelectItem>
+                      <SelectItem value='20'>20 per page</SelectItem>
+                      <SelectItem value='50'>50 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <nav className='flex items-center space-x-1'>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      onClick={() => setPage(1)}
+                      disabled={page === 1}
+                    >
+                      <ChevronsLeft className='h-4 w-4' />
+                      <span className='sr-only'>First page</span>
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className='h-4 w-4' />
+                      <span className='sr-only'>Previous page</span>
+                    </Button>
+                    <div className='flex items-center justify-center text-sm font-medium px-4'>
+                      Page {page} of {totalPages}
+                    </div>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronRight className='h-4 w-4' />
+                      <span className='sr-only'>Next page</span>
+                    </Button>
+                    <Button
+                      variant='outline'
+                      size='icon'
+                      onClick={() => setPage(totalPages)}
+                      disabled={page === totalPages}
+                    >
+                      <ChevronsRight className='h-4 w-4' />
+                      <span className='sr-only'>Last page</span>
+                    </Button>
+                  </nav>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -17,32 +17,32 @@ export interface Notification {
 }
 
 export enum NotificationType {
-  GENERAL = 'general',
-  ACADEMIC = 'academic',
-  EVENT = 'event',
-  SYSTEM = 'system',
-  URGENT = 'urgent',
+  GENERAL = 'GENERAL',
+  ACADEMIC = 'ACADEMIC',
+  EVENT = 'EVENT',
+  SYSTEM = 'SYSTEM',
+  URGENT = 'URGENT',
 }
 
 export enum NotificationPriority {
-  LOW = 'low',
-  NORMAL = 'normal',
-  HIGH = 'high',
-  CRITICAL = 'critical',
+  LOW = 'LOW',
+  NORMAL = 'NORMAL',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
 }
 
 export enum NotificationStatus {
-  DRAFT = 'draft',
-  SCHEDULED = 'scheduled',
-  SENT = 'sent',
-  REVOKED = 'revoked',
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  SENT = 'SENT',
+  REVOKED = 'REVOKED',
 }
 
 export enum NotificationTargetType {
-  ALL_STUDENTS = 'all_students',
-  SPECIFIC_STUDENTS = 'specific_students',
-  BY_CLASS = 'by_class',
-  BY_MAJOR = 'by_major',
+  ALL_STUDENTS = 'ALL_STUDENTS',
+  SPECIFIC_STUDENTS = 'SPECIFIC_STUDENTS',
+  BY_CLASS = 'BY_CLASS',
+  BY_MAJOR = 'BY_MAJOR',
 }
 
 export interface NotificationStats {
