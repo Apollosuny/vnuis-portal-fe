@@ -18,6 +18,7 @@ import {
   Menu,
   ChevronLeft,
   ChevronRight,
+  Bell,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +29,8 @@ import { useUIStore } from '@/stores/ui.store';
 import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 import { UserAvatar } from '../ui/user-avatar';
 import { useEffect } from 'react';
+import { NotificationIcon } from '../notifications/NotificationIcon';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface StudentDashboardLayoutProps {
   children: React.ReactNode;
@@ -76,6 +79,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
     if (pathname.includes('/bookings')) return 'bookings';
     if (pathname.includes('/events')) return 'events';
     if (pathname.includes('/settings')) return 'settings';
+    if (pathname.includes('/notifications')) return 'notifications';
     return 'overview';
   };
 
@@ -98,6 +102,9 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
       case 'events':
         router.push(ROUTES.STUDENT_EVENTS);
         break;
+      case 'notifications':
+        router.push(ROUTES.STUDENT_NOTIFICATIONS);
+        break;
       case 'settings':
         router.push(ROUTES.STUDENT_SETTINGS);
         break;
@@ -112,6 +119,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
     if (pathname.includes('/bookings')) return 'My Bookings';
     if (pathname.includes('/events')) return 'Event Registration';
     if (pathname.includes('/settings')) return 'Settings';
+    if (pathname.includes('/notifications')) return 'Notifications';
 
     return 'Student Dashboard';
   };
@@ -226,6 +234,12 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               onClick={() => handleNavigation('events')}
             />
             <SidebarItem
+              icon={<Bell size={20} />}
+              label='Notifications'
+              active={activeTab === 'notifications'}
+              onClick={() => handleNavigation('notifications')}
+            />
+            <SidebarItem
               icon={<Settings size={20} />}
               label='Settings'
               active={activeTab === 'settings'}
@@ -296,6 +310,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               transition={{ delay: 0.7, duration: 0.3 }}
             >
               <ThemeToggle />
+              <NotificationIcon />
               <UserAvatar />
             </motion.div>
           </motion.header>
@@ -331,6 +346,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
   isSubItem,
 }) => {
   const { isSidebarCollapsed } = useUIStore();
+  const { unreadCount } = useNotifications();
+  const hasNotifications = label === 'Notifications' && unreadCount > 0;
 
   return (
     <motion.button
@@ -349,38 +366,60 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
       }}
       layout
     >
-      <motion.span
-        initial={{ scale: 1 }}
-        animate={{
-          scale: active ? 1.1 : 1,
-          rotate: active ? 360 : 0,
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 300,
-          damping: 15,
-          duration: 0.35,
-        }}
-        className={active ? 'text-primary' : ''}
-      >
-        {icon}
-      </motion.span>
-      {(!isSidebarCollapsed || isSubItem) && (
+      <div className='relative'>
         <motion.span
-          layout
-          className='whitespace-nowrap origin-left'
-          initial={{ opacity: 0, x: -5 }}
+          initial={{ scale: 1 }}
           animate={{
-            opacity: 1,
-            x: 0,
+            scale: active ? 1.1 : 1,
+            rotate: active ? 360 : 0,
           }}
           transition={{
-            duration: 0.3,
-            delay: 0.05,
+            type: 'spring',
+            stiffness: 300,
+            damping: 15,
+            duration: 0.35,
           }}
+          className={active ? 'text-primary' : ''}
         >
-          {label}
+          {icon}
         </motion.span>
+        {isSidebarCollapsed && hasNotifications && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className='absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center'
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </motion.span>
+        )}
+      </div>
+      {(!isSidebarCollapsed || isSubItem) && (
+        <div className='flex items-center'>
+          <motion.span
+            layout
+            className='whitespace-nowrap origin-left'
+            initial={{ opacity: 0, x: -5 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+            }}
+            transition={{
+              duration: 0.3,
+              delay: 0.05,
+            }}
+          >
+            {label}
+          </motion.span>
+          {hasNotifications && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className='ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center'
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </motion.span>
+          )}
+        </div>
       )}
       {active && (
         <motion.div

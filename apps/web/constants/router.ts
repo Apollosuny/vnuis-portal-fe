@@ -21,4 +21,5 @@ export const ROUTES = {
   STUDENT_BOOKINGS: '/student-dashboard/bookings',
   STUDENT_EVENTS: '/student-dashboard/events',
   STUDENT_SETTINGS: '/student-dashboard/settings',
+  STUDENT_NOTIFICATIONS: '/student-dashboard/notifications',
 };
