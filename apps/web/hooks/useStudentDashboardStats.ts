@@ -108,6 +108,9 @@ export const useStudentDashboardStats = () => {
     stats,
     formSubmissionsByMonth,
     roomBookingsByStatus,
+    formSubmissions: formSubmissions || [],
+    bookings: roomBookings?.data || [],
+    eventRegistrations: eventRegistrations || [],
     isLoading,
     error,
   };

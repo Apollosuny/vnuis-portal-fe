@@ -21,6 +21,8 @@ import { FormStats } from '@/components/dashboard/FormStats';
 import { RoomStats } from '@/components/dashboard/RoomStats';
 import { UpcomingEventsCard } from '@/components/dashboard/UpcomingEventsCard';
 import { useStudentDashboardStats } from '@/hooks/useStudentDashboardStats';
+import { StudentAdditionalCharts } from './components/StudentAdditionalCharts';
+import { AcademicPerformanceCharts } from './components/AcademicPerformanceCharts';
 
 const StudentDashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -48,8 +50,15 @@ const StudentDashboardPage: React.FC = () => {
 };
 
 const OverviewPanel: React.FC = () => {
-  const { stats, formSubmissionsByMonth, roomBookingsByStatus, isLoading } =
-    useStudentDashboardStats();
+  const {
+    stats,
+    formSubmissionsByMonth,
+    roomBookingsByStatus,
+    formSubmissions,
+    bookings,
+    eventRegistrations,
+    isLoading,
+  } = useStudentDashboardStats();
 
   if (isLoading) {
     return (
@@ -132,6 +141,19 @@ const OverviewPanel: React.FC = () => {
       </section>
 
       <UpcomingEventsCard upcomingCount={stats.upcomingEvents} events={[]} />
+
+      <div className='mt-8'>
+        <h2 className='text-2xl font-semibold mb-4'>Form & Room Analytics</h2>
+        <StudentAdditionalCharts
+          formSubmissions={formSubmissions}
+          bookings={bookings}
+        />
+      </div>
+
+      <div className='mt-8'>
+        <h2 className='text-2xl font-semibold mb-4'>Academic Performance</h2>
+        <AcademicPerformanceCharts />
+      </div>
     </div>
   );
 };
