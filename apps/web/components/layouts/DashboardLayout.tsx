@@ -201,7 +201,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           >
             <SidebarToggle className='hidden sm:block' />
             <motion.div
-              className={`p-4 border-b border-sidebar-border flex items-center justify-center h-24 ${
+              className={`p-4 border-b border-sidebar-border flex items-center justify-center !h-24 ${
                 isSidebarCollapsed ? 'px-2' : ''
               }`}
               whileHover={{ scale: 1.05 }}
@@ -364,7 +364,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div className='flex flex-col h-full w-full'>
               {/* Header */}
               <motion.header
-                className='border-b p-4 flex justify-between items-center backdrop-blur-sm bg-background/70 min-h-[5rem] shadow-sm'
+                className='border-b p-4 flex justify-between items-center backdrop-blur-sm bg-background/70 min-h-[5rem] shadow-sm !h-24'
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.3 }}
