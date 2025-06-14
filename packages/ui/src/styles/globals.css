@@ -1,11 +1,21 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../../../components/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 8px 1px rgba(var(--primary-rgb), 0.35);
+  }
+
+  .shadow-glow-subtle {
+    box-shadow: 0 0 5px 0 rgba(var(--primary-rgb), 0.2);
+  }
+}
 
 :root {
   --background: oklch(1 0 0);
@@ -16,6 +26,7 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
+  --primary-rgb: 32, 32, 32; /* RGB equivalent for primary color */
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);

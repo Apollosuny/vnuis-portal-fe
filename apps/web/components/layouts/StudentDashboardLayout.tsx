@@ -139,14 +139,31 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
 
         {/* Sidebar */}
         <motion.div
-          className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-card shadow-md flex flex-col fixed md:relative z-40 h-full transition-all duration-300 ease-in-out ${isSidebarCollapsed ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className={`bg-card shadow-md flex flex-col fixed md:relative z-40 h-full border-r`}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{
+            opacity: 1,
+            x: 0,
+            width: isSidebarCollapsed ? '5rem' : '16rem', // 20 vs 64 in rem
+            transition: {
+              width: {
+                type: 'spring',
+                stiffness: 500,
+                damping: 30,
+                duration: 0.3,
+              },
+            },
+          }}
+          style={{
+            transform:
+              isSidebarCollapsed && window.innerWidth < 768
+                ? 'translateX(-100%)'
+                : 'translateX(0)',
+          }}
           transition={{
             type: 'spring',
-            stiffness: 100,
-            damping: 15,
-            delay: 0.2,
+            stiffness: 300,
+            damping: 25,
           }}
         >
           <SidebarToggle className='hidden sm:block' />
@@ -317,35 +334,71 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
 
   return (
     <motion.button
-      className={`flex items-center gap-2 p-2 rounded-md w-full text-left transition-colors cursor-pointer ${
+      className={`flex items-center gap-3 p-2 rounded-md w-full text-left transition-all relative overflow-hidden ${
         active
-          ? 'bg-primary/10 text-primary'
+          ? 'bg-primary/15 text-primary font-medium'
           : 'hover:bg-muted/50 hover:text-foreground'
       } ${isSidebarCollapsed && !isSubItem ? 'justify-center' : ''}`}
       onClick={onClick}
       whileHover={{ scale: 1.02, x: isSidebarCollapsed ? 0 : 4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{
+        type: 'spring',
+        stiffness: 500,
+        damping: 25,
+      }}
       layout
     >
       <motion.span
         initial={{ scale: 1 }}
-        animate={{ scale: active ? 1.1 : 1, rotate: active ? 360 : 0 }}
-        transition={{ duration: 0.2 }}
+        animate={{
+          scale: active ? 1.1 : 1,
+          rotate: active ? 360 : 0,
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 300,
+          damping: 15,
+          duration: 0.35,
+        }}
+        className={active ? 'text-primary' : ''}
       >
         {icon}
       </motion.span>
       {(!isSidebarCollapsed || isSubItem) && (
-        <motion.span layout>{label}</motion.span>
+        <motion.span
+          layout
+          className='whitespace-nowrap origin-left'
+          initial={{ opacity: 0, x: -5 }}
+          animate={{
+            opacity: 1,
+            x: 0,
+          }}
+          transition={{
+            duration: 0.3,
+            delay: 0.05,
+          }}
+        >
+          {label}
+        </motion.span>
       )}
       {active && (
         <motion.div
-          className={`absolute ${isSidebarCollapsed ? 'bottom-0 left-1/2 w-8 h-1 -translate-x-1/2' : 'left-0 w-1 h-6'} bg-primary rounded-full`}
-          layoutId='activeIndicator'
+          className={`absolute ${
+            isSidebarCollapsed
+              ? 'bottom-0 left-1/2 w-10 h-1 -translate-x-1/2'
+              : 'left-0 top-1/2 -translate-y-1/2 w-1.5 h-4/5'
+          } bg-primary rounded-full shadow-glow`}
+          layoutId={isSubItem ? 'subItemActiveIndicator' : 'activeIndicator'}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, transition: { duration: 0.2 } }}
+          transition={{
+            type: 'spring',
+            stiffness: 400,
+            damping: 30,
+            duration: 0.3,
+          }}
         />
       )}
     </motion.button>

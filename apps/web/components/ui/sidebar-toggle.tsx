@@ -14,25 +14,39 @@ export const SidebarToggle = ({ className = '' }: SidebarToggleProps) => {
 
   return (
     <motion.div
-      className={`absolute -right-4 top-1/2 -translate-y-1/2 z-50 ${className}`}
-      whileHover={{ scale: 1.2 }}
-      whileTap={{ scale: 0.9 }}
+      className={`absolute -right-4 top-16 z-50 ${className}`}
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.92 }}
+      transition={{
+        type: 'spring',
+        stiffness: 400,
+        damping: 15,
+      }}
     >
       <Button
         onClick={toggleSidebar}
         size='sm'
         variant='secondary'
-        className='h-8 w-8 p-0 rounded-full shadow-md border'
+        className='h-9 w-9 p-0 rounded-full shadow-md border border-border/60 backdrop-blur-sm transition-all duration-300 ease-in-out hover:shadow-glow-subtle'
         title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <motion.div
-          animate={{ rotate: isSidebarCollapsed ? 0 : 180 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          initial={{ rotate: 0 }}
+          animate={{
+            rotate: isSidebarCollapsed ? 0 : 180,
+            scale: isSidebarCollapsed ? [0.9, 1] : [1, 1],
+          }}
+          transition={{
+            type: 'spring',
+            stiffness: 400,
+            damping: 25,
+            duration: 0.4,
+          }}
         >
           {isSidebarCollapsed ? (
-            <ChevronRight size={16} />
+            <ChevronRight className='text-primary' size={18} />
           ) : (
-            <ChevronLeft size={16} />
+            <ChevronLeft className='text-primary' size={18} />
           )}
         </motion.div>
       </Button>
