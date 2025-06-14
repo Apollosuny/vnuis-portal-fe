@@ -109,7 +109,7 @@ export const FormsListClient = () => {
                     </span>
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400'>
-                    {form.data.questions.length}
+                    {form.data?.questions?.length || 0}
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400'>
                     {form.requireApproval ? 'Yes' : 'No'}
