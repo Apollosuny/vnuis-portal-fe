@@ -47,8 +47,9 @@ export enum NotificationTargetType {
 
 export interface NotificationStats {
   total: number;
+  draft: number;
+  scheduled: number;
   sent: number;
-  pending: number;
   revoked: number;
   readRate: number;
 }

@@ -22,7 +22,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <Bell className='h-4 w-4 text-muted-foreground' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold'>{stats.total}</div>
+          <div className='text-2xl font-bold'>{Number(stats.total) || 0}</div>
           <p className='text-xs text-muted-foreground'>All notifications</p>
         </CardContent>
       </Card>
@@ -33,7 +33,9 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <Send className='h-4 w-4 text-green-600' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold text-green-600'>{stats.sent}</div>
+          <div className='text-2xl font-bold text-green-600'>
+            {Number(stats.sent) || 0}
+          </div>
           <p className='text-xs text-muted-foreground'>Notifications sent</p>
         </CardContent>
       </Card>
@@ -45,9 +47,12 @@ export function StatsCards({ stats }: StatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className='text-2xl font-bold text-yellow-600'>
-            {stats.pending}
+            {(Number(stats.draft) || 0) + (Number(stats.scheduled) || 0)}
           </div>
-          <p className='text-xs text-muted-foreground'>Draft & scheduled</p>
+          <p className='text-xs text-muted-foreground'>
+            Draft: {Number(stats.draft) || 0}, Scheduled:{' '}
+            {Number(stats.scheduled) || 0}
+          </p>
         </CardContent>
       </Card>
 
@@ -57,7 +62,9 @@ export function StatsCards({ stats }: StatsCardsProps) {
           <Ban className='h-4 w-4 text-red-600' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold text-red-600'>{stats.revoked}</div>
+          <div className='text-2xl font-bold text-red-600'>
+            {Number(stats.revoked) || 0}
+          </div>
           <p className='text-xs text-muted-foreground'>Revoked notifications</p>
         </CardContent>
       </Card>
@@ -69,7 +76,9 @@ export function StatsCards({ stats }: StatsCardsProps) {
         </CardHeader>
         <CardContent>
           <div className='text-2xl font-bold text-blue-600'>
-            {stats.readRate}%
+            {typeof stats.readRate === 'number' && !isNaN(stats.readRate)
+              ? `${(stats.readRate * 100).toFixed(1)}%`
+              : '0.0%'}
           </div>
           <p className='text-xs text-muted-foreground'>Students who read</p>
         </CardContent>

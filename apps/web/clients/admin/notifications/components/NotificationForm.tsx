@@ -29,8 +29,10 @@ import {
   NotificationPriority,
   NotificationTargetType,
 } from '@/types/notification.types';
-import { mockStudents, mockClasses, mockMajors } from '../mock-data';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { studentApi } from '@/api/student.api';
+import { Student } from '@/types/user.types';
 
 interface FormData {
   title: string;
@@ -71,17 +73,56 @@ interface NotificationFormProps {
   notification?: Notification | null;
   onSubmit: (data: Partial<Notification>) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export function NotificationForm({
   notification,
   onSubmit,
   onCancel,
+  isLoading = false,
 }: NotificationFormProps) {
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>(
     notification?.targetIds || []
   );
   const [isScheduled, setIsScheduled] = useState(!!notification?.scheduledAt);
+
+  // Fetch students data using React Query
+  const { data: studentsData, isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const response = await studentApi.getStudents();
+      return response.items || [];
+    },
+  });
+
+  // Define temporary interfaces for class and major
+  interface ClassData {
+    id: string;
+    name: string;
+    studentCount: number;
+  }
+
+  interface MajorData {
+    id: string;
+    name: string;
+    studentCount: number;
+  }
+
+  // These would ideally come from an API, but for now we'll create some static data
+  const classesList: ClassData[] = [
+    { id: 'class-1', name: 'IT1', studentCount: 30 },
+    { id: 'class-2', name: 'IT2', studentCount: 28 },
+    { id: 'class-3', name: 'CS1', studentCount: 35 },
+    { id: 'class-4', name: 'CS2', studentCount: 32 },
+  ];
+
+  const majorsList: MajorData[] = [
+    { id: 'major-1', name: 'Công nghệ thông tin', studentCount: 150 },
+    { id: 'major-2', name: 'Khoa học máy tính', studentCount: 120 },
+    { id: 'major-3', name: 'Kỹ thuật phần mềm', studentCount: 100 },
+    { id: 'major-4', name: 'An ninh mạng', studentCount: 80 },
+  ];
 
   const {
     register,
@@ -132,19 +173,20 @@ export function NotificationForm({
   const getTargetOptions = () => {
     switch (watchedTargetType) {
       case NotificationTargetType.SPECIFIC_STUDENTS:
-        return mockStudents.map((student) => ({
+        if (!studentsData) return [];
+        return studentsData.map((student: Student) => ({
           id: student.id,
-          label: `${student.name} (${student.email})`,
+          label: `${student.firstName} ${student.lastName} (${student.email})`,
           value: student.id,
         }));
       case NotificationTargetType.BY_CLASS:
-        return mockClasses.map((cls) => ({
+        return classesList.map((cls: ClassData) => ({
           id: cls.id,
           label: `${cls.name} (${cls.studentCount} sinh viên)`,
           value: cls.id,
         }));
       case NotificationTargetType.BY_MAJOR:
-        return mockMajors.map((major) => ({
+        return majorsList.map((major: MajorData) => ({
           id: major.id,
           label: `${major.name} (${major.studentCount} sinh viên)`,
           value: major.id,
@@ -312,23 +354,37 @@ export function NotificationForm({
                     : 'ngành'}
               </Label>
               <div className='max-h-48 overflow-y-auto border rounded-md p-3 space-y-2'>
-                {targetOptions.map((option) => (
-                  <div key={option.id} className='flex items-center space-x-2'>
-                    <Checkbox
-                      id={option.id}
-                      checked={selectedTargetIds.includes(option.value)}
-                      onCheckedChange={(checked) =>
-                        handleTargetChange(option.value, checked as boolean)
-                      }
-                    />
-                    <Label
-                      htmlFor={option.id}
-                      className='text-sm cursor-pointer'
-                    >
-                      {option.label}
-                    </Label>
+                {watchedTargetType ===
+                  NotificationTargetType.SPECIFIC_STUDENTS &&
+                isLoadingStudents ? (
+                  <div className='flex items-center justify-center py-4'>
+                    <div className='animate-spin h-5 w-5 border-t-2 border-b-2 border-primary rounded-full mr-2'></div>
+                    <span>Đang tải danh sách sinh viên...</span>
                   </div>
-                ))}
+                ) : (
+                  targetOptions.map(
+                    (option: { id: string; label: string; value: string }) => (
+                      <div
+                        key={option.id}
+                        className='flex items-center space-x-2'
+                      >
+                        <Checkbox
+                          id={option.id}
+                          checked={selectedTargetIds.includes(option.value)}
+                          onCheckedChange={(checked) =>
+                            handleTargetChange(option.value, checked as boolean)
+                          }
+                        />
+                        <Label
+                          htmlFor={option.id}
+                          className='text-sm cursor-pointer'
+                        >
+                          {option.label}
+                        </Label>
+                      </div>
+                    )
+                  )
+                )}
               </div>
               {selectedTargetIds.length > 0 && (
                 <div className='space-y-2'>
@@ -336,7 +392,7 @@ export function NotificationForm({
                   <div className='flex flex-wrap gap-2'>
                     {selectedTargetIds.map((targetId) => {
                       const option = targetOptions.find(
-                        (opt) => opt.value === targetId
+                        (opt: { value: string }) => opt.value === targetId
                       );
                       return (
                         <Badge key={targetId} variant='secondary'>
@@ -400,8 +456,17 @@ export function NotificationForm({
         <Button type='button' variant='outline' onClick={onCancel}>
           Hủy
         </Button>
-        <Button type='submit'>
-          {notification ? 'Cập nhật' : 'Tạo thông báo'}
+        <Button type='submit' disabled={isLoading}>
+          {isLoading ? (
+            <div className='flex items-center'>
+              <div className='animate-spin h-4 w-4 mr-2 border-t-2 border-b-2 border-white rounded-full'></div>
+              {notification ? 'Đang cập nhật...' : 'Đang tạo...'}
+            </div>
+          ) : notification ? (
+            'Cập nhật'
+          ) : (
+            'Tạo thông báo'
+          )}
         </Button>
       </div>
     </form>

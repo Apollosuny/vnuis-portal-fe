@@ -15,7 +15,9 @@ import {
   NotificationType,
   NotificationTargetType,
 } from '@/types/notification.types';
-import { mockStudents } from '../mock-data';
+import { Student } from '@/types/user.types';
+import { useQuery } from '@tanstack/react-query';
+import { studentApi } from '@/api/student.api';
 
 interface NotificationDetailProps {
   notification: Notification;
@@ -85,17 +87,27 @@ export function NotificationDetail({
     return labels[targetType];
   };
 
+  // Fetch students with React Query
+  const { data: students = [], isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students'],
+    queryFn: async () => {
+      const response = await studentApi.getStudents();
+      return response.items || [];
+    },
+  });
+
   const getReadByStudents = () => {
     if (!notification.readBy) return [];
-    return mockStudents.filter((student) =>
+    return students.filter((student: Student) =>
       notification.readBy?.includes(student.id)
     );
   };
 
   const readByStudents = getReadByStudents();
-  const readRate = notification.readBy
-    ? Math.round((notification.readBy.length / mockStudents.length) * 100)
-    : 0;
+  const readRate =
+    notification.readBy && students.length > 0
+      ? Math.round((notification.readBy.length / students.length) * 100)
+      : 0;
 
   return (
     <div className='space-y-6'>
@@ -232,27 +244,38 @@ export function NotificationDetail({
             <div className='flex items-center justify-between'>
               <span className='font-medium'>Số lượng đã đọc:</span>
               <span>
-                {notification.readBy?.length || 0} / {mockStudents.length}
+                {notification.readBy?.length || 0} / {students.length}
               </span>
             </div>
 
-            {readByStudents.length > 0 && (
+            {isLoadingStudents ? (
               <div>
                 <Separator className='my-3' />
-                <div className='space-y-2'>
-                  <span className='font-medium'>Sinh viên đã đọc:</span>
-                  <div className='max-h-32 overflow-y-auto'>
-                    {readByStudents.map((student) => (
-                      <div
-                        key={student.id}
-                        className='text-sm text-muted-foreground'
-                      >
-                        • {student.name} ({student.email})
-                      </div>
-                    ))}
-                  </div>
+                <div className='flex items-center justify-center py-4'>
+                  <div className='animate-spin h-5 w-5 border-t-2 border-b-2 border-primary rounded-full mr-2'></div>
+                  <span>Đang tải thông tin sinh viên...</span>
                 </div>
               </div>
+            ) : (
+              readByStudents.length > 0 && (
+                <div>
+                  <Separator className='my-3' />
+                  <div className='space-y-2'>
+                    <span className='font-medium'>Sinh viên đã đọc:</span>
+                    <div className='max-h-32 overflow-y-auto'>
+                      {readByStudents.map((student: Student) => (
+                        <div
+                          key={student.id}
+                          className='text-sm text-muted-foreground'
+                        >
+                          • {student.firstName} {student.lastName} (
+                          {student.email})
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
             )}
           </CardContent>
         </Card>

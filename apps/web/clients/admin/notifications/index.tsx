@@ -44,18 +44,19 @@ import {
 } from '@workspace/ui/components/dialog';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/layouts/DashboardLayout';
-import { mockNotifications, mockNotificationStats } from './mock-data';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { notificationApi } from '@/api/notification.api';
 import {
   Notification,
   NotificationStatus,
   NotificationType,
   NotificationPriority,
+  NotificationStats,
 } from '@/types/notification.types';
 import { NotificationForm, NotificationDetail, StatsCards } from './components';
 
 export default function NotificationManagementPage() {
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -66,17 +67,154 @@ export default function NotificationManagementPage() {
   const [editingNotification, setEditingNotification] =
     useState<Notification | null>(null);
 
-  // Filter notifications
-  const filteredNotifications = notifications.filter((notification) => {
-    const matchesSearch =
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || notification.status === statusFilter;
-    const matchesType =
-      typeFilter === 'all' || notification.type === typeFilter;
+  // Fetch notifications using React Query
+  const {
+    data: notifications = [],
+    isLoading: isLoadingNotifications,
+    error: notificationsError,
+  } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => notificationApi.getNotifications(),
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: true,
+  });
 
-    return matchesSearch && matchesStatus && matchesType;
+  // Fetch notification stats using React Query
+  const {
+    data: rawNotificationStats,
+    isLoading: isLoadingStats,
+    error: statsError,
+  } = useQuery({
+    queryKey: ['notifications', 'stats'],
+    queryFn: () => notificationApi.getNotificationStats(),
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: true,
+  });
+
+  // Process stats to ensure all values are numbers
+  const notificationStats: NotificationStats = {
+    total:
+      typeof rawNotificationStats?.total === 'number'
+        ? rawNotificationStats.total
+        : 0,
+    draft:
+      typeof rawNotificationStats?.draft === 'number'
+        ? rawNotificationStats.draft
+        : 0,
+    scheduled:
+      typeof rawNotificationStats?.scheduled === 'number'
+        ? rawNotificationStats.scheduled
+        : 0,
+    sent:
+      typeof rawNotificationStats?.sent === 'number'
+        ? rawNotificationStats.sent
+        : 0,
+    revoked:
+      typeof rawNotificationStats?.revoked === 'number'
+        ? rawNotificationStats.revoked
+        : 0,
+    readRate:
+      typeof rawNotificationStats?.readRate === 'number'
+        ? rawNotificationStats.readRate
+        : 0,
+  };
+
+  // Show errors if any
+  if (notificationsError) {
+    console.error('Error fetching notifications:', notificationsError);
+    toast.error('Failed to load notifications');
+  }
+
+  if (statsError) {
+    console.error('Error fetching stats:', statsError);
+    toast.error('Failed to load notification statistics');
+  }
+
+  // Filter notifications
+  const filteredNotifications = notifications.filter(
+    (notification: Notification) => {
+      const matchesSearch =
+        notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        notification.content.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' || notification.status === statusFilter;
+      const matchesType =
+        typeFilter === 'all' || notification.type === typeFilter;
+
+      return matchesSearch && matchesStatus && matchesType;
+    }
+  );
+
+  // Send notification mutation
+  const sendNotificationMutation = useMutation({
+    mutationFn: (id: string) => notificationApi.sendNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'stats'] });
+    },
+    onError: (error) => {
+      console.error('Error sending notification:', error);
+      toast.error('Failed to send notification');
+    },
+  });
+
+  // Revoke notification mutation
+  const revokeNotificationMutation = useMutation({
+    mutationFn: (id: string) => notificationApi.revokeNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'stats'] });
+    },
+    onError: (error) => {
+      console.error('Error revoking notification:', error);
+      toast.error('Failed to revoke notification');
+    },
+  });
+
+  // Delete notification mutation
+  const deleteNotificationMutation = useMutation({
+    mutationFn: (id: string) => notificationApi.deleteNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'stats'] });
+    },
+    onError: (error) => {
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
+    },
+  });
+
+  // Create notification mutation
+  const createNotificationMutation = useMutation({
+    mutationFn: (data: Partial<Notification>) =>
+      notificationApi.createNotification(data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'stats'] });
+      setIsFormOpen(false);
+      toast.success('Notification created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating notification:', error);
+      toast.error('Failed to create notification');
+    },
+  });
+
+  // Update notification mutation
+  const updateNotificationMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Notification> }) =>
+      notificationApi.updateNotification(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'stats'] });
+      setEditingNotification(null);
+      setIsFormOpen(false);
+      toast.success('Notification updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating notification:', error);
+      toast.error('Failed to update notification');
+    },
   });
 
   const handleSendNotification = (notification: Notification) => {
@@ -88,19 +226,11 @@ export default function NotificationManagementPage() {
       return;
     }
 
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((n) =>
-        n.id === notification.id
-          ? {
-              ...n,
-              status: NotificationStatus.SENT,
-              sentAt: new Date().toISOString(),
-            }
-          : n
-      )
-    );
-
-    toast.success(`Notification sent: ${notification.title}`);
+    sendNotificationMutation.mutate(notification.id, {
+      onSuccess: () => {
+        toast.success(`Notification sent: ${notification.title}`);
+      },
+    });
   };
 
   const handleRevokeNotification = (notification: Notification) => {
@@ -109,19 +239,11 @@ export default function NotificationManagementPage() {
       return;
     }
 
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((n) =>
-        n.id === notification.id
-          ? {
-              ...n,
-              status: NotificationStatus.REVOKED,
-              revokedAt: new Date().toISOString(),
-            }
-          : n
-      )
-    );
-
-    toast.success(`Notification revoked: ${notification.title}`);
+    revokeNotificationMutation.mutate(notification.id, {
+      onSuccess: () => {
+        toast.success(`Notification revoked: ${notification.title}`);
+      },
+    });
   };
 
   const handleDeleteNotification = (notification: Notification) => {
@@ -130,39 +252,24 @@ export default function NotificationManagementPage() {
       return;
     }
 
-    setNotifications((prevNotifications) =>
-      prevNotifications.filter((n) => n.id !== notification.id)
-    );
-
-    toast.success(`Notification deleted: ${notification.title}`);
+    deleteNotificationMutation.mutate(notification.id, {
+      onSuccess: () => {
+        toast.success(`Notification deleted: ${notification.title}`);
+      },
+    });
   };
 
   const handleCreateNotification = (data: Partial<Notification>) => {
-    const newNotification: Notification = {
-      ...data,
-      id: `notification_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      createdBy: 'admin@university.edu', // This should come from auth context
-      status: data.scheduledAt
-        ? NotificationStatus.SCHEDULED
-        : NotificationStatus.DRAFT,
-    } as Notification;
-
-    setNotifications((prev) => [newNotification, ...prev]);
-    setIsFormOpen(false);
-    toast.success('Notification created successfully');
+    createNotificationMutation.mutate(data);
   };
 
   const handleUpdateNotification = (data: Partial<Notification>) => {
     if (!editingNotification) return;
 
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === editingNotification.id ? { ...n, ...data } : n))
-    );
-
-    setEditingNotification(null);
-    setIsFormOpen(false);
-    toast.success('Notification updated successfully');
+    updateNotificationMutation.mutate({
+      id: editingNotification.id,
+      data,
+    });
   };
 
   const handleEditNotification = (notification: Notification) => {
@@ -251,7 +358,13 @@ export default function NotificationManagementPage() {
         </div>
 
         {/* Stats Cards */}
-        <StatsCards stats={mockNotificationStats} />
+        {isLoadingStats ? (
+          <div className='flex items-center justify-center p-6'>
+            <div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary'></div>
+          </div>
+        ) : (
+          <StatsCards stats={notificationStats} />
+        )}
 
         {/* Filters */}
         <Card>
@@ -319,96 +432,140 @@ export default function NotificationManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredNotifications.map((notification) => (
-                  <TableRow key={notification.id}>
-                    <TableCell className='font-medium max-w-xs'>
-                      <div className='truncate' title={notification.title}>
-                        {notification.title}
+                {isLoadingNotifications ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className='h-24 text-center'>
+                      <div className='flex items-center justify-center'>
+                        <div className='animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary mr-2'></div>
+                        <span>Loading notifications...</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant='outline'>
-                        {getTypeLabel(notification.type)}
-                      </Badge>
+                  </TableRow>
+                ) : filteredNotifications.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className='h-24 text-center'>
+                      No notifications found.
                     </TableCell>
-                    <TableCell>
-                      {getPriorityBadge(notification.priority)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(notification.status)}</TableCell>
-                    <TableCell>
-                      {DateTime.fromISO(notification.createdAt).toFormat(
-                        'dd/MM/yyyy HH:mm'
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {notification.sentAt
-                        ? DateTime.fromISO(notification.sentAt).toFormat(
-                            'dd/MM/yyyy HH:mm'
-                          )
-                        : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => {
-                            setSelectedNotification(notification);
-                            setIsDetailOpen(true);
-                          }}
-                        >
-                          <Eye className='h-4 w-4' />
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => handleEditNotification(notification)}
-                          disabled={
-                            notification.status === NotificationStatus.SENT ||
-                            notification.status === NotificationStatus.REVOKED
-                          }
-                        >
-                          <Edit className='h-4 w-4' />
-                        </Button>
-                        {(notification.status === NotificationStatus.DRAFT ||
-                          notification.status ===
-                            NotificationStatus.SCHEDULED) && (
+                  </TableRow>
+                ) : (
+                  filteredNotifications.map((notification: Notification) => (
+                    <TableRow key={notification.id}>
+                      <TableCell className='font-medium max-w-xs'>
+                        <div className='truncate' title={notification.title}>
+                          {notification.title}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant='outline'>
+                          {getTypeLabel(notification.type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getPriorityBadge(notification.priority)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(notification.status)}
+                      </TableCell>
+                      <TableCell>
+                        {DateTime.fromISO(notification.createdAt).toFormat(
+                          'dd/MM/yyyy HH:mm'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {notification.sentAt
+                          ? DateTime.fromISO(notification.sentAt).toFormat(
+                              'dd/MM/yyyy HH:mm'
+                            )
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className='flex items-center gap-2'>
                           <Button
                             variant='ghost'
                             size='sm'
-                            onClick={() => handleSendNotification(notification)}
-                            className='text-green-600 hover:text-green-700'
+                            onClick={() => {
+                              setSelectedNotification(notification);
+                              setIsDetailOpen(true);
+                            }}
                           >
-                            <Send className='h-4 w-4' />
+                            <Eye className='h-4 w-4' />
                           </Button>
-                        )}
-                        {notification.status === NotificationStatus.SENT && (
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleEditNotification(notification)}
+                            disabled={
+                              notification.status === NotificationStatus.SENT ||
+                              notification.status === NotificationStatus.REVOKED
+                            }
+                          >
+                            <Edit className='h-4 w-4' />
+                          </Button>
+                          {(notification.status === NotificationStatus.DRAFT ||
+                            notification.status ===
+                              NotificationStatus.SCHEDULED) && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() =>
+                                handleSendNotification(notification)
+                              }
+                              disabled={sendNotificationMutation.isPending}
+                              className='text-green-600 hover:text-green-700'
+                            >
+                              {sendNotificationMutation.isPending &&
+                              sendNotificationMutation.variables ===
+                                notification.id ? (
+                                <div className='animate-spin h-4 w-4 border-t-2 border-b-2 border-green-600 rounded-full' />
+                              ) : (
+                                <Send className='h-4 w-4' />
+                              )}
+                            </Button>
+                          )}
+                          {notification.status === NotificationStatus.SENT && (
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              onClick={() =>
+                                handleRevokeNotification(notification)
+                              }
+                              disabled={revokeNotificationMutation.isPending}
+                              className='text-orange-600 hover:text-orange-700'
+                            >
+                              {revokeNotificationMutation.isPending &&
+                              revokeNotificationMutation.variables ===
+                                notification.id ? (
+                                <div className='animate-spin h-4 w-4 border-t-2 border-b-2 border-orange-600 rounded-full' />
+                              ) : (
+                                <RotateCcw className='h-4 w-4' />
+                              )}
+                            </Button>
+                          )}
                           <Button
                             variant='ghost'
                             size='sm'
                             onClick={() =>
-                              handleRevokeNotification(notification)
+                              handleDeleteNotification(notification)
                             }
-                            className='text-orange-600 hover:text-orange-700'
+                            disabled={
+                              notification.status === NotificationStatus.SENT ||
+                              deleteNotificationMutation.isPending
+                            }
+                            className='text-red-600 hover:text-red-700'
                           >
-                            <RotateCcw className='h-4 w-4' />
+                            {deleteNotificationMutation.isPending &&
+                            deleteNotificationMutation.variables ===
+                              notification.id ? (
+                              <div className='animate-spin h-4 w-4 border-t-2 border-b-2 border-red-600 rounded-full' />
+                            ) : (
+                              <Trash2 className='h-4 w-4' />
+                            )}
                           </Button>
-                        )}
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => handleDeleteNotification(notification)}
-                          disabled={
-                            notification.status === NotificationStatus.SENT
-                          }
-                          className='text-red-600 hover:text-red-700'
-                        >
-                          <Trash2 className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -430,6 +587,10 @@ export default function NotificationManagementPage() {
                 editingNotification
                   ? handleUpdateNotification
                   : handleCreateNotification
+              }
+              isLoading={
+                createNotificationMutation.isPending ||
+                updateNotificationMutation.isPending
               }
               onCancel={() => {
                 setIsFormOpen(false);
