@@ -23,6 +23,7 @@ import DashboardLayout from '@/components/layouts/DashboardLayout';
 import { DataTable } from '@/components/data-table';
 import { StatsCard } from './components/StatsCard';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
+import { AdditionalCharts } from './components/AdditionalCharts';
 
 // Format submission date
 const formatSubmissionDate = (date: string) => {
@@ -129,6 +130,19 @@ export default function AdminDashboard() {
 
         {/* Analytics Charts */}
         <AnalyticsCharts
+          formSubmissions={formSubmissions}
+          bookings={bookings}
+          events={events}
+        />
+
+        {/* Additional Analytics Charts */}
+        <div className='mt-8 mb-4'>
+          <h2 className='text-2xl font-bold'>Detailed Analytics</h2>
+          <p className='text-muted-foreground'>
+            Comprehensive analysis of platform activities
+          </p>
+        </div>
+        <AdditionalCharts
           formSubmissions={formSubmissions}
           bookings={bookings}
           events={events}
