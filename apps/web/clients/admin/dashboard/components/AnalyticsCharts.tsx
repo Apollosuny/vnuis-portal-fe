@@ -26,6 +26,12 @@ export const AnalyticsCharts = ({
   bookings,
   events,
 }: AnalyticsChartsProps) => {
+  // Log bookings to check their structure
+  console.log('Bookings data:', bookings);
+  console.log(
+    'Bookings with APPROVED status:',
+    bookings.filter((booking) => booking.status === 'APPROVED')
+  );
   // Calculate form submissions by status
   const formStats = {
     pending: formSubmissions.filter(
@@ -42,14 +48,27 @@ export const AnalyticsCharts = ({
   // Calculate room bookings by status
   const bookingStats = {
     pending: bookings.filter(
-      (booking) => booking.status === RoomBookingStatus.PENDING
+      (booking) =>
+        booking.status === RoomBookingStatus.PENDING ||
+        booking.status === 'PENDING'
     ).length,
     approved: bookings.filter(
-      (booking) => booking.status === RoomBookingStatus.APPROVED
+      (booking) =>
+        booking.status === RoomBookingStatus.APPROVED ||
+        booking.status === 'APPROVED'
     ).length,
     rejected: bookings.filter(
-      (booking) => booking.status === RoomBookingStatus.REJECTED
+      (booking) =>
+        booking.status === RoomBookingStatus.REJECTED ||
+        booking.status === 'REJECTED'
     ).length,
+    cancelled: bookings.filter(
+      (booking) =>
+        booking.status === RoomBookingStatus.CANCELLED ||
+        booking.status === 'CANCELLED'
+    ).length,
+    completed: bookings.filter((booking) => booking.status === 'COMPLETED')
+      .length,
   };
 
   // Calculate event registrations
@@ -78,27 +97,26 @@ export const AnalyticsCharts = ({
     },
   };
 
-  // Bar chart options for room bookings
+  // Donut chart options for room bookings
   const bookingChartOptions: ApexOptions = {
     chart: {
-      type: 'bar',
-      stacked: false,
+      type: 'donut',
     },
-    xaxis: {
-      categories: ['Pending', 'Approved', 'Rejected'],
+    labels: ['Pending', 'Approved', 'Rejected', 'Cancelled', 'Completed'],
+    colors: ['#FBBF24', '#34D399', '#F87171', '#6B7280', '#8B5CF6'],
+    legend: {
+      position: 'bottom',
     },
-    colors: ['#FBBF24', '#34D399', '#F87171'],
-    plotOptions: {
-      bar: {
-        borderRadius: 4,
-        horizontal: true,
-        distributed: true,
+    tooltip: {
+      y: {
+        formatter: (val) => `${val} bookings`,
       },
     },
-    dataLabels: {
-      enabled: true,
-      style: {
-        colors: ['#fff'],
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '70%',
+        },
       },
     },
   };
@@ -129,18 +147,24 @@ export const AnalyticsCharts = ({
           <Chart
             options={bookingChartOptions}
             series={[
-              {
-                name: 'Bookings',
-                data: [
-                  bookingStats.pending,
-                  bookingStats.approved,
-                  bookingStats.rejected,
-                ],
-              },
+              bookingStats.pending,
+              bookingStats.approved,
+              bookingStats.rejected,
+              bookingStats.cancelled,
+              bookingStats.completed,
             ]}
-            type='bar'
+            type='donut'
             height={350}
           />
+          {/* Debug information */}
+          <div className='mt-4 text-xs text-muted-foreground'>
+            <p>Pending: {bookingStats.pending}</p>
+            <p>Approved: {bookingStats.approved}</p>
+            <p>Rejected: {bookingStats.rejected}</p>
+            <p>Cancelled: {bookingStats.cancelled}</p>
+            <p>Completed: {bookingStats.completed}</p>
+            <p>Total Bookings: {bookings.length}</p>
+          </div>
         </CardContent>
       </Card>
     </div>

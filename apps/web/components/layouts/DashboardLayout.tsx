@@ -20,6 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  PanelRightOpen,
+  PanelRight,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,24 +31,10 @@ import { DecorativeShape } from '@/components/ui/decorative-shape';
 import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants/router';
 import { useLogout } from '@/hooks/useLogout';
-import { useUserStore } from '@/stores/user.store';
 import { useUIStore } from '@/stores/ui.store';
 import { SidebarToggle } from '@/components/ui/sidebar-toggle';
+import { RightSidebarToggle } from '@/components/ui/right-sidebar-toggle';
 import { useEffect } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@workspace/ui/components/dropdown-menu';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@workspace/ui/components/avatar';
 import { UserAvatar } from '../ui/user-avatar';
 
 interface DashboardLayoutProps {
@@ -62,8 +50,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const router = useRouter();
   const { onLogout } = useLogout();
   const { theme } = useTheme();
-  const { isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } =
-    useUIStore();
+  const {
+    isSidebarCollapsed,
+    toggleSidebar,
+    setSidebarCollapsed,
+    isRightSidebarOpen,
+    toggleRightSidebar,
+    setRightSidebarOpen,
+  } = useUIStore();
 
   // Auto-collapse sidebar on small screens
   useEffect(() => {
@@ -88,7 +82,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     if (!isSidebarCollapsed && window.innerWidth < 768) {
       toggleSidebar();
     }
-  }, [pathname, isSidebarCollapsed, toggleSidebar]);
+
+    // Also close right sidebar on mobile when path changes
+    if (isRightSidebarOpen && window.innerWidth < 768) {
+      setRightSidebarOpen(false);
+    }
+  }, [
+    pathname,
+    isSidebarCollapsed,
+    toggleSidebar,
+    isRightSidebarOpen,
+    setRightSidebarOpen,
+  ]);
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -390,11 +395,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   </div>
                 </div>
                 <motion.div
-                  className='flex items-center gap-3 flex-shrink-0 ml-4'
+                  className='flex items-center justify-center gap-3 flex-shrink-0 ml-4'
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.3 }}
                 >
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={toggleRightSidebar}
+                    className='md:flex hidden'
+                    title={
+                      isRightSidebarOpen ? 'Close sidebar' : 'Open sidebar'
+                    }
+                  >
+                    {isRightSidebarOpen ? (
+                      <PanelRight size={20} />
+                    ) : (
+                      <PanelRightOpen size={20} />
+                    )}
+                  </Button>
                   <ThemeToggle />
                   <UserAvatar />
                 </motion.div>
@@ -429,6 +449,131 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </div>
               </motion.main>
             </div>
+          </motion.div>
+
+          {/* Right Sidebar */}
+          <AnimatePresence>
+            {isRightSidebarOpen && (
+              <motion.div
+                className='fixed inset-0 bg-black/20 z-30 md:hidden'
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setRightSidebarOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+
+          <motion.div
+            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-l relative z-40 fixed right-0 md:relative ${
+              isRightSidebarOpen ? 'w-64' : 'w-0'
+            }`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{
+              opacity: isRightSidebarOpen ? 1 : 0,
+              x: 0,
+              width: isRightSidebarOpen ? '16rem' : '0', // 64 vs 0 in rem
+              transition: {
+                width: {
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 30,
+                  duration: 0.3,
+                },
+              },
+            }}
+            style={{
+              transform:
+                !isRightSidebarOpen && window.innerWidth < 768
+                  ? 'translateX(100%)'
+                  : 'translateX(0)',
+            }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 25,
+            }}
+          >
+            <RightSidebarToggle className='hidden sm:block' />
+            <motion.div
+              className='p-4 border-b border-sidebar-border flex items-center justify-center h-24'
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+            >
+              <div className='text-lg font-semibold text-sidebar-foreground'>
+                <AnimatedIcon
+                  icon={<Sparkles size={22} />}
+                  animationType='pulse'
+                  className='text-primary inline-block mr-2'
+                />
+                Quick Info
+              </div>
+            </motion.div>
+
+            <motion.div
+              className='flex flex-col flex-1 p-4 gap-3 overflow-y-auto'
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+            >
+              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-sm font-medium mb-2 flex items-center'>
+                  <Calendar size={16} className='mr-2 text-sidebar-primary' />{' '}
+                  Today
+                </h3>
+                <p className='text-xs text-sidebar-muted'>
+                  {new Date().toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+
+              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-sm font-medium mb-2 flex items-center'>
+                  <FileText size={16} className='mr-2 text-sidebar-primary' />{' '}
+                  Recent Forms
+                </h3>
+                <div className='space-y-2'>
+                  <p className='text-xs text-sidebar-muted'>No recent forms</p>
+                  {/* Will be populated with actual data later */}
+                </div>
+              </div>
+
+              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-sm font-medium mb-2 flex items-center'>
+                  <BarChart4 size={16} className='mr-2 text-sidebar-primary' />{' '}
+                  Statistics
+                </h3>
+                <div className='space-y-1 text-xs text-sidebar-muted'>
+                  <p className='flex justify-between'>
+                    <span>Forms:</span>
+                    <span className='font-medium'>24</span>
+                  </p>
+                  <p className='flex justify-between'>
+                    <span>Rooms:</span>
+                    <span className='font-medium'>12</span>
+                  </p>
+                  <p className='flex justify-between'>
+                    <span>Events:</span>
+                    <span className='font-medium'>8</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-sm font-medium mb-2 flex items-center'>
+                  <BadgeCheck size={16} className='mr-2 text-sidebar-primary' />{' '}
+                  Tasks
+                </h3>
+                <div className='space-y-2'>
+                  <p className='text-xs text-sidebar-muted'>No pending tasks</p>
+                  {/* Will be populated with actual data later */}
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       </AnimatedBackground>

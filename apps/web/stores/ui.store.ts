@@ -5,6 +5,9 @@ interface UIStore {
   isSidebarCollapsed: boolean;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  isRightSidebarOpen: boolean;
+  toggleRightSidebar: () => void;
+  setRightSidebarOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -16,6 +19,11 @@ export const useUIStore = create<UIStore>()(
         set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
       setSidebarCollapsed: (collapsed) =>
         set({ isSidebarCollapsed: collapsed }),
+      // Default to false (right sidebar is closed)
+      isRightSidebarOpen: false,
+      toggleRightSidebar: () =>
+        set((state) => ({ isRightSidebarOpen: !state.isRightSidebarOpen })),
+      setRightSidebarOpen: (open) => set({ isRightSidebarOpen: open }),
     }),
     {
       name: 'ui-storage',
