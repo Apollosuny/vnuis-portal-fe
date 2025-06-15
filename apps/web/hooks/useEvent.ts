@@ -76,6 +76,7 @@ export const useEventForm = (
     handleSubmit: rhfHandleSubmit,
     reset,
     formState: { errors, isDirty, isValid },
+    watch,
   } = useForm<EventFormValues>({
     resolver: yupResolver(eventSchema as any),
     defaultValues: {
@@ -161,6 +162,7 @@ export const useEventForm = (
     handleCreateEvent,
     handleUpdateEvent,
     reset,
+    watch,
   };
 };
 
