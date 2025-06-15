@@ -154,11 +154,12 @@ export const FormDetailClient = () => {
                           Options
                         </span>
                         <ul className='mt-2 space-y-2'>
-                          {question.answers.map((answer, answerIndex) => (
-                            <li key={answer.id} className='text-foreground'>
-                              {answerIndex + 1}. {answer.content}
-                            </li>
-                          ))}
+                          {question.answers &&
+                            question.answers.map((answer, answerIndex) => (
+                              <li key={answer.id} className='text-foreground'>
+                                {answerIndex + 1}. {answer.content}
+                              </li>
+                            ))}
                         </ul>
                       </div>
                     )}
