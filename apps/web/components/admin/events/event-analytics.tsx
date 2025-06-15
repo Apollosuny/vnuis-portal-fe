@@ -254,7 +254,7 @@ export const EventAnalytics = ({ events }: EventAnalyticsProps) => {
       </div>
 
       {/* Charts */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2'>
         <Card className='col-span-1'>
           <CardHeader>
             <CardTitle>Events by Category</CardTitle>
@@ -272,7 +272,7 @@ export const EventAnalytics = ({ events }: EventAnalyticsProps) => {
           </CardContent>
         </Card>
 
-        <Card className='col-span-1'>
+        {/* <Card className='col-span-1'>
           <CardHeader>
             <CardTitle>Registration Status</CardTitle>
             <CardDescription>Overview of registration statuses</CardDescription>
@@ -285,7 +285,7 @@ export const EventAnalytics = ({ events }: EventAnalyticsProps) => {
               height={300}
             />
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Card className='col-span-1 lg:col-span-1'>
           <CardHeader>

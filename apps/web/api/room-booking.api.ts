@@ -86,7 +86,18 @@ export const roomBookingApi = {
     status?: string;
     search?: string;
   }): Promise<RoomBookingResponseWithPagination> => {
-    const response = await nexusAxios.get(BASE_URL, { params });
+    // Ensure pagination params are numbers
+    const normalizedParams = {
+      ...params,
+      page: params?.page ? Number(params.page) : undefined,
+      limit: params?.limit ? Number(params.limit) : undefined,
+    };
+
+    console.log('Sending API request with params:', normalizedParams);
+    const response = await nexusAxios.get(BASE_URL, {
+      params: normalizedParams,
+    });
+    console.log('Received response with pagination:', response.data.meta);
     return response.data;
   },
 

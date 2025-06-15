@@ -29,9 +29,22 @@ export const useAdminBookings = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await roomBookingApi.getRoomBookings(params);
+
+        console.log('useAdminBookings - Fetching with params:', params);
+
+        // Ensure pagination parameters are valid numbers
+        const validatedParams = {
+          ...params,
+          page: params?.page ? Math.max(1, Number(params.page)) : 1,
+          limit: params?.limit ? Math.max(1, Number(params.limit)) : 10,
+        };
+
+        const response = await roomBookingApi.getRoomBookings(validatedParams);
         setBookings(response.data);
+
+        console.log('useAdminBookings - Received pagination:', response.meta);
         setPagination(response.meta);
+
         return response;
       } catch (error: any) {
         const message =

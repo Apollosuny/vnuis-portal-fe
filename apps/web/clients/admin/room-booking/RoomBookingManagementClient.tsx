@@ -354,8 +354,14 @@ const RoomBookingManagementClient = () => {
               <Button
                 variant='outline'
                 size='sm'
-                disabled={pagination.page === pagination.totalPages}
-                onClick={() =>
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => {
+                  console.log(
+                    'Next page clicked. Current page:',
+                    pagination.page,
+                    'Total pages:',
+                    pagination.totalPages
+                  );
                   fetchBookings({
                     startDate: dateRange.startDate,
                     endDate: dateRange.endDate,
@@ -364,8 +370,8 @@ const RoomBookingManagementClient = () => {
                     search: searchQuery || undefined,
                     page: pagination.page + 1,
                     limit: pagination.limit,
-                  })
-                }
+                  });
+                }}
               >
                 Next
               </Button>

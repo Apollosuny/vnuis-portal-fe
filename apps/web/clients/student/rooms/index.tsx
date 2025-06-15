@@ -300,6 +300,8 @@ const RoomsPage: React.FC = () => {
         ? bookingSlot.duration / 60 // Convert minutes to hours if duration is in minutes
         : 1; // Default to 1 hour if no duration specified
 
+      console.log('startTime', startTime.toISOString());
+
       // Call the API to book the room
       await roomBookingApi.createBooking({
         startTime: startTime.toISOString(),
@@ -307,7 +309,7 @@ const RoomsPage: React.FC = () => {
         purpose: bookingPurpose,
         isRecurring: false,
         roomId: selectedRoom.roomId,
-        offset: offsetStr,
+        offset: '0',
       });
 
       setBookingSuccess(true);
