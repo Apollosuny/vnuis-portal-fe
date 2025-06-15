@@ -39,12 +39,21 @@ export const useNotificationStore = create<State & Actions>()(
         })),
       markAsRead: (notificationId) =>
         set((state) => {
+          const userId = window.localStorage.getItem('user-storage')
+            ? JSON.parse(window.localStorage.getItem('user-storage') || '{}')
+                ?.state?.user?.id
+            : null;
+
+          if (!userId) {
+            return state;
+          }
+
           const updatedNotifications = state.notifications.map(
             (notification) =>
               notification.id === notificationId
                 ? {
                     ...notification,
-                    isRead: true,
+                    readBy: [...(notification.readBy || []), userId],
                   }
                 : notification
           );
@@ -54,13 +63,26 @@ export const useNotificationStore = create<State & Actions>()(
           };
         }),
       markAllAsRead: () =>
-        set((state) => ({
-          notifications: state.notifications.map((notification) => ({
-            ...notification,
-            isRead: true,
-          })),
-          unreadCount: 0,
-        })),
+        set((state) => {
+          const userId = window.localStorage.getItem('user-storage')
+            ? JSON.parse(window.localStorage.getItem('user-storage') || '{}')
+                ?.state?.user?.id
+            : null;
+
+          if (!userId) {
+            return state;
+          }
+
+          return {
+            notifications: state.notifications.map((notification) => ({
+              ...notification,
+              readBy: notification.readBy?.includes(userId)
+                ? notification.readBy
+                : [...(notification.readBy || []), userId],
+            })),
+            unreadCount: 0,
+          };
+        }),
       setUnreadCount: (count) => set({ unreadCount: count }),
       setIsLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),

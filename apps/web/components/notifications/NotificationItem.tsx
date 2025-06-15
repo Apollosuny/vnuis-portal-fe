@@ -3,6 +3,7 @@
 import { Button } from '@workspace/ui/components/button';
 import { Notification, NotificationType } from '@/types/notification.types';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useUserStore } from '@/stores/user.store';
 import {
   Bell,
   FileText,
@@ -19,7 +20,7 @@ import { cn } from '@workspace/ui/lib/utils';
 interface NotificationItemProps {
   notification: Notification;
   priorityColor: string;
-  formattedDate: string;
+  formattedDate?: string;
 }
 
 export const NotificationItem = ({
@@ -28,8 +29,9 @@ export const NotificationItem = ({
   formattedDate,
 }: NotificationItemProps) => {
   const { markAsRead } = useNotifications();
+  const { user } = useUserStore();
   const [isExpanded, setIsExpanded] = useState(false);
-  const isRead = notification.readBy?.includes('current-user-id');
+  const isRead = notification.readBy?.includes(user?.id || '');
 
   // Get icon based on notification type
   const getNotificationIcon = (type: NotificationType) => {
@@ -63,31 +65,47 @@ export const NotificationItem = ({
         !isRead && 'bg-primary/5'
       )}
       onClick={handleToggleExpand}
+      data-read={isRead ? 'true' : 'false'}
     >
       <div className='flex items-start gap-3'>
-        <div className='mt-1'>{getNotificationIcon(notification.type)}</div>
+        <div
+          className={cn(
+            'p-2 rounded-lg bg-muted flex items-center justify-center'
+          )}
+        >
+          {getNotificationIcon(notification.type)}
+        </div>
         <div className='flex-1'>
           <div className='flex items-center justify-between mb-1'>
-            <h4
-              className={cn('font-medium text-sm', !isRead && 'font-semibold')}
-            >
-              {notification.title}
-            </h4>
-            {!isRead && (
+            <div className='flex items-center gap-2'>
+              <h4
+                className={cn(
+                  'font-medium text-sm',
+                  !isRead && 'font-semibold'
+                )}
+              >
+                {notification.title}
+              </h4>
+              {!isRead && (
+                <span className='text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full'>
+                  New
+                </span>
+              )}
               <span className={`w-2 h-2 rounded-full ${priorityColor}`}></span>
-            )}
+            </div>
+            <span className='text-xs text-muted-foreground'>
+              {formattedDate}
+            </span>
           </div>
-
-          <p className='text-xs text-muted-foreground mb-2'>{formattedDate}</p>
 
           {isExpanded ? (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className='text-sm text-foreground/80'
+              className='text-sm text-foreground/80 mt-2'
             >
-              <p>{notification.content}</p>
+              <p className='text-sm leading-relaxed'>{notification.content}</p>
 
               {notification.metadata &&
                 Object.keys(notification.metadata).length > 0 && (
@@ -125,7 +143,7 @@ export const NotificationItem = ({
               )}
             </motion.div>
           ) : (
-            <p className='text-sm line-clamp-1 text-foreground/80'>
+            <p className='text-sm line-clamp-2 text-muted-foreground mt-1'>
               {notification.content}
             </p>
           )}

@@ -25,10 +25,11 @@ export const NotificationList = ({
     isLoading,
     fetchNotifications,
     markAllAsRead,
+    page,
+    setPage,
+    total,
+    totalPages,
   } = useNotifications();
-
-  // React Query sẽ tự động quản lý việc fetch data
-  // Không cần gọi fetchNotifications ở đây nữa
 
   const handleMarkAllAsRead = () => {
     markAllAsRead();
@@ -104,6 +105,37 @@ export const NotificationList = ({
                   )}
                 />
               ))}
+
+              {/* Add pagination if we have more than 1 page */}
+              {totalPages > 1 && (
+                <div className='flex justify-center items-center gap-2 pt-4 mt-2 border-t'>
+                  {page > 1 && (
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-7 px-2 text-xs'
+                      onClick={() => setPage(page - 1)}
+                    >
+                      Prev
+                    </Button>
+                  )}
+
+                  <div className='text-xs text-muted-foreground'>
+                    Page {page} of {totalPages}
+                  </div>
+
+                  {page < totalPages && (
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-7 px-2 text-xs'
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Next
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className='py-8 px-4 text-center'>

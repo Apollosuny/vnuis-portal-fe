@@ -6,10 +6,13 @@ import {
   NotificationStatus,
   NotificationTargetType,
 } from '@/types/notification.types';
+import { useState } from 'react';
 
 export const useNotifications = () => {
   const { user } = useUserStore();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const {
     notifications: storeNotifications,
     unreadCount: storeUnreadCount,
@@ -26,22 +29,16 @@ export const useNotifications = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', user?.id, page, limit],
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const notifications = await notificationApi.getNotifications({
-        status: NotificationStatus.SENT, // Only get sent notifications
+      // Use the getMyNotifications endpoint with pagination parameters
+      const notifications = await notificationApi.getMyNotifications({
+        page,
+        limit,
       });
-
-      // Filter notifications for this student
-      return notifications.filter(
-        (notification: any) =>
-          notification.targetType === NotificationTargetType.ALL_STUDENTS ||
-          (notification.targetType ===
-            NotificationTargetType.SPECIFIC_STUDENTS &&
-            notification.targetIds?.includes(user.id))
-      );
+      return notifications;
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -52,10 +49,16 @@ export const useNotifications = () => {
   useQuery({
     queryKey: ['updateNotificationStore', notifications],
     queryFn: async () => {
-      if (notifications && notifications.length > 0) {
-        setNotifications(notifications);
+      if (notifications) {
+        // Handle different response structures
+        const notificationItems = Array.isArray(notifications)
+          ? notifications
+          : notifications.items || [];
 
-        const unread = notifications.filter(
+        setNotifications(notificationItems);
+
+        // Calculate unread notifications
+        const unread = notificationItems.filter(
           (notification: any) => !notification.readBy?.includes(user?.id)
         ).length;
 
@@ -72,6 +75,7 @@ export const useNotifications = () => {
       return notificationApi.markAsRead(notificationId);
     },
     onSuccess: (_, notificationId) => {
+      // Pass the current user ID to ensure proper UI update
       storeMarkAsRead(notificationId);
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -80,7 +84,22 @@ export const useNotifications = () => {
   // Mark all notifications as read
   const { mutate: markAllAsRead } = useMutation({
     mutationFn: () => {
-      return notificationApi.markAllAsRead();
+      // Extract notification IDs to be marked as read
+      const notificationItems = notifications
+        ? Array.isArray(notifications)
+          ? notifications
+          : notifications.items || []
+        : [];
+
+      // Filter for unread notifications
+      const unreadNotificationIds = notificationItems
+        .filter(
+          (notification: any) => !notification.readBy?.includes(user?.id || '')
+        )
+        .map((notification: any) => notification.id);
+
+      // Call API with these IDs
+      return notificationApi.markAllAsRead(unreadNotificationIds);
     },
     onSuccess: () => {
       storeMarkAllAsRead();
@@ -88,11 +107,33 @@ export const useNotifications = () => {
     },
   });
 
+  // Extract notification items based on the structure
+  const notificationItems = notifications
+    ? Array.isArray(notifications)
+      ? notifications
+      : notifications.items || []
+    : storeNotifications;
+
+  // Extract pagination data if available
+  const paginationData =
+    notifications && !Array.isArray(notifications)
+      ? {
+          total: notifications.total || notificationItems.length,
+          page: notifications.page || 1,
+          totalPages: notifications.totalPages || 1,
+        }
+      : { total: notificationItems.length, page: 1, totalPages: 1 };
+
   return {
-    notifications: notifications || storeNotifications,
+    notifications: notificationItems,
+    ...paginationData,
     unreadCount: storeUnreadCount,
     isLoading,
     error,
+    page,
+    limit,
+    setPage,
+    setLimit,
     fetchNotifications: () => refetch(),
     markAsRead,
     markAllAsRead,

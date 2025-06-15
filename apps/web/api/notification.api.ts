@@ -32,6 +32,8 @@ export type QueryNotificationDto = {
   endDate?: string;
   page?: number;
   limit?: number;
+  take?: number;
+  skip?: number;
 };
 
 export const notificationApi = {
@@ -149,8 +151,126 @@ export const notificationApi = {
     return response.data;
   },
 
-  markAllAsRead: async () => {
-    const response = await nexusAxios.post('/notifications/read-all');
-    return response.data;
+  markAllAsRead: async (notificationIds: string[] = []) => {
+    // If we have specific notification IDs, mark them as read one by one
+    if (notificationIds.length > 0) {
+      const promises = notificationIds.map((id) =>
+        nexusAxios.post(`/notifications/${id}/read`)
+      );
+      const responses = await Promise.all(promises);
+      return responses.map((response) => response.data);
+    }
+
+    // If no specific IDs provided, try to use the bulk endpoint or fallback to individual requests
+    try {
+      // First try the bulk endpoint
+      const response = await nexusAxios.post('/notifications/read-all');
+      return response.data;
+    } catch (error) {
+      console.warn(
+        'Bulk read endpoint not available, consider implementing it in backend'
+      );
+      // Could implement fallback to individually mark each notification
+      return {
+        message: 'Please implement /notifications/read-all endpoint in backend',
+      };
+    }
+  },
+
+  getMyNotifications: async (params?: QueryNotificationDto) => {
+    // Format parameters for backend API
+    // Convert page/limit to take/skip as needed by backend
+    // Convert pagination params
+    const apiParams: QueryNotificationDto = { ...params };
+    if (params?.page && params?.limit) {
+      // If backend uses skip/take instead of page/limit
+      apiParams.take = params.limit;
+      apiParams.skip = (params.page - 1) * params.limit;
+    }
+
+    const response = await nexusAxios.get('/notifications/me', {
+      params: apiParams,
+    });
+
+    // Process response data
+    let items = [];
+    let totalItems = 0;
+    let totalPages = 1;
+    let currentPage = params?.page || 1;
+
+    // Check if response is paginated or array
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      'items' in response.data
+    ) {
+      // Already paginated response
+      items = response.data.items || [];
+      totalItems = response.data.total || items.length;
+      totalPages =
+        response.data.totalPages ||
+        Math.ceil(totalItems / (params?.limit || 10));
+      currentPage = response.data.page || currentPage;
+    } else if (Array.isArray(response.data)) {
+      // Array response - process all items
+      items = response.data;
+      totalItems = items.length;
+      totalPages = Math.ceil(totalItems / (params?.limit || 10));
+    } else {
+      // Unexpected response format
+      console.error('Unexpected API response format:', response.data);
+      return [];
+    }
+
+    // Process items
+    const processedData = items.map((notification: any) => {
+      // Process type field (ensure uppercase)
+      let type = notification.type;
+      if (type && typeof type === 'string') {
+        type = type.toUpperCase();
+        if (!Object.values(NotificationType).includes(type)) {
+          type = NotificationType.GENERAL;
+        }
+      } else {
+        type = NotificationType.GENERAL;
+      }
+
+      // Process priority field (ensure uppercase)
+      let priority = notification.priority;
+      if (priority && typeof priority === 'string') {
+        priority = priority.toUpperCase();
+        if (!Object.values(NotificationPriority).includes(priority)) {
+          priority = NotificationPriority.NORMAL;
+        }
+      } else {
+        priority = NotificationPriority.NORMAL;
+      }
+
+      // Process status field (ensure uppercase)
+      let status = notification.status;
+      if (status && typeof status === 'string') {
+        status = status.toUpperCase();
+        if (!Object.values(NotificationStatus).includes(status)) {
+          status = NotificationStatus.DRAFT;
+        }
+      } else {
+        status = NotificationStatus.DRAFT;
+      }
+
+      return {
+        ...notification,
+        type,
+        priority,
+        status,
+      };
+    });
+
+    // Return paginated response
+    return {
+      items: processedData,
+      total: totalItems,
+      page: currentPage,
+      totalPages: totalPages,
+    };
   },
 };

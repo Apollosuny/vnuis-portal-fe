@@ -1,7 +1,7 @@
 'use client';
 
 import StudentDashboardLayout from '@/components/layouts/StudentDashboardLayout';
-import { NotificationList } from '@/components/notifications/NotificationList';
+import { StudentNotificationList } from '@/components/notifications/StudentNotificationList';
 import {
   Card,
   CardContent,
@@ -25,19 +25,19 @@ const NotificationsPage = () => {
 
   return (
     <StudentDashboardLayout title='Notifications'>
-      <Card className='w-full'>
-        <CardHeader className='pb-3'>
+      <Card className='w-full shadow-sm'>
+        <CardHeader className='pb-3 border-b'>
           <CardTitle>Notifications</CardTitle>
         </CardHeader>
 
-        <div className='px-6'>
+        <div className='px-6 py-4'>
           <Tabs
             defaultValue='all'
             value={activeTab}
             onValueChange={setActiveTab}
             className='w-full'
           >
-            <TabsList className='w-full sm:w-auto'>
+            <TabsList className='w-full sm:w-auto mb-4'>
               <TabsTrigger value='all'>All</TabsTrigger>
               <TabsTrigger value='general'>General</TabsTrigger>
               <TabsTrigger value='academic'>Academic</TabsTrigger>
@@ -45,9 +45,9 @@ const NotificationsPage = () => {
               <TabsTrigger value='urgent'>Urgent</TabsTrigger>
             </TabsList>
 
-            <TabsContent value='all' className='mt-0 pt-6'>
-              <CardContent className='p-0'>
-                <NotificationList
+            <TabsContent value='all' className='mt-0'>
+              <CardContent className='px-0 pt-0'>
+                <StudentNotificationList
                   closeFn={dummyClose}
                   maxHeight='max-h-[600px]'
                   fullPage={true}
@@ -55,26 +55,26 @@ const NotificationsPage = () => {
               </CardContent>
             </TabsContent>
 
-            <TabsContent value='general' className='mt-0 pt-6'>
-              <CardContent className='p-0'>
+            <TabsContent value='general' className='mt-0'>
+              <CardContent className='px-0 pt-0'>
                 <FilteredNotifications type={NotificationType.GENERAL} />
               </CardContent>
             </TabsContent>
 
-            <TabsContent value='academic' className='mt-0 pt-6'>
-              <CardContent className='p-0'>
+            <TabsContent value='academic' className='mt-0'>
+              <CardContent className='px-0 pt-0'>
                 <FilteredNotifications type={NotificationType.ACADEMIC} />
               </CardContent>
             </TabsContent>
 
-            <TabsContent value='event' className='mt-0 pt-6'>
-              <CardContent className='p-0'>
+            <TabsContent value='event' className='mt-0'>
+              <CardContent className='px-0 pt-0'>
                 <FilteredNotifications type={NotificationType.EVENT} />
               </CardContent>
             </TabsContent>
 
-            <TabsContent value='urgent' className='mt-0 pt-6'>
-              <CardContent className='p-0'>
+            <TabsContent value='urgent' className='mt-0'>
+              <CardContent className='px-0 pt-0'>
                 <FilteredNotifications type={NotificationType.URGENT} />
               </CardContent>
             </TabsContent>
@@ -90,7 +90,8 @@ const FilteredNotifications = ({ type }: { type: NotificationType }) => {
   // For now, we're just rendering the NotificationList component
 
   return (
-    <NotificationList
+    <StudentNotificationList
+      type={type}
       closeFn={() => {}}
       maxHeight='max-h-[600px]'
       fullPage={true}
