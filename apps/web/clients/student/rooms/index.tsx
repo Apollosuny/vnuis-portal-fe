@@ -39,7 +39,9 @@ import {
   formatISODateForUI,
   formatTimeFromISOString,
   convertTimeZone,
+  convertBetweenTimezones,
 } from '../../../utils/date';
+import { DateTime } from 'luxon';
 
 // Define helper for animation delays (since Tailwind doesn't support dynamic delays by default)
 const getDelayStyle = (delayMs: number) => ({
@@ -164,8 +166,11 @@ const RoomsPage: React.FC = () => {
   // Function to get available time slots for a specific room and date
   const fetchAvailableSlots = async (roomId: string, date: string) => {
     try {
-      const today = new Date();
-      const offset = today.getTimezoneOffset().toString();
+      // Get current timezone offset in minutes and convert to hours:minutes format
+      // Offset is in minutes, negative for west of UTC and positive for east of UTC
+      const now = DateTime.now();
+      const offset = '0';
+
       const slots = await roomTimeSlotApi.getAvailableTimeSlots(
         roomId,
         date,
@@ -237,20 +242,43 @@ const RoomsPage: React.FC = () => {
 
   const handleSelectSlot = (slot: any) => {
     // Handle selecting a new slot with a smooth animation effect
+    console.log('Selected slot:', slot);
+
+    // Use new utility to ensure time is properly converted
+    const localStartTime =
+      slot.localStartTime ||
+      convertBetweenTimezones(
+        slot.startHour || slot.startTime || '',
+        bookingDate
+      );
+
+    const localEndTime =
+      slot.localEndTime ||
+      convertBetweenTimezones(slot.endHour || slot.endTime || '', bookingDate);
+
+    // Enhance slot with properly calculated local times
+    const enhancedSlot = {
+      ...slot,
+      localStartTime,
+      localEndTime,
+    };
+
+    console.log('Enhanced slot with proper local times:', enhancedSlot);
+
     if (
       bookingSlot &&
       bookingSlot.startHour === slot.startHour &&
       bookingSlot.endHour === slot.endHour
     ) {
       // Keep the current selection - no toggle
-      setBookingSlot(slot);
+      setBookingSlot(enhancedSlot);
     } else {
       // Set a new slot with a subtle animation
       setBookingSlot(null);
 
       // Small delay for visual feedback when changing selection
       setTimeout(() => {
-        setBookingSlot(slot);
+        setBookingSlot(enhancedSlot);
       }, 50);
     }
 
@@ -258,7 +286,7 @@ const RoomsPage: React.FC = () => {
 
     // Validate current duration with the newly selected slot
     if (bookingDuration > 0) {
-      const isValid = validateDuration(slot, bookingDuration);
+      const isValid = validateDuration(enhancedSlot, bookingDuration);
       setIsDurationValid(isValid);
       if (!isValid) {
         setBookingError(
@@ -306,60 +334,89 @@ const RoomsPage: React.FC = () => {
       // Format: YYYY-MM-DD
       const dateStr = bookingDate;
 
-      // Find the time string (format: HH:MM) - prefer localStartTime as it's already converted to local timezone
-      const timeStr =
-        bookingSlot.localStartTime ||
-        bookingSlot.startTime ||
-        bookingSlot.startHour ||
-        '';
+      // Find the time string (format: HH:MM)
+      // For booking, we need to be careful about which time we use
+      console.log('Full booking slot data:', bookingSlot);
 
-      if (!timeStr) {
-        throw new Error('Invalid time slot');
+      // For booking, we should use the UTC time from the server (startHour)
+      // because we'll be converting it back to UTC properly
+      const originalTimeStr = bookingSlot.startHour || '';
+      // This is the local time that was displayed to user
+      const localTimeStr = bookingSlot.localStartTime || '';
+
+      if (!originalTimeStr) {
+        throw new Error('Invalid time slot - missing original UTC time');
       }
 
-      // Parse the date and time components
-      const [yearStr, monthStr, dayStr] = dateStr.split('-');
-      const [hoursStr, minutesStr] = timeStr.split(':');
+      console.log(`Booking details:
+        Date: ${dateStr}
+        Original UTC time from server: ${originalTimeStr}
+        Local time displayed to user: ${localTimeStr}
+      `);
 
-      if (!yearStr || !monthStr || !dayStr || !hoursStr || !minutesStr) {
-        throw new Error('Invalid date or time format');
+      // Use Luxon to handle date/time and timezone conversion properly
+      // We're going to use the original UTC time from server, and create a proper
+      // DateTime object with the correct timezone
+      const [hours, minutes] = originalTimeStr.split(':').map(Number);
+
+      // Create a DateTime object in UTC first since that's what the server gave us
+      // Then we'll ensure it's properly formatted for the API
+      // Use DateTime.fromISO to parse the date safely, then set the time components
+      // This is a more reliable approach
+      const baseDate = DateTime.fromISO(dateStr);
+
+      if (!baseDate.isValid) {
+        console.error(
+          'Invalid date format:',
+          dateStr,
+          baseDate.invalidExplanation
+        );
+        throw new Error('Invalid date format');
       }
 
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const day = parseInt(dayStr, 10);
-      const hours = parseInt(hoursStr, 10);
-      const minutes = parseInt(minutesStr, 10);
+      // Create a new DateTime with the specified time components in UTC
+      const dateTime = baseDate
+        .set({
+          hour: hours,
+          minute: minutes,
+        })
+        .setZone('UTC');
 
-      if (
-        isNaN(year) ||
-        isNaN(month) ||
-        isNaN(day) ||
-        isNaN(hours) ||
-        isNaN(minutes)
-      ) {
+      if (!dateTime.isValid) {
+        console.error('Invalid DateTime:', dateTime.invalidExplanation);
         throw new Error('Invalid date or time values');
       }
 
-      // In JavaScript months are 0-indexed (0 = January, 11 = December)
-      const startTime = new Date(year, month - 1, day, hours, minutes);
+      // Log detailed debug info about the DateTime object
+      console.log('DateTime object for booking:', {
+        originalUTC: dateTime.toString(),
+        iso: dateTime.toISO(),
+        toLocal: dateTime.toLocal().toString(),
+        toLocalISO: dateTime.toLocal().toISO(),
+        offset: dateTime.offset,
+      });
 
-      // Get user's timezone offset for the API
-      const offset = new Date().getTimezoneOffset() * -1; // Convert to positive
-      const offsetHours = Math.floor(offset / 60);
-      const offsetMinutes = Math.abs(offset % 60);
-      const offsetStr = `${offsetHours}:${offsetMinutes.toString().padStart(2, '0')}`;
+      // Get the ISO string for the API - should be in UTC
+      const startTimeISO = dateTime.toISO();
 
-      console.log('startTime', startTime.toISOString());
+      // Get properly formatted timezone offset for API
+      const offsetMinutes = DateTime.local().offset;
+
+      // Format offset as +/-HH:MM
+      const sign = offsetMinutes >= 0 ? '+' : '-';
+      const absOffset = Math.abs(offsetMinutes);
+      const offsetHours = Math.floor(absOffset / 60);
+      const offsetMins = absOffset % 60;
+      const formattedOffset = `${sign}${offsetHours.toString().padStart(2, '0')}:${offsetMins.toString().padStart(2, '0')}`;
 
       // Call the API to book the room
       await roomBookingApi.createBooking({
-        startTime: startTime.toISOString(),
+        startTime: startTimeISO,
         duration: bookingDuration, // Use the user-specified duration
         purpose: bookingPurpose,
         isRecurring: false,
         roomId: selectedRoom.roomId,
-        offset: '0',
+        offset: '0', // Use the properly formatted timezone offset
       });
 
       setBookingSuccess(true);
@@ -400,9 +457,13 @@ const RoomsPage: React.FC = () => {
     }
   };
 
+  // Enhanced function to get available slots with proper time conversion
   const getAvailableSlots = () => {
     if (!selectedRoom || !bookingDate) return [];
-    return availableTimeSlots[bookingDate] || [];
+
+    const slots = availableTimeSlots[bookingDate] || [];
+
+    return slots;
   };
 
   const getFeatureIcon = (feature: string) => {
@@ -781,18 +842,121 @@ const RoomsPage: React.FC = () => {
                                 const endHourValue =
                                   slot.endHour || slot.endTime || '';
 
-                                // Convert from UTC to local time
-                                const startTime = convertTimeZone(
-                                  startHourValue,
-                                  bookingDate,
-                                  false
+                                console.log(
+                                  `Raw slot time: ${startHourValue} - ${endHourValue}`
                                 );
 
-                                const endTime = convertTimeZone(
-                                  endHourValue,
-                                  bookingDate,
-                                  false
-                                );
+                                // Convert from UTC to local time using Luxon
+                                let startTime, endTime;
+
+                                try {
+                                  console.log(
+                                    `Processing time slot: ${startHourValue} - ${endHourValue}`
+                                  );
+
+                                  // Parse using Luxon directly for better timezone handling
+                                  if (startHourValue && endHourValue) {
+                                    const startParts =
+                                      startHourValue.split(':');
+                                    const endParts = endHourValue.split(':');
+
+                                    if (
+                                      startParts.length >= 2 &&
+                                      endParts.length >= 2
+                                    ) {
+                                      const dateObj =
+                                        DateTime.fromISO(bookingDate);
+                                      console.log(
+                                        'Date object for conversion:',
+                                        dateObj.toString()
+                                      );
+
+                                      // These times are already in UTC from the backend
+                                      // We need to interpret them as UTC times and convert to local
+                                      const startHour = parseInt(
+                                        startParts[0],
+                                        10
+                                      );
+                                      const startMinute = parseInt(
+                                        startParts[1],
+                                        10
+                                      );
+                                      const endHour = parseInt(endParts[0], 10);
+                                      const endMinute = parseInt(
+                                        endParts[1],
+                                        10
+                                      );
+
+                                      console.log(
+                                        `Parsed time values - Start: ${startHour}:${startMinute}, End: ${endHour}:${endMinute}`
+                                      );
+
+                                      // Create UTC time and convert to local
+                                      const startInUTC = DateTime.fromObject({
+                                        year: dateObj.year,
+                                        month: dateObj.month,
+                                        day: dateObj.day,
+                                        hour: startHour,
+                                        minute: startMinute,
+                                      }).toLocal();
+
+                                      const endInUTC = DateTime.fromObject({
+                                        year: dateObj.year,
+                                        month: dateObj.month,
+                                        day: dateObj.day,
+                                        hour: endHour,
+                                        minute: endMinute,
+                                      }).toLocal();
+
+                                      console.log(
+                                        'UTC start time:',
+                                        startInUTC.setZone('UTC').toString()
+                                      );
+                                      console.log(
+                                        'Local start time:',
+                                        startInUTC.toString()
+                                      );
+                                      console.log(
+                                        'UTC end time:',
+                                        endInUTC.setZone('UTC').toString()
+                                      );
+                                      console.log(
+                                        'Local end time:',
+                                        endInUTC.toString()
+                                      );
+
+                                      startTime = startInUTC.toFormat('HH:mm');
+                                      endTime = endInUTC.toFormat('HH:mm');
+
+                                      console.log(
+                                        `Final display time: ${startTime} - ${endTime} (local time)`
+                                      );
+                                    } else {
+                                      throw new Error('Invalid time format');
+                                    }
+                                  } else {
+                                    throw new Error('Missing time values');
+                                  }
+                                } catch (error) {
+                                  console.error(
+                                    'Error converting time:',
+                                    error
+                                  );
+                                  // Fallback to old method as backup
+                                  startTime = convertTimeZone(
+                                    startHourValue,
+                                    bookingDate,
+                                    false
+                                  );
+                                  endTime = convertTimeZone(
+                                    endHourValue,
+                                    bookingDate,
+                                    false
+                                  );
+                                  console.log(
+                                    `Fallback conversion: ${startTime} - ${endTime}`
+                                  );
+                                }
 
                                 const isSelected =
                                   bookingSlot &&

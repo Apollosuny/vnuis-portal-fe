@@ -13,17 +13,25 @@ import { formatTimeFromISOString, convertTimeZone } from '../utils/date';
 const normalizeTime = (timeString: string | null | undefined): string => {
   if (!timeString) return '';
 
+  console.log('Normalizing time:', timeString);
+
   // If it's an ISO date string, use Luxon for proper timezone handling
   if (typeof timeString === 'string' && timeString.includes('T')) {
-    return formatTimeFromISOString(timeString, true); // Convert from UTC to local
+    const result = formatTimeFromISOString(timeString, true); // Convert from UTC to local
+    console.log(`Normalized ISO time ${timeString} -> ${result}`);
+    return result;
   }
 
   // If it's just a time string (HH:MM), treat as UTC and convert to local time
   if (typeof timeString === 'string' && timeString.match(/^\d{1,2}:\d{2}$/)) {
-    // Convert from UTC to local timezone
-    return convertTimeZone(timeString, new Date(), false);
+    const result = convertTimeZone(timeString, new Date(), false);
+    console.log(
+      `Normalized time string ${timeString} -> ${result} (UTC to local)`
+    );
+    return result;
   }
 
+  console.log('Time string not recognized for normalization:', timeString);
   return timeString;
 };
 
@@ -45,17 +53,43 @@ export const roomTimeSlotApi = {
 
       // Make sure we process the data correctly
       if (response.data && Array.isArray(response.data)) {
+        console.log('Raw API timeslots response:', response.data);
+
         // Normalize time formats in case they're coming as ISO strings
-        return response.data.map(
-          (slot: any): TimeSlotRange => ({
+        const mappedSlots = response.data.map((slot: any): TimeSlotRange => {
+          // We need to preserve original values from the API but also provide local time versions
+          const processedSlot = {
             ...slot,
-            // Handle both startHour/endHour and startTime/endTime fields
+            // Keep original API values
+            startHour: slot.startHour || '',
+            endHour: slot.endHour || '',
+            // Normalize time formats using our utility
             startTime: slot.startHour || normalizeTime(slot.startTime) || '',
             endTime: slot.endHour || normalizeTime(slot.endTime) || '',
             // Ensure dows is always an array
             dows: Array.isArray(slot.dows) ? slot.dows : [],
-          })
-        );
+          };
+
+          console.log('Processing slot:', {
+            original: {
+              startHour: slot.startHour,
+              endHour: slot.endHour,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+            },
+            processed: {
+              startHour: processedSlot.startHour,
+              endHour: processedSlot.endHour,
+              startTime: processedSlot.startTime,
+              endTime: processedSlot.endTime,
+            },
+          });
+
+          return processedSlot;
+        });
+
+        console.log('Normalized timeslots:', mappedSlots);
+        return mappedSlots;
       }
       return response.data || [];
     } catch (error) {
