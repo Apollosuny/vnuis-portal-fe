@@ -27,7 +27,7 @@ const getRegistrationBadgeVariant = (status: EventRegistrationStatus) => {
     case EventRegistrationStatus.APPROVED:
       return 'default' as const;
     case EventRegistrationStatus.REJECTED:
-      return 'destructive' as const;
+      return 'outline' as const; // Changed to outline for custom styling
     case EventRegistrationStatus.CANCELLED:
       return 'outline' as const;
     case EventRegistrationStatus.ATTENDED:
@@ -123,9 +123,33 @@ export const EventCard: React.FC<Props> = ({ event, registration }) => {
           <div className='mt-4 transform transition-all duration-300 group-hover:scale-105'>
             <Badge
               variant={getRegistrationBadgeVariant(registration.status)}
-              className='w-full flex items-center justify-center py-1.5 shadow-sm group-hover:shadow-md transition-shadow duration-300'
+              className={cn(
+                'w-full flex items-center justify-center py-1.5 shadow-sm group-hover:shadow-md transition-all duration-300',
+                registration.status === EventRegistrationStatus.REJECTED &&
+                  'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-800 dark:text-red-400',
+                registration.status === EventRegistrationStatus.APPROVED &&
+                  'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400',
+                registration.status === EventRegistrationStatus.CANCELLED &&
+                  'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'
+              )}
             >
-              <FileCheck className='h-3 w-3 mr-1.5 animate-pulse' />
+              {registration.status === EventRegistrationStatus.REJECTED ? (
+                <svg
+                  xmlns='http://www.w3.org/2000/svg'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='h-3 w-3 mr-1.5'
+                >
+                  <path d='M18 6 6 18' />
+                  <path d='m6 6 12 12' />
+                </svg>
+              ) : (
+                <FileCheck className='h-3 w-3 mr-1.5 animate-pulse' />
+              )}
               Status: {registration.status}
             </Badge>
           </div>

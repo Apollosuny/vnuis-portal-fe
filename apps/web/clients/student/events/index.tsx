@@ -289,11 +289,9 @@ export const StudentEventsClient = () => {
                       <EventCard
                         key={event.id}
                         event={event}
-                        // registration={registration}
-                        // isPast={true}
-                        // onSuccess={() => {
-                        //   fetchMyRegistrations();
-                        // }}
+                        registration={event.registrations?.find(
+                          (register) => register.studentId === student?.id
+                        )}
                       />
                     );
                   })}
