@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Event,
@@ -21,6 +21,8 @@ import {
   CardTitle,
 } from '@workspace/ui/components/card';
 import { Calendar, Clock, MapPin, Users, ArrowLeft } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { useUserStore } from '@/stores/user.store';
 
 type EventDetailClientProps = {
   eventId: string;
@@ -28,35 +30,18 @@ type EventDetailClientProps = {
 
 export const EventDetailClient = ({ eventId }: EventDetailClientProps) => {
   const router = useRouter();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [registration, setRegistration] = useState<EventRegistration | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const { student } = useUserStore();
 
-  useEffect(() => {
-    fetchEventDetails();
-  }, [eventId]);
-
-  const fetchEventDetails = async () => {
-    try {
-      setLoading(true);
-      // Fetch event details
-      const eventData = await eventApi.getEvent(eventId);
-      setEvent(eventData);
-
-      // Fetch user's registration for this event
-      const registrations = await eventApi.getEventRegistrations({ eventId });
-      const userRegistration = registrations[0]; // Assuming the API filters by current user
-      setRegistration(userRegistration);
-    } catch (error) {
-      toast.error(getAPIErrorMessage(error));
-      router.push('/student-dashboard/events');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: event,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['eventDetails', eventId],
+    queryFn: async () => await eventApi.getEvent(eventId),
+    enabled: !!eventId,
+  });
 
   const handleRegister = async () => {
     try {
@@ -65,13 +50,21 @@ export const EventDetailClient = ({ eventId }: EventDetailClientProps) => {
         eventId,
       });
       toast.success('Event registration successful');
-      fetchEventDetails(); // Refresh the data
+      refetch();
     } catch (error) {
       toast.error(getAPIErrorMessage(error));
     } finally {
       setRegistering(false);
     }
   };
+
+  const registration = useMemo(
+    () =>
+      event?.registrations.find(
+        (register: EventRegistration) => register.studentId === student?.id
+      ),
+    [event]
+  );
 
   const handleCancelRegistration = async () => {
     if (!registration) return;
@@ -80,7 +73,7 @@ export const EventDetailClient = ({ eventId }: EventDetailClientProps) => {
       setRegistering(true);
       await eventApi.cancelRegistration(registration.id);
       toast.success('Registration cancelled successfully');
-      fetchEventDetails(); // Refresh the data
+      refetch();
     } catch (error) {
       toast.error(getAPIErrorMessage(error));
     } finally {
@@ -121,7 +114,7 @@ export const EventDetailClient = ({ eventId }: EventDetailClientProps) => {
     }
   };
 
-  if (loading || !event) {
+  if (isLoading || !event) {
     return (
       <div className='flex justify-center items-center min-h-[50vh]'>
         <Spinner size='lg' />

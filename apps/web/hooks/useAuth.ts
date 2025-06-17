@@ -1,4 +1,4 @@
-import { login } from '../api/auth.api';
+import { getStudentProfile, login } from '../api/auth.api';
 import { useUserStore } from '../stores/user.store';
 import { handleApiError } from '../utils/errorHandler';
 import { useMemo, useState } from 'react';
@@ -36,6 +36,7 @@ export const useAuth = (onSuccess?: () => void) => {
     setJwt,
     setJwtRefresh,
     setUser,
+    setStudent,
     setIsAuthenticated,
   } = useUserStore();
 
@@ -62,6 +63,12 @@ export const useAuth = (onSuccess?: () => void) => {
         setJwtRefresh(res.jwtRefresh);
         setUser(res.user);
         setIsAuthenticated(true);
+
+        if (res.user.role === 'STUDENT') {
+          const profile = await getStudentProfile();
+          setStudent(profile);
+        }
+
         if (onSuccess) {
           onSuccess();
         } else {

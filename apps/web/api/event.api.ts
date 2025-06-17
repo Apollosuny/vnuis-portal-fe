@@ -52,6 +52,19 @@ export const eventApi = {
     return response.data;
   },
 
+  getEventsByStudent: async (params?: { include?: string[] }) => {
+    const queryParams: Record<string, any> = {};
+
+    if (params?.include) {
+      queryParams.include = [params.include.join(',')];
+    }
+
+    const response = await nexusAxios.get('/events/student', {
+      params: queryParams,
+    });
+    return response.data;
+  },
+
   getEvent: async (id: string) => {
     const response = await nexusAxios.get(`/events/${id}`);
     return response.data;

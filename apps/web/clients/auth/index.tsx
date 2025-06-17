@@ -21,13 +21,6 @@ const LoginPage: React.FC = () => {
   const { onLogin, control, errors, handleSubmit, shouldDisableButton } =
     useAuth();
 
-  useEffect(() => {
-    // if (isAuthenticated && jwt && jwtRefresh && user) {
-    //   // Redirect to the dashboard or home page if already authenticated
-    //   window.location.href = '/dashboard'; // Adjust the redirect path as needed
-    // }
-  }, [jwt, jwtRefresh, isAuthenticated, user]);
-
   return (
     <div className='h-screen w-full relative overflow-hidden'>
       {/* Video background */}

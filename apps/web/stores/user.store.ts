@@ -1,10 +1,13 @@
 // User store with zustand
 import { IUser } from '@/types/user.type';
+import { Operator, Student } from '@/types/user.types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type State = {
   user: IUser | null;
+  student: Student | null;
+  operator: Operator | null;
   jwt: string | null;
   jwtRefresh: string | null;
   isAuthenticated: boolean;
@@ -13,6 +16,8 @@ type State = {
 
 type Actions = {
   setUser: (user: IUser | null) => void;
+  setStudent: (student: Student | null) => void;
+  setOperator: (operator: Operator | null) => void;
   setJwt: (jwt: string | null) => void;
   setJwtRefresh: (jwtRefresh: string | null) => void;
   setIsAuthenticated: (isAuthenticated: boolean) => void;
@@ -22,6 +27,8 @@ type Actions = {
 
 const defaultStates = {
   user: null,
+  student: null,
+  operator: null,
   jwt: null,
   jwtRefresh: null,
   isAuthenticated: false,
@@ -33,6 +40,8 @@ export const useUserStore = create<State & Actions>()(
     (set) => ({
       ...defaultStates,
       setUser: (user) => set({ user }),
+      setStudent: (student) => set({ student }),
+      setOperator: (operator) => set({ operator }),
       setJwt: (jwt) => set({ jwt }),
       setJwtRefresh: (jwtRefresh) => set({ jwtRefresh }),
       setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),

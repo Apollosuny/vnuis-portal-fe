@@ -1,3 +1,4 @@
+import { Student } from '@/types/user.types';
 import { nexusAxios } from '../configs/axios.config';
 import { IUser } from '../types/user.type';
 
@@ -31,5 +32,10 @@ export const refreshToken = async (
       Authorization: refreshToken,
     },
   });
+  return res.data;
+};
+
+export const getStudentProfile = async (): Promise<Student> => {
+  const res = await nexusAxios.get('/student/me');
   return res.data;
 };
