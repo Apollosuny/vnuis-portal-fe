@@ -41,6 +41,12 @@ import {
   convertTimeZone,
 } from '../../../utils/date';
 
+// Define helper for animation delays (since Tailwind doesn't support dynamic delays by default)
+const getDelayStyle = (delayMs: number) => ({
+  animationDelay: `${delayMs}ms`,
+  transitionDelay: `${delayMs}ms`,
+});
+
 // Filter options
 const roomTypes = [
   { value: 'all', label: 'All Types' },
@@ -86,6 +92,8 @@ const RoomsPage: React.FC = () => {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [bookingPurpose, setBookingPurpose] = useState('');
+  const [bookingDuration, setBookingDuration] = useState<number>(1); // Add state for booking duration
+  const [isDurationValid, setIsDurationValid] = useState<boolean>(true); // Add state to track duration validity
   const [availableTimeSlots, setAvailableTimeSlots] = useState<
     Record<string, any[]>
   >({});
@@ -108,6 +116,8 @@ const RoomsPage: React.FC = () => {
     setBookingError(null);
     setBookingSuccess(false);
     setBookingPurpose('');
+    setBookingDuration(1); // Reset booking duration
+    setIsDurationValid(true);
 
     fetchRooms();
   }, []);
@@ -173,6 +183,8 @@ const RoomsPage: React.FC = () => {
 
   const handleRoomClick = async (room: Room) => {
     setSelectedRoom(room);
+    setBookingDuration(1); // Reset duration to default value
+    setIsDurationValid(true); // Reset duration validity
 
     // Set default date to today
     const today = new Date();
@@ -219,11 +231,41 @@ const RoomsPage: React.FC = () => {
     setBookingSuccess(false);
     setBookingError(null);
     setBookingPurpose('');
+    setBookingDuration(1); // Reset duration when closing the detail
+    setIsDurationValid(true); // Reset duration validity
   };
 
   const handleSelectSlot = (slot: any) => {
-    setBookingSlot(slot);
+    // Handle selecting a new slot with a smooth animation effect
+    if (
+      bookingSlot &&
+      bookingSlot.startHour === slot.startHour &&
+      bookingSlot.endHour === slot.endHour
+    ) {
+      // Keep the current selection - no toggle
+      setBookingSlot(slot);
+    } else {
+      // Set a new slot with a subtle animation
+      setBookingSlot(null);
+
+      // Small delay for visual feedback when changing selection
+      setTimeout(() => {
+        setBookingSlot(slot);
+      }, 50);
+    }
+
     setBookingError(null);
+
+    // Validate current duration with the newly selected slot
+    if (bookingDuration > 0) {
+      const isValid = validateDuration(slot, bookingDuration);
+      setIsDurationValid(isValid);
+      if (!isValid) {
+        setBookingError(
+          `The selected duration (${bookingDuration} hours) exceeds the available time slot.`
+        );
+      }
+    }
   };
 
   const handleBookRoom = async () => {
@@ -234,6 +276,19 @@ const RoomsPage: React.FC = () => {
 
     if (!bookingPurpose.trim()) {
       setBookingError('Please provide a purpose for your booking.');
+      return;
+    }
+
+    if (bookingDuration <= 0) {
+      setBookingError('Please specify a valid duration greater than 0.');
+      return;
+    }
+
+    // Validate the duration against the selected time slot
+    if (!validateDuration(bookingSlot, bookingDuration)) {
+      setBookingError(
+        `The selected duration (${bookingDuration} hours) exceeds the available time slot.`
+      );
       return;
     }
 
@@ -295,17 +350,12 @@ const RoomsPage: React.FC = () => {
       const offsetMinutes = Math.abs(offset % 60);
       const offsetStr = `${offsetHours}:${offsetMinutes.toString().padStart(2, '0')}`;
 
-      // Make sure we have a valid duration
-      const duration = bookingSlot.duration
-        ? bookingSlot.duration / 60 // Convert minutes to hours if duration is in minutes
-        : 1; // Default to 1 hour if no duration specified
-
       console.log('startTime', startTime.toISOString());
 
       // Call the API to book the room
       await roomBookingApi.createBooking({
         startTime: startTime.toISOString(),
-        duration,
+        duration: bookingDuration, // Use the user-specified duration
         purpose: bookingPurpose,
         isRecurring: false,
         roomId: selectedRoom.roomId,
@@ -318,6 +368,8 @@ const RoomsPage: React.FC = () => {
       // Reset fields after successful booking
       setBookingSlot(null);
       setBookingPurpose('');
+      setBookingDuration(1); // Reset duration to default
+      setIsDurationValid(true); // Reset duration validity
 
       // Refresh available slots to reflect the new booking
       const slots = await fetchAvailableSlots(selectedRoom.roomId, bookingDate);
@@ -396,6 +448,47 @@ const RoomsPage: React.FC = () => {
     if (room.capacity > 10) features.push('Air Conditioning');
 
     return features;
+  };
+
+  // Function to check if the selected duration is valid for the time slot
+  const validateDuration = (slot: any, duration: number): boolean => {
+    if (!slot || !duration) return false;
+
+    // Get the start and end times
+    const startTime =
+      slot.localStartTime || slot.startTime || slot.startHour || '';
+    const endTime = slot.localEndTime || slot.endTime || slot.endHour || '';
+
+    if (!startTime || !endTime) return false;
+
+    // Parse hours and minutes
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+
+    // Calculate the slot duration in hours
+    const slotDurationHours =
+      endHour - startHour + (endMinute - startMinute) / 60;
+
+    // Check if requested duration fits within the slot
+    return duration <= slotDurationHours;
+  };
+
+  const handleDurationChange = (value: number) => {
+    setBookingDuration(value);
+    setBookingError(null);
+
+    // Validate duration if a slot is selected
+    if (bookingSlot && value > 0) {
+      const isValid = validateDuration(bookingSlot, value);
+      setIsDurationValid(isValid);
+      if (!isValid) {
+        setBookingError(
+          `The selected duration (${value} hours) exceeds the available time slot.`
+        );
+      }
+    } else {
+      setIsDurationValid(true);
+    }
   };
 
   if (loading) {
@@ -678,12 +771,10 @@ const RoomsPage: React.FC = () => {
                         <label className='block text-sm font-medium mb-1'>
                           Select Time Slot
                         </label>
-                        <div className='grid grid-cols-2 gap-2'>
+                        <div className='grid grid-cols-2 gap-3'>
                           {getAvailableSlots().length > 0 ? (
                             getAvailableSlots().map(
                               (slot: any, index: number) => {
-                                console.log('Slot:', slot);
-
                                 // Use startHour and endHour from response instead of startTime/endTime
                                 const startHourValue =
                                   slot.startHour || slot.startTime || '';
@@ -703,13 +794,18 @@ const RoomsPage: React.FC = () => {
                                   false
                                 );
 
+                                const isSelected =
+                                  bookingSlot &&
+                                  bookingSlot.startHour === slot.startHour &&
+                                  bookingSlot.endHour === slot.endHour;
+
                                 return (
                                   <div
                                     key={index}
-                                    className={`p-2 border rounded-md cursor-pointer ${
-                                      bookingSlot === slot
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'hover:bg-gray-50'
+                                    className={`group relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 ${
+                                      isSelected
+                                        ? 'bg-gradient-to-br from-primary via-primary to-primary/90 border-primary shadow-lg scale-105'
+                                        : 'bg-white border-gray-200 hover:border-primary/40 hover:shadow-sm hover:scale-[1.02]'
                                     }`}
                                     onClick={() =>
                                       handleSelectSlot({
@@ -719,7 +815,47 @@ const RoomsPage: React.FC = () => {
                                       })
                                     }
                                   >
-                                    {startTime} - {endTime}
+                                    {/* Selected indicator */}
+                                    {isSelected && (
+                                      <div className='absolute -top-2 -right-2 h-6 w-6 bg-green-500 rounded-full flex items-center justify-center shadow-md border border-white'>
+                                        <span className='text-white text-xs'>
+                                          ✓
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    <div className='flex flex-col items-center'>
+                                      {/* Time display */}
+                                      <div className='flex items-center justify-center mb-1'>
+                                        <Clock
+                                          className={`h-5 w-5 ${
+                                            isSelected
+                                              ? 'text-white mr-2'
+                                              : 'text-primary mr-2 group-hover:text-primary/80'
+                                          }`}
+                                        />
+                                        <span
+                                          className={`text-base font-medium ${
+                                            isSelected
+                                              ? 'text-white'
+                                              : 'group-hover:text-gray-900'
+                                          }`}
+                                        >
+                                          {startTime} - {endTime}
+                                        </span>
+                                      </div>
+
+                                      {/* Status indicator: available or selected */}
+                                      <div
+                                        className={`text-xs mt-1 px-2 py-0.5 rounded-full ${
+                                          isSelected
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-green-100 text-green-700'
+                                        }`}
+                                      >
+                                        {isSelected ? 'Selected' : 'Available'}
+                                      </div>
+                                    </div>
                                   </div>
                                 );
                               }
@@ -732,61 +868,161 @@ const RoomsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className='pt-4 border-t'>
-                        <div className='flex justify-between mb-2'>
-                          <span>Room type:</span>
-                          <span className='font-medium'>
-                            {selectedRoom.type.charAt(0) +
-                              selectedRoom.type.slice(1).toLowerCase()}
-                          </span>
-                        </div>
-                        <div className='flex justify-between mb-2'>
-                          <span>Capacity:</span>
-                          <span className='font-medium'>
-                            {selectedRoom.capacity} people
-                          </span>
-                        </div>
-                        {bookingSlot && (
-                          <>
-                            <div className='flex justify-between mb-2'>
-                              <span>Date:</span>
-                              <span className='font-medium'>
-                                {formatDateForDisplay(bookingDate)}
-                              </span>
+                      <div className='mt-6 pt-5 border-t'>
+                        <h3 className='font-semibold text-gray-800 mb-3 flex items-center'>
+                          <DoorOpen className='mr-2 h-4 w-4 text-primary animate-pulse' />
+                          Room Details
+                        </h3>
+
+                        {/* Room details card with animation */}
+                        <div
+                          className={`bg-gray-50 p-4 rounded-lg mb-4 transition-all duration-500 ${
+                            bookingSlot
+                              ? 'opacity-100 transform translate-y-0 shadow-md'
+                              : 'opacity-0 transform -translate-y-4'
+                          }`}
+                          style={
+                            bookingSlot ? { transitionDelay: '100ms' } : {}
+                          }
+                        >
+                          <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                            <div className='text-gray-600'>Room type:</div>
+                            <div className='font-medium text-gray-900'>
+                              {selectedRoom.type.charAt(0) +
+                                selectedRoom.type.slice(1).toLowerCase()}
                             </div>
-                            <div className='flex justify-between mb-2'>
-                              <span>Time:</span>
-                              <span className='font-medium'>
-                                {bookingSlot.localStartTime ||
-                                  bookingSlot.startTime ||
-                                  bookingSlot.startHour}{' '}
-                                -{' '}
-                                {bookingSlot.localEndTime ||
-                                  bookingSlot.endTime ||
-                                  bookingSlot.endHour}
-                              </span>
+
+                            <div className='text-gray-600'>Capacity:</div>
+                            <div className='font-medium text-gray-900'>
+                              <Users className='inline h-3.5 w-3.5 mr-1 text-gray-500' />
+                              {selectedRoom.capacity} people
                             </div>
-                          </>
-                        )}
+
+                            {bookingSlot && (
+                              <>
+                                <div
+                                  className='text-gray-600 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(100)}
+                                >
+                                  Date:
+                                </div>
+                                <div
+                                  className='font-medium text-gray-900 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(200)}
+                                >
+                                  <Calendar className='inline h-3.5 w-3.5 mr-1 text-gray-500' />
+                                  {formatDateForDisplay(bookingDate)}
+                                </div>
+
+                                <div
+                                  className='text-gray-600 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(300)}
+                                >
+                                  Time:
+                                </div>
+                                <div
+                                  className='font-medium text-gray-900 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(400)}
+                                >
+                                  <Clock className='inline h-3.5 w-3.5 mr-1 text-gray-500' />
+                                  {bookingSlot.localStartTime ||
+                                    bookingSlot.startTime ||
+                                    bookingSlot.startHour}{' '}
+                                  -{' '}
+                                  {bookingSlot.localEndTime ||
+                                    bookingSlot.endTime ||
+                                    bookingSlot.endHour}
+                                </div>
+
+                                <div
+                                  className='text-gray-600 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(500)}
+                                >
+                                  Duration:
+                                </div>
+                                <div
+                                  className='font-medium text-gray-900 transition-all duration-300 opacity-0 animate-pulse'
+                                  style={getDelayStyle(600)}
+                                >
+                                  {bookingDuration}{' '}
+                                  {bookingDuration === 1 ? 'hour' : 'hours'}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       {bookingSlot && (
-                        <div className='mt-4 border-t pt-4'>
-                          <label
-                            htmlFor='purpose'
-                            className='block mb-2 text-sm font-medium'
+                        <>
+                          <div
+                            className={`mt-4 border-t pt-4 transition-all duration-700 transform ${
+                              bookingSlot
+                                ? 'opacity-100 translate-y-0'
+                                : 'opacity-0 translate-y-8'
+                            }`}
+                            style={
+                              bookingSlot ? { transitionDelay: '700ms' } : {}
+                            }
                           >
-                            Purpose of booking:
-                          </label>
-                          <textarea
-                            id='purpose'
-                            className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary'
-                            value={bookingPurpose}
-                            onChange={(e) => setBookingPurpose(e.target.value)}
-                            placeholder='Please describe the purpose of your booking'
-                            rows={3}
-                          />
-                        </div>
+                            <label
+                              htmlFor='duration'
+                              className='flex items-center mb-2 text-sm font-medium group'
+                            >
+                              <Clock className='mr-2 h-4 w-4 text-primary group-hover:text-primary/80 transition-colors' />
+                              Duration (hours):
+                            </label>
+                            <input
+                              id='duration'
+                              type='number'
+                              className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all hover:border-primary/50'
+                              min='0.5'
+                              max='24'
+                              step='0.5'
+                              value={bookingDuration}
+                              onChange={(e) =>
+                                handleDurationChange(parseFloat(e.target.value))
+                              }
+                            />
+                            <p className='text-xs text-gray-500 mt-1'>
+                              The duration must fit within the selected time
+                              slot (
+                              {bookingSlot.localStartTime ||
+                                bookingSlot.startTime}{' '}
+                              -{' '}
+                              {bookingSlot.localEndTime || bookingSlot.endTime})
+                            </p>
+                          </div>
+
+                          <div
+                            className={`mt-4 border-t pt-4 transition-all duration-700 transform ${
+                              bookingSlot
+                                ? 'opacity-100 translate-y-0'
+                                : 'opacity-0 translate-y-8'
+                            }`}
+                            style={
+                              bookingSlot ? { transitionDelay: '900ms' } : {}
+                            }
+                          >
+                            <label
+                              htmlFor='purpose'
+                              className='flex items-center mb-2 text-sm font-medium group'
+                            >
+                              <PanelTop className='mr-2 h-4 w-4 text-primary group-hover:text-primary/80 transition-colors' />
+                              Purpose of booking:
+                            </label>
+                            <textarea
+                              id='purpose'
+                              className='w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm transition-all hover:border-primary/50'
+                              value={bookingPurpose}
+                              onChange={(e) =>
+                                setBookingPurpose(e.target.value)
+                              }
+                              placeholder='Please describe the purpose of your booking'
+                              rows={3}
+                            />
+                          </div>
+                        </>
                       )}
 
                       {bookingError && (
@@ -817,11 +1053,19 @@ const RoomsPage: React.FC = () => {
                 </CardContent>
                 <CardFooter>
                   <Button
-                    className='w-full'
+                    className={`w-full transition-all duration-700 transform ${
+                      bookingSlot
+                        ? 'opacity-100 scale-100'
+                        : 'opacity-70 scale-95'
+                    }`}
+                    style={bookingSlot ? { transitionDelay: '1100ms' } : {}}
                     disabled={
                       !bookingSlot ||
-                      !selectedRoom.isAvailable ||
-                      bookingLoading
+                      bookingLoading ||
+                      !selectedRoom ||
+                      (bookingSlot &&
+                        bookingDuration > 0 &&
+                        !validateDuration(bookingSlot, bookingDuration))
                     }
                     onClick={handleBookRoom}
                   >
@@ -830,14 +1074,12 @@ const RoomsPage: React.FC = () => {
                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                         Processing...
                       </>
-                    ) : selectedRoom.isAvailable ? (
-                      bookingSlot ? (
-                        'Confirm Booking'
-                      ) : (
-                        'Select a Time Slot'
-                      )
-                    ) : (
+                    ) : !selectedRoom ? (
                       'Room Unavailable'
+                    ) : bookingSlot ? (
+                      'Confirm Booking'
+                    ) : (
+                      'Select a Time Slot'
                     )}
                   </Button>
                 </CardFooter>
