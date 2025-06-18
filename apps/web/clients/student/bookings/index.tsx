@@ -129,10 +129,7 @@ const BookingsPage: React.FC = () => {
         return bookingDate >= today;
       }
 
-      if (
-        activeTab === 'history' &&
-        (booking.status === 'REJECTED' || booking.status === 'CANCELLED')
-      ) {
+      if (activeTab === 'history') {
         // History tab shows past bookings
         return true;
       }
