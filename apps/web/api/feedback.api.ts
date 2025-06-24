@@ -1,4 +1,5 @@
 import { nexusAxios } from '@/configs/axios.config';
+import qs from 'qs';
 
 export interface Feedback {
   id: string;
@@ -86,23 +87,21 @@ export interface QueryFeedbackDto {
   take?: number;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  totalItems: number;
+  currentPage: number;
+  totalPages: number;
+}
+
 export const feedbackApi = {
   // Get all feedbacks with optional query parameters
   getFeedbacks: async (query?: QueryFeedbackDto): Promise<Feedback[]> => {
-    const params = new URLSearchParams();
-    if (query) {
-      Object.entries(query).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'object') {
-            params.append(key, JSON.stringify(value));
-          } else {
-            params.append(key, String(value));
-          }
-        }
-      });
-    }
-
-    const response = await nexusAxios.get(`/feedback?${params.toString()}`);
+    const params = query ? qs.stringify(query) : '';
+    const url = params
+      ? `/feedback?params=${encodeURIComponent(params)}`
+      : '/feedback';
+    const response = await nexusAxios.get(url);
     return response.data;
   },
 
@@ -135,20 +134,11 @@ export const feedbackApi = {
 
   // Get my feedbacks (for current student)
   getMyFeedbacks: async (query?: QueryFeedbackDto): Promise<Feedback[]> => {
-    const params = new URLSearchParams();
-    if (query) {
-      Object.entries(query).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          if (typeof value === 'object') {
-            params.append(key, JSON.stringify(value));
-          } else {
-            params.append(key, String(value));
-          }
-        }
-      });
-    }
-
-    const response = await nexusAxios.get(`/feedback?${params.toString()}`);
+    const params = query ? qs.stringify(query) : '';
+    const url = params
+      ? `/feedback?params=${encodeURIComponent(params)}`
+      : '/feedback';
+    const response = await nexusAxios.get(url);
     return response.data;
   },
 
@@ -162,10 +152,10 @@ export const feedbackApi = {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<Feedback[]> => {
+  }): Promise<PaginatedResponse<Feedback>> => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
+      if (value !== undefined && value !== null && value !== '') {
         searchParams.append(key, String(value));
       }
     });
@@ -173,6 +163,26 @@ export const feedbackApi = {
     const response = await nexusAxios.get(
       `/feedback/search?${searchParams.toString()}`
     );
+
+    // Backend mới có thể chưa trả về metadata phân trang
+    // Tạm thời convert response format cũ sang format mới nếu cần
+    if (Array.isArray(response.data)) {
+      return {
+        data: response.data,
+        totalItems: response.headers['x-total-count']
+          ? parseInt(response.headers['x-total-count'])
+          : response.data.length,
+        currentPage: params.page || 1,
+        totalPages: response.headers['x-total-pages']
+          ? parseInt(response.headers['x-total-pages'])
+          : Math.ceil(
+              (response.headers['x-total-count']
+                ? parseInt(response.headers['x-total-count'])
+                : response.data.length) / (params.limit || 10)
+            ),
+      };
+    }
+
     return response.data;
   },
 

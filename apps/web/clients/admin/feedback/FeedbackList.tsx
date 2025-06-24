@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -44,22 +44,63 @@ const ITEMS_PER_PAGE = 10;
 export function FeedbackList() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
-  const [sentiment, setSentiment] = useState('');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [sentiment, setSentiment] = useState('all');
+
+  // Thông tin phân trang từ backend
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const {
-    data: feedbacks,
+    data: feedbackResponse,
     isLoading,
     error,
   } = useAdminFeedbacks({
     page,
     limit: ITEMS_PER_PAGE,
     search,
-    category,
-    status,
-    sentiment,
+    category: category === 'all' ? '' : category,
+    status: status === 'all' ? '' : status,
+    sentiment: sentiment === 'all' ? '' : sentiment,
   });
+
+  // Extract feedbacks from response - handle both formats (with pagination metadata or direct array)
+  const feedbacks = feedbackResponse
+    ? 'data' in feedbackResponse && Array.isArray(feedbackResponse.data)
+      ? feedbackResponse.data
+      : Array.isArray(feedbackResponse)
+        ? feedbackResponse
+        : []
+    : [];
+
+  // Update pagination info from the response
+  useEffect(() => {
+    if (feedbackResponse) {
+      if (
+        typeof feedbackResponse === 'object' &&
+        'totalItems' in feedbackResponse
+      ) {
+        // New API response format with pagination metadata
+        setTotalItems(feedbackResponse.totalItems || 0);
+        setTotalPages(feedbackResponse.totalPages || 1);
+      } else {
+        // Legacy API response format (array of feedbacks) or handle any other format
+        const feedbacksArray = Array.isArray(feedbackResponse)
+          ? feedbackResponse
+          : feedbacks;
+        const isLastPage = feedbacksArray.length < ITEMS_PER_PAGE;
+
+        if (isLastPage) {
+          setTotalItems((page - 1) * ITEMS_PER_PAGE + feedbacksArray.length);
+          setTotalPages(page);
+        } else {
+          setTotalItems(page * ITEMS_PER_PAGE);
+          setTotalPages(page + 1);
+        }
+      }
+    }
+  }, [feedbackResponse, page, feedbacks]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -157,7 +198,7 @@ export function FeedbackList() {
               <SelectValue placeholder='Category' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=''>All Categories</SelectItem>
+              <SelectItem value='all'>All Categories</SelectItem>
               <SelectItem value='GENERAL'>General</SelectItem>
               <SelectItem value='USER_EXPERIENCE'>User Experience</SelectItem>
               <SelectItem value='FUNCTIONALITY'>Functionality</SelectItem>
@@ -175,7 +216,7 @@ export function FeedbackList() {
               <SelectValue placeholder='Status' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=''>All Status</SelectItem>
+              <SelectItem value='all'>All Status</SelectItem>
               <SelectItem value='SUBMITTED'>Submitted</SelectItem>
               <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
               <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
@@ -189,7 +230,7 @@ export function FeedbackList() {
               <SelectValue placeholder='Sentiment' />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value=''>All Sentiment</SelectItem>
+              <SelectItem value='all'>All Sentiment</SelectItem>
               <SelectItem value='POSITIVE'>Positive</SelectItem>
               <SelectItem value='NEGATIVE'>Negative</SelectItem>
               <SelectItem value='NEUTRAL'>Neutral</SelectItem>
@@ -277,12 +318,19 @@ export function FeedbackList() {
         {/* Pagination */}
         <div className='flex items-center justify-between mt-6'>
           <div className='text-sm text-gray-500'>
-            Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{' '}
-            {Math.min(page * ITEMS_PER_PAGE, feedbacks?.length || 0)} of{' '}
-            {feedbacks?.length || 0} results
+            {feedbacks && feedbacks.length > 0 ? (
+              <>
+                Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                {(page - 1) * ITEMS_PER_PAGE + feedbacks.length} of {totalItems}{' '}
+                results
+              </>
+            ) : (
+              'No results found'
+            )}
           </div>
           <Pagination>
             <PaginationContent>
+              {/* Previous Page Button */}
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => setPage(Math.max(1, page - 1))}
@@ -293,14 +341,44 @@ export function FeedbackList() {
                   }
                 />
               </PaginationItem>
-              <PaginationItem>
-                <PaginationLink isActive>{page}</PaginationLink>
-              </PaginationItem>
+
+              {/* Page Numbers */}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                // Logic to show correct page numbers around current page
+                let pageNum = 1;
+
+                if (totalPages <= 5) {
+                  // Show all pages if total pages <= 5
+                  pageNum = i + 1;
+                } else if (page <= 3) {
+                  // When current page is near the start
+                  pageNum = i + 1;
+                } else if (page >= totalPages - 2) {
+                  // When current page is near the end
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  // When current page is in the middle
+                  pageNum = page - 2 + i;
+                }
+
+                return (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      onClick={() => setPage(pageNum)}
+                      isActive={pageNum === page}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+
+              {/* Next Page Button */}
               <PaginationItem>
                 <PaginationNext
                   onClick={() => setPage(page + 1)}
                   className={
-                    feedbacks && feedbacks.length < ITEMS_PER_PAGE
+                    page >= totalPages
                       ? 'pointer-events-none opacity-50'
                       : 'cursor-pointer'
                   }

@@ -1,5 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { feedbackApi, Feedback, QueryFeedbackDto } from '@/api/feedback.api';
+import {
+  feedbackApi,
+  Feedback,
+  QueryFeedbackDto,
+  PaginatedResponse,
+} from '@/api/feedback.api';
 
 export interface UseAdminFeedbacksParams {
   page?: number;
@@ -24,39 +29,23 @@ export const useAdminFeedbacks = (params: UseAdminFeedbacksParams = {}) => {
     search,
   } = params;
 
-  const queryParams: QueryFeedbackDto = {
-    skip: (page - 1) * limit,
-    take: limit,
-    include: ['student', 'reviewedByOperator', 'responses'],
-    sort: { createdAt: 'desc' },
-  };
-
-  // Add filters
-  if (category || status || sentiment || startDate || endDate || search) {
-    queryParams.where = {};
-
-    if (category) queryParams.where.category = category;
-    if (status) queryParams.where.status = status;
-    if (sentiment) queryParams.where.sentiment = sentiment;
-
-    if (startDate || endDate) {
-      queryParams.where.createdAt = {};
-      if (startDate) queryParams.where.createdAt.gte = startDate;
-      if (endDate) queryParams.where.createdAt.lte = endDate;
-    }
-
-    if (search) {
-      queryParams.where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-  }
-
-  return useQuery({
-    queryKey: ['admin-feedbacks', queryParams],
+  return useQuery<PaginatedResponse<Feedback>>({
+    queryKey: [
+      'admin-feedbacks',
+      { page, limit, category, status, sentiment, startDate, endDate, search },
+    ],
     queryFn: async () => {
-      return await feedbackApi.getFeedbacks(queryParams);
+      // Sử dụng endpoint search để tận dụng phân trang phía backend
+      return await feedbackApi.searchFeedbacks({
+        q: search,
+        category,
+        status,
+        sentiment,
+        startDate,
+        endDate,
+        page,
+        limit,
+      });
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });

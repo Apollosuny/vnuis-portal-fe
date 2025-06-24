@@ -28,9 +28,9 @@ interface FeedbackFiltersProps {
 
 export function FeedbackFilters({ onFiltersChange }: FeedbackFiltersProps) {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const [status, setStatus] = useState('');
-  const [sentiment, setSentiment] = useState('');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('all');
+  const [sentiment, setSentiment] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -107,21 +107,33 @@ export function FeedbackFilters({ onFiltersChange }: FeedbackFiltersProps) {
   };
 
   const applyFilters = (filters: any) => {
-    onFiltersChange(filters);
+    // Chuyển đổi giá trị "all" thành giá trị rỗng cho API
+    const apiFilters = {
+      ...filters,
+      category: filters.category === 'all' ? '' : filters.category,
+      status: filters.status === 'all' ? '' : filters.status,
+      sentiment: filters.sentiment === 'all' ? '' : filters.sentiment,
+    };
+    onFiltersChange(apiFilters);
   };
 
   const clearFilters = () => {
     setSearch('');
-    setCategory('');
-    setStatus('');
-    setSentiment('');
+    setCategory('all');
+    setStatus('all');
+    setSentiment('all');
     setStartDate('');
     setEndDate('');
     onFiltersChange({});
   };
 
   const hasActiveFilters =
-    search || category || status || sentiment || startDate || endDate;
+    search ||
+    category !== 'all' ||
+    status !== 'all' ||
+    sentiment !== 'all' ||
+    startDate ||
+    endDate;
 
   return (
     <Card>
@@ -162,7 +174,7 @@ export function FeedbackFilters({ onFiltersChange }: FeedbackFiltersProps) {
                 <SelectValue placeholder='All Categories' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=''>All Categories</SelectItem>
+                <SelectItem value='all'>All Categories</SelectItem>
                 <SelectItem value='GENERAL'>General</SelectItem>
                 <SelectItem value='USER_EXPERIENCE'>User Experience</SelectItem>
                 <SelectItem value='FUNCTIONALITY'>Functionality</SelectItem>
@@ -185,7 +197,7 @@ export function FeedbackFilters({ onFiltersChange }: FeedbackFiltersProps) {
                 <SelectValue placeholder='All Status' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=''>All Status</SelectItem>
+                <SelectItem value='all'>All Status</SelectItem>
                 <SelectItem value='SUBMITTED'>Submitted</SelectItem>
                 <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
                 <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
@@ -204,7 +216,7 @@ export function FeedbackFilters({ onFiltersChange }: FeedbackFiltersProps) {
                 <SelectValue placeholder='All Sentiment' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value=''>All Sentiment</SelectItem>
+                <SelectItem value='all'>All Sentiment</SelectItem>
                 <SelectItem value='POSITIVE'>Positive</SelectItem>
                 <SelectItem value='NEGATIVE'>Negative</SelectItem>
                 <SelectItem value='NEUTRAL'>Neutral</SelectItem>

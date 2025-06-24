@@ -1,6 +1,7 @@
 import Axios, { InternalAxiosRequestConfig } from 'axios';
 import { useUserStore } from '../stores/user.store';
 import { refreshToken } from '@/api/auth.api';
+import qs from 'qs';
 
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
 
