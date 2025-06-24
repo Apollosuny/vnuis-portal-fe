@@ -23,6 +23,7 @@ import {
   PanelRightOpen,
   PanelRight,
   Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -339,6 +340,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 label='Notifications'
                 active={activeTab === 'notifications'}
                 onClick={() => handleNavigation('notifications')}
+              />
+              <SidebarItem
+                icon={
+                  <AnimatedIcon
+                    icon={<MessageSquare size={18} />}
+                    animationType='bounce'
+                  />
+                }
+                label='Feedback'
+                active={pathname.includes('/dashboard/feedback')}
+                onClick={() => router.push('/dashboard/feedback')}
               />
             </motion.div>
             <motion.div
