@@ -1,4 +1,4 @@
-import { StudentEventsClient } from '@/clients/student/events/student-events.client';
+import { StudentEventsClient } from '@/clients/student/events';
 
 export const metadata = {
   title: 'Events',

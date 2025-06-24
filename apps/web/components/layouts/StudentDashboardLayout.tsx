@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,6 +82,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
     if (pathname.includes('/rooms')) return 'rooms';
     if (pathname.includes('/bookings')) return 'bookings';
     if (pathname.includes('/events')) return 'events';
+    if (pathname.includes('/feedback')) return 'feedback';
     if (pathname.includes('/settings')) return 'settings';
     if (pathname.includes('/notifications')) return 'notifications';
     return 'overview';
@@ -105,6 +107,9 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
       case 'events':
         router.push(ROUTES.STUDENT_EVENTS);
         break;
+      case 'feedback':
+        router.push(ROUTES.STUDENT_FEEDBACK);
+        break;
       case 'notifications':
         router.push(ROUTES.STUDENT_NOTIFICATIONS);
         break;
@@ -121,6 +126,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
     if (pathname.includes('/rooms')) return 'Room Directory';
     if (pathname.includes('/bookings')) return 'My Bookings';
     if (pathname.includes('/events')) return 'Event Registration';
+    if (pathname.includes('/feedback')) return 'Feedback Center';
     if (pathname.includes('/settings')) return 'Settings';
     if (pathname.includes('/notifications')) return 'Notifications';
 
@@ -136,6 +142,8 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
       return <Clock className='h-5 w-5 text-primary' />;
     if (pathname.includes('/events'))
       return <Calendar className='h-5 w-5 text-primary' />;
+    if (pathname.includes('/feedback'))
+      return <MessageSquare className='h-5 w-5 text-primary' />;
     if (pathname.includes('/settings'))
       return <Settings className='h-5 w-5 text-primary' />;
     if (pathname.includes('/notifications'))
@@ -301,6 +309,17 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
                 label='Events'
                 active={activeTab === 'events'}
                 onClick={() => handleNavigation('events')}
+              />
+              <SidebarItem
+                icon={
+                  <AnimatedIcon
+                    icon={<MessageSquare size={20} />}
+                    animationType='shake'
+                  />
+                }
+                label='Feedback'
+                active={activeTab === 'feedback'}
+                onClick={() => handleNavigation('feedback')}
               />
               <SidebarItem
                 icon={

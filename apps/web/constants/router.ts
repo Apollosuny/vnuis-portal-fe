@@ -20,6 +20,7 @@ export const ROUTES = {
   STUDENT_ROOMS: '/student-dashboard/rooms',
   STUDENT_BOOKINGS: '/student-dashboard/bookings',
   STUDENT_EVENTS: '/student-dashboard/events',
+  STUDENT_FEEDBACK: '/student-dashboard/feedback',
   STUDENT_SETTINGS: '/student-dashboard/settings',
   STUDENT_NOTIFICATIONS: '/student-dashboard/notifications',
 };
