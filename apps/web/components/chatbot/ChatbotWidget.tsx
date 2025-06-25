@@ -20,7 +20,7 @@ interface Message {
 }
 
 export const ChatbotWidget: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Default to closed
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -264,70 +264,71 @@ export const ChatbotWidget: React.FC = () => {
   );
 
   return (
-    <div className='fixed bottom-4 right-4 z-50'>
-      {/* Chatbot Toggle Button */}
+    <div className='fixed right-0 top-0 z-40 h-screen'>
+      {/* Chatbot toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          'bg-primary text-white rounded-full p-3 shadow-lg hover:bg-primary/90 transition-all duration-300',
-          isOpen && 'scale-90'
-        )}
+        className='fixed bottom-4 right-4 h-12 w-12 bg-primary hover:bg-primary/90 text-white rounded-full shadow-lg flex items-center justify-center transition-all'
+        aria-label='Toggle chat'
       >
         {isOpen ? (
-          <X className='w-6 h-6' />
+          <X className='h-5 w-5' />
         ) : (
-          <MessageCircle className='w-6 h-6' />
+          <MessageCircle className='h-5 w-5' />
         )}
       </button>
 
-      {/* Chatbot Interface */}
-      {isOpen && (
-        <div className='absolute bottom-16 right-0 w-96 h-[500px] bg-white rounded-lg shadow-xl border animate-in slide-in-from-bottom-2 duration-300'>
-          {/* Header */}
-          <div className='flex items-center justify-between p-4 border-b bg-primary text-white rounded-t-lg'>
-            <div className='flex items-center gap-2'>
-              <Bot className='w-5 h-5' />
-              <h3 className='font-semibold'>Trợ lý ảo</h3>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className='hover:bg-white/20 rounded-full p-1 transition-colors'
-            >
-              <X className='w-4 h-4' />
-            </button>
+      {/* Quick Info Panel */}
+      <div
+        className={cn(
+          'h-full w-80 bg-white dark:bg-gray-900 border-l shadow-lg transform transition-transform duration-300 ease-in-out overflow-hidden',
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        {/* Header */}
+        <div className='flex items-center justify-between p-4 border-b'>
+          <div className='flex items-center gap-2'>
+            <Bot className='h-5 w-5 text-primary' />
+            <h2 className='font-semibold text-lg'>Trợ lý ảo</h2>
           </div>
-
-          {/* Messages */}
-          <div className='flex-1 p-4 overflow-y-auto h-[380px]'>
-            {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className='p-4 border-t'>
-            <form onSubmit={handleSubmit} className='flex gap-2'>
-              <Input
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder='Nhập tin nhắn...'
-                disabled={isLoading}
-                className='flex-1'
-              />
-              <Button
-                type='submit'
-                size='sm'
-                disabled={isLoading || !inputValue.trim()}
-                className='px-3'
-              >
-                <Send className='w-4 h-4' />
-              </Button>
-            </form>
-          </div>
+          <button
+            onClick={() => setIsOpen(false)}
+            className='p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'
+          >
+            <X className='h-5 w-5' />
+          </button>
         </div>
-      )}
+
+        {/* Chat area */}
+        <div className='h-[calc(100vh-8rem)] overflow-y-auto p-4'>
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input area */}
+        <div className='absolute bottom-0 left-0 right-0 border-t p-4 bg-white dark:bg-gray-900'>
+          <form onSubmit={handleSubmit} className='flex gap-2'>
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder='Nhập tin nhắn...'
+              disabled={isLoading}
+              className='flex-1'
+            />
+            <Button
+              type='submit'
+              size='sm'
+              disabled={isLoading || !inputValue.trim()}
+              className='px-3'
+            >
+              <Send className='h-4 w-4' />
+            </Button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 };
