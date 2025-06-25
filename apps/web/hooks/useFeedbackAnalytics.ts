@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, UseQueryOptions } from '@tanstack/react-query';
 import { feedbackAnalyticsApi } from '@/api/feedback-analytics.api';
 import { DateTime } from 'luxon';
 
 export const useFeedbackDashboardOverview = (
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
 ) => {
   return useQuery({
     queryKey: ['feedback-dashboard-overview', startDate, endDate],
@@ -15,12 +16,14 @@ export const useFeedbackDashboardOverview = (
       );
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 
 export const useFeedbackSentimentAnalysis = (
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
 ) => {
   return useQuery({
     queryKey: ['feedback-sentiment-analysis', startDate, endDate],
@@ -31,12 +34,14 @@ export const useFeedbackSentimentAnalysis = (
       );
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 
 export const useFeedbackCategoryAnalysis = (
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
 ) => {
   return useQuery({
     queryKey: ['feedback-category-analysis', startDate, endDate],
@@ -44,12 +49,14 @@ export const useFeedbackCategoryAnalysis = (
       return await feedbackAnalyticsApi.getCategoryAnalysis(startDate, endDate);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 
 export const useFeedbackRatingAnalysis = (
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
 ) => {
   return useQuery({
     queryKey: ['feedback-rating-analysis', startDate, endDate],
@@ -57,12 +64,14 @@ export const useFeedbackRatingAnalysis = (
       return await feedbackAnalyticsApi.getRatingAnalysis(startDate, endDate);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 
 export const useFeedbackResponseTimeAnalysis = (
   startDate?: string,
-  endDate?: string
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
 ) => {
   return useQuery({
     queryKey: ['feedback-response-time-analysis', startDate, endDate],
@@ -73,16 +82,22 @@ export const useFeedbackResponseTimeAnalysis = (
       );
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 
-export const useFeedbackTrends = (startDate?: string, endDate?: string) => {
+export const useFeedbackTrends = (
+  startDate?: string,
+  endDate?: string,
+  options?: Partial<UseQueryOptions>
+) => {
   return useQuery({
     queryKey: ['feedback-trends', startDate, endDate],
     queryFn: async () => {
       return await feedbackAnalyticsApi.getTrends(startDate, endDate);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options,
   });
 };
 

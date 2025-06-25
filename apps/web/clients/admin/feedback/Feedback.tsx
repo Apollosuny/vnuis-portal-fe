@@ -10,6 +10,7 @@ import {
   useFeedbackRatingAnalysis,
   useFeedbackResponseTimeAnalysis,
   useFeedbackSentimentAnalysis,
+  useFeedbackTrends,
 } from '@/hooks/useFeedbackAnalytics';
 import { Button } from '@workspace/ui/components/button';
 import {
@@ -84,47 +85,116 @@ const Feedback = () => {
     [dateRange, customStartDate, customEndDate]
   );
 
-  // Fetch data
+  // Fetch data based on active tab
   const { data: dashboardData, isLoading: dashboardLoading } =
     useFeedbackDashboardOverview(startDate ?? undefined, endDate ?? undefined);
+
   const { data: sentimentData, isLoading: sentimentLoading } =
-    useFeedbackSentimentAnalysis(startDate ?? undefined, endDate ?? undefined);
+    useFeedbackSentimentAnalysis(startDate ?? undefined, endDate ?? undefined, {
+      enabled: activeTab === 'overview',
+    });
+
   const { data: categoryData, isLoading: categoryLoading } =
-    useFeedbackCategoryAnalysis(startDate ?? undefined, endDate ?? undefined);
+    useFeedbackCategoryAnalysis(startDate ?? undefined, endDate ?? undefined, {
+      enabled: activeTab === 'overview',
+    });
+
   const { data: ratingData, isLoading: ratingLoading } =
-    useFeedbackRatingAnalysis(startDate ?? undefined, endDate ?? undefined);
+    useFeedbackRatingAnalysis(startDate ?? undefined, endDate ?? undefined, {
+      enabled: activeTab === 'analytics',
+    });
+
   const { data: responseTimeData, isLoading: responseTimeLoading } =
     useFeedbackResponseTimeAnalysis(
       startDate ?? undefined,
-      endDate ?? undefined
+      endDate ?? undefined,
+      { enabled: activeTab === 'analytics' }
     );
+
   const { data: feedbackStats, isLoading: statsLoading } = useFeedbackStats();
+
+  const { data: trendsData, isLoading: trendsLoading } = useFeedbackTrends(
+    startDate ?? undefined,
+    endDate ?? undefined,
+    { enabled: activeTab === 'trends' }
+  );
 
   // Process category data for the chart
   const processedCategoryData = useMemo(() => {
-    if (
-      !categoryData?.distribution ||
-      !Array.isArray(categoryData.distribution)
-    ) {
+    const data = categoryData as any;
+    if (!data?.distribution || !Array.isArray(data.distribution)) {
       return { categories: [], counts: [] };
     }
 
     // Map through the data and extract category names and counts
     return {
-      categories: categoryData.distribution.map(
-        (item) => item.category || 'Unknown'
+      categories: data.distribution.map(
+        (item: any) => item.category || 'Unknown'
       ),
-      counts: categoryData.distribution.map((item) => item.count || 0),
+      counts: data.distribution.map((item: any) => item._count?.id || 0),
     };
   }, [categoryData]);
 
+  // Process trends data for charts
+  const processedTrendsData = useMemo(() => {
+    const trends = trendsData as any;
+    const sentiment = sentimentData as any;
+    const rating = ratingData as any;
+
+    if (!trends) {
+      return {
+        volumeOverTime: [],
+        sentimentTrends: [],
+        ratingTrends: [],
+      };
+    }
+
+    // Process daily trends for volume chart
+    const volumeOverTime =
+      trends.dailyTrends?.map((item: any) => ({
+        date: item.createdAt,
+        count: item._count.id,
+      })) || [];
+
+    // Use sentiment data from sentiment analysis API
+    const sentimentTrends =
+      sentiment?.trends?.map((item: any) => ({
+        date: item.createdAt,
+        positive: item.sentiment === 'POSITIVE' ? item._count.id : 0,
+        negative: item.sentiment === 'NEGATIVE' ? item._count.id : 0,
+        neutral: item.sentiment === 'NEUTRAL' ? item._count.id : 0,
+      })) || [];
+
+    // Use rating data from rating analysis API
+    const ratingTrends =
+      trends.dailyTrends?.map((item: any) => ({
+        date: item.createdAt,
+        averageRating: rating?.average || 3.5,
+        totalFeedbacks: item._count.id,
+      })) || [];
+
+    return {
+      volumeOverTime,
+      sentimentTrends,
+      ratingTrends,
+    };
+  }, [trendsData, sentimentData, ratingData]);
+
   const isLoading =
     dashboardLoading ||
-    sentimentLoading ||
-    categoryLoading ||
-    ratingLoading ||
-    responseTimeLoading ||
+    (activeTab === 'overview' && (sentimentLoading || categoryLoading)) ||
+    (activeTab === 'analytics' && (ratingLoading || responseTimeLoading)) ||
+    (activeTab === 'trends' && trendsLoading) ||
     statsLoading;
+
+  // Individual tab loading states
+  const isOverviewLoading =
+    dashboardLoading || sentimentLoading || categoryLoading;
+  const isAnalyticsLoading = ratingLoading || responseTimeLoading;
+  const isTrendsLoading = trendsLoading;
+
+  // Global loading for stats cards (always visible)
+  const isStatsLoading = dashboardLoading || statsLoading;
 
   return (
     <AuthenticatedGuard>
@@ -195,7 +265,7 @@ const Feedback = () => {
           <FeedbackStatsCards
             dashboardData={dashboardData}
             responseTimeData={responseTimeData}
-            isLoading={isLoading}
+            isLoading={isStatsLoading}
           />
 
           {/* Main Content Tabs */}
@@ -247,11 +317,11 @@ const Feedback = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {isLoading ? (
+                    {isOverviewLoading ? (
                       <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
-                    ) : isValidArray(sentimentData?.distribution) ? (
+                    ) : isValidArray((sentimentData as any)?.distribution) ? (
                       <Chart
                         type='donut'
                         height={300}
@@ -262,14 +332,14 @@ const Feedback = () => {
                           plotOptions: { pie: { donut: { size: '60%' } } },
                         }}
                         series={[
-                          (sentimentData?.distribution ?? []).find(
-                            (d) => d.sentiment === 'POSITIVE'
+                          ((sentimentData as any)?.distribution ?? []).find(
+                            (d: any) => d.sentiment === 'POSITIVE'
                           )?._count?.id || 0,
-                          (sentimentData?.distribution ?? []).find(
-                            (d) => d.sentiment === 'NEGATIVE'
+                          ((sentimentData as any)?.distribution ?? []).find(
+                            (d: any) => d.sentiment === 'NEGATIVE'
                           )?._count?.id || 0,
-                          (sentimentData?.distribution ?? []).find(
-                            (d) => d.sentiment === 'NEUTRAL'
+                          ((sentimentData as any)?.distribution ?? []).find(
+                            (d: any) => d.sentiment === 'NEUTRAL'
                           )?._count?.id || 0,
                         ]}
                       />
@@ -341,11 +411,11 @@ const Feedback = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {isLoading ? (
+                    {isAnalyticsLoading ? (
                       <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
-                    ) : isValidArray(ratingData?.distribution) ? (
+                    ) : isValidArray((ratingData as any)?.distribution) ? (
                       <Chart
                         type='bar'
                         height={300}
@@ -360,8 +430,8 @@ const Feedback = () => {
                             name: 'Count',
                             data: [1, 2, 3, 4, 5].map(
                               (rating) =>
-                                (ratingData?.distribution ?? []).find(
-                                  (d) => d?.rating === rating
+                                ((ratingData as any)?.distribution ?? []).find(
+                                  (d: any) => d?.rating === rating
                                 )?._count?.id || 0
                             ),
                           },
@@ -387,20 +457,20 @@ const Feedback = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {isLoading ? (
+                    {isAnalyticsLoading ? (
                       <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
-                    ) : responseTimeData?.responseTimeDistribution &&
+                    ) : (responseTimeData as any)?.responseTimeDistribution &&
                       Object.values(
-                        responseTimeData.responseTimeDistribution
-                      ).some((v) => v > 0) ? (
+                        (responseTimeData as any).responseTimeDistribution
+                      ).some((v: any) => v > 0) ? (
                       <div className='space-y-4'>
                         <div className='text-center'>
                           <div className='text-3xl font-bold text-primary'>
-                            {responseTimeData?.averageResponseTime?.toFixed(
-                              1
-                            ) ?? 'N/A'}
+                            {(
+                              responseTimeData as any
+                            )?.averageResponseTime?.toFixed(1) ?? 'N/A'}
                             h
                           </div>
                           <div className='text-sm text-muted-foreground'>
@@ -421,13 +491,13 @@ const Feedback = () => {
                             legend: { position: 'bottom' },
                           }}
                           series={[
-                            responseTimeData?.responseTimeDistribution
+                            (responseTimeData as any)?.responseTimeDistribution
                               ?.under1Hour || 0,
-                            responseTimeData?.responseTimeDistribution
+                            (responseTimeData as any)?.responseTimeDistribution
                               ?.under24Hours || 0,
-                            responseTimeData?.responseTimeDistribution
+                            (responseTimeData as any)?.responseTimeDistribution
                               ?.under72Hours || 0,
-                            responseTimeData?.responseTimeDistribution
+                            (responseTimeData as any)?.responseTimeDistribution
                               ?.over72Hours || 0,
                           ]}
                         />
@@ -444,19 +514,224 @@ const Feedback = () => {
 
             {/* Trends Tab */}
             <TabsContent value='trends' className='space-y-4'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                {/* Feedback Volume Over Time */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className='flex items-center space-x-2'>
+                      <TrendingUp className='h-5 w-5' />
+                      <span>Feedback Volume Over Time</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Daily feedback submission trends
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isTrendsLoading ? (
+                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                        Loading...
+                      </div>
+                    ) : isValidArray(processedTrendsData.volumeOverTime) ? (
+                      <Chart
+                        type='line'
+                        height={300}
+                        options={{
+                          chart: {
+                            type: 'line',
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                          },
+                          xaxis: {
+                            categories:
+                              processedTrendsData.volumeOverTime.map(
+                                (item: any) =>
+                                  new Date(item.date).toLocaleDateString()
+                              ) || [],
+                            labels: {
+                              rotate: -45,
+                              style: { fontSize: '12px' },
+                            },
+                          },
+                          yaxis: {
+                            title: { text: 'Number of Feedbacks' },
+                            min: 0,
+                          },
+                          colors: ['#3b82f6'],
+                          stroke: { curve: 'smooth', width: 3 },
+                          markers: { size: 4 },
+                          grid: { borderColor: '#e5e7eb' },
+                        }}
+                        series={[
+                          {
+                            name: 'Feedbacks',
+                            data:
+                              processedTrendsData.volumeOverTime.map(
+                                (item: any) => item.count
+                              ) || [],
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                        No trend data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Sentiment Trends */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className='flex items-center space-x-2'>
+                      <PieChart className='h-5 w-5' />
+                      <span>Sentiment Trends</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Sentiment distribution over time
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isTrendsLoading ? (
+                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                        Loading...
+                      </div>
+                    ) : isValidArray(processedTrendsData.sentimentTrends) ? (
+                      <Chart
+                        type='area'
+                        height={300}
+                        options={{
+                          chart: {
+                            type: 'area',
+                            toolbar: { show: false },
+                            stacked: true,
+                          },
+                          xaxis: {
+                            categories:
+                              processedTrendsData.sentimentTrends.map(
+                                (item: any) =>
+                                  new Date(item.date).toLocaleDateString()
+                              ) || [],
+                            labels: {
+                              rotate: -45,
+                              style: { fontSize: '12px' },
+                            },
+                          },
+                          yaxis: {
+                            title: { text: 'Number of Feedbacks' },
+                            min: 0,
+                          },
+                          colors: ['#10b981', '#ef4444', '#6b7280'],
+                          stroke: { curve: 'smooth', width: 2 },
+                          fill: {
+                            type: 'gradient',
+                            gradient: {
+                              opacityFrom: 0.6,
+                              opacityTo: 0.1,
+                            },
+                          },
+                          legend: { position: 'top' },
+                          grid: { borderColor: '#e5e7eb' },
+                        }}
+                        series={[
+                          {
+                            name: 'Positive',
+                            data:
+                              processedTrendsData.sentimentTrends.map(
+                                (item: any) => item.positive
+                              ) || [],
+                          },
+                          {
+                            name: 'Negative',
+                            data:
+                              processedTrendsData.sentimentTrends.map(
+                                (item: any) => item.negative
+                              ) || [],
+                          },
+                          {
+                            name: 'Neutral',
+                            data:
+                              processedTrendsData.sentimentTrends.map(
+                                (item: any) => item.neutral
+                              ) || [],
+                          },
+                        ]}
+                      />
+                    ) : (
+                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                        No sentiment trend data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Rating Trends */}
               <Card>
                 <CardHeader>
                   <CardTitle className='flex items-center space-x-2'>
-                    <TrendingUp className='h-5 w-5' />
-                    <span>Feedback Trends</span>
+                    <Star className='h-5 w-5' />
+                    <span>Average Rating Trends</span>
                   </CardTitle>
-                  <CardDescription>Feedback volume over time</CardDescription>
+                  <CardDescription>
+                    Average feedback rating over time
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Placeholder for trends chart - you can implement this based on your data structure */}
-                  <div className='h-64 flex items-center justify-center text-muted-foreground'>
-                    Trends chart will be implemented here
-                  </div>
+                  {isTrendsLoading ? (
+                    <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      Loading...
+                    </div>
+                  ) : isValidArray(processedTrendsData.ratingTrends) ? (
+                    <Chart
+                      type='line'
+                      height={300}
+                      options={{
+                        chart: {
+                          type: 'line',
+                          toolbar: { show: false },
+                          zoom: { enabled: false },
+                        },
+                        xaxis: {
+                          categories:
+                            processedTrendsData.ratingTrends.map((item: any) =>
+                              new Date(item.date).toLocaleDateString()
+                            ) || [],
+                          labels: {
+                            rotate: -45,
+                            style: { fontSize: '12px' },
+                          },
+                        },
+                        yaxis: {
+                          title: { text: 'Average Rating' },
+                          min: 0,
+                          max: 5,
+                          tickAmount: 5,
+                        },
+                        colors: ['#f59e0b'],
+                        stroke: { curve: 'smooth', width: 3 },
+                        markers: { size: 4 },
+                        grid: { borderColor: '#e5e7eb' },
+                        tooltip: {
+                          y: {
+                            formatter: (value) => `${value.toFixed(2)} stars`,
+                          },
+                        },
+                      }}
+                      series={[
+                        {
+                          name: 'Average Rating',
+                          data:
+                            processedTrendsData.ratingTrends.map(
+                              (item: any) => item.averageRating
+                            ) || [],
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      No rating trend data available
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

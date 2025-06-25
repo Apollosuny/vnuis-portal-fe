@@ -164,8 +164,6 @@ export const feedbackApi = {
       `/feedback/search?${searchParams.toString()}`
     );
 
-    // Backend mới có thể chưa trả về metadata phân trang
-    // Tạm thời convert response format cũ sang format mới nếu cần
     if (Array.isArray(response.data)) {
       return {
         data: response.data,

@@ -29,8 +29,8 @@ export interface SentimentAnalysis {
 export interface CategoryAnalysis {
   distribution: Array<{
     category: string;
-    count: number;
-    percentage: number;
+    _count: { id: number };
+    _avg: { rating: number };
   }>;
   trends: Array<{
     category: string;
@@ -56,6 +56,14 @@ export interface ResponseTimeAnalysis {
     over72Hours: number;
   };
   totalResponded: number;
+}
+
+export interface FeedbackTrends {
+  dailyTrends: Array<{
+    createdAt: string;
+    _count: { id: number };
+  }>;
+  weeklyTrends: Record<string, number>;
 }
 
 export const feedbackAnalyticsApi = {
@@ -135,13 +143,46 @@ export const feedbackAnalyticsApi = {
   },
 
   // Get trends over time
-  getTrends: async (startDate?: string, endDate?: string): Promise<any> => {
+  getTrends: async (
+    startDate?: string,
+    endDate?: string
+  ): Promise<FeedbackTrends> => {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
 
     const response = await nexusAxios.get(
       `/feedback-analytics/trends?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  // Get sentiment trends over time
+  getSentimentTrends: async (
+    startDate?: string,
+    endDate?: string
+  ): Promise<any> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const response = await nexusAxios.get(
+      `/feedback-analytics/sentiment/analysis?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  // Get rating trends over time
+  getRatingTrends: async (
+    startDate?: string,
+    endDate?: string
+  ): Promise<any> => {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
+    const response = await nexusAxios.get(
+      `/feedback-analytics/rating/analysis?${params.toString()}`
     );
     return response.data;
   },
