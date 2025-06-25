@@ -96,12 +96,10 @@ export interface PaginatedResponse<T> {
 
 export const feedbackApi = {
   // Get all feedbacks with optional query parameters
-  getFeedbacks: async (query?: QueryFeedbackDto): Promise<Feedback[]> => {
-    const params = query ? qs.stringify(query) : '';
-    const url = params
-      ? `/feedback?params=${encodeURIComponent(params)}`
-      : '/feedback';
-    const response = await nexusAxios.get(url);
+  getFeedbacks: async (
+    query?: QueryFeedbackDto
+  ): Promise<PaginatedResponse<Feedback>> => {
+    const response = await nexusAxios.get('/feedback', { params: query });
     return response.data;
   },
 
@@ -139,48 +137,6 @@ export const feedbackApi = {
       ? `/feedback?params=${encodeURIComponent(params)}`
       : '/feedback';
     const response = await nexusAxios.get(url);
-    return response.data;
-  },
-
-  // Search feedbacks
-  searchFeedbacks: async (params: {
-    q?: string;
-    startDate?: string;
-    endDate?: string;
-    category?: string;
-    sentiment?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<PaginatedResponse<Feedback>> => {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        searchParams.append(key, String(value));
-      }
-    });
-
-    const response = await nexusAxios.get(
-      `/feedback/search?${searchParams.toString()}`
-    );
-
-    if (Array.isArray(response.data)) {
-      return {
-        data: response.data,
-        totalItems: response.headers['x-total-count']
-          ? parseInt(response.headers['x-total-count'])
-          : response.data.length,
-        currentPage: params.page || 1,
-        totalPages: response.headers['x-total-pages']
-          ? parseInt(response.headers['x-total-pages'])
-          : Math.ceil(
-              (response.headers['x-total-count']
-                ? parseInt(response.headers['x-total-count'])
-                : response.data.length) / (params.limit || 10)
-            ),
-      };
-    }
-
     return response.data;
   },
 

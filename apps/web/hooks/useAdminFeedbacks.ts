@@ -35,17 +35,39 @@ export const useAdminFeedbacks = (params: UseAdminFeedbacksParams = {}) => {
       { page, limit, category, status, sentiment, startDate, endDate, search },
     ],
     queryFn: async () => {
-      // Sử dụng endpoint search để tận dụng phân trang phía backend
-      return await feedbackApi.searchFeedbacks({
-        q: search,
-        category,
-        status,
-        sentiment,
-        startDate,
-        endDate,
-        page,
-        limit,
-      });
+      const query: any = {};
+
+      if (search) {
+        query.where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { content: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      if (category) {
+        query.where.category = category;
+      }
+
+      if (status) {
+        query.where.status = status;
+      }
+
+      if (sentiment) {
+        query.where.sentiment = sentiment;
+      }
+
+      if (startDate && endDate) {
+        query.where.createdAt = {
+          gte: startDate,
+          lte: endDate,
+        };
+      }
+
+      query.skip = (page - 1) * limit;
+      query.take = limit;
+      query.sort = { createdAt: 'desc' };
+
+      return await feedbackApi.getFeedbacks(query);
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -62,7 +84,7 @@ export const useFeedbackStats = () => {
       });
 
       const stats = {
-        total: allFeedbacks.length,
+        total: allFeedbacks.totalItems,
         byStatus: {} as Record<string, number>,
         byCategory: {} as Record<string, number>,
         bySentiment: {} as Record<string, number>,
@@ -73,7 +95,7 @@ export const useFeedbackStats = () => {
       let totalRating = 0;
       let ratingCount = 0;
 
-      allFeedbacks.forEach((feedback) => {
+      allFeedbacks.data.forEach((feedback) => {
         // Status stats
         stats.byStatus[feedback.status] =
           (stats.byStatus[feedback.status] || 0) + 1;
