@@ -178,6 +178,16 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                         />
                       )}
 
+                      {question.type === 'number' && (
+                        <input
+                          type='number'
+                          name={`question-${question.id || qIndex}`}
+                          className='w-full p-2 border rounded-md'
+                          placeholder={`Enter ${question.title.toLowerCase()}`}
+                          required
+                        />
+                      )}
+
                       {question.type === 'textarea' && (
                         <textarea
                           name={`question-${question.id || qIndex}`}
