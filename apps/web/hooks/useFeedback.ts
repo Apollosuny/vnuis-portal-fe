@@ -112,24 +112,3 @@ export const useDeleteFeedback = () => {
     },
   });
 };
-
-export const useSearchFeedbacks = (params: {
-  q?: string;
-  startDate?: string;
-  endDate?: string;
-  category?: string;
-  sentiment?: string;
-  status?: string;
-  page?: number;
-  limit?: number;
-}) => {
-  return useQuery({
-    queryKey: ['searchFeedbacks', params],
-    queryFn: async () => {
-      return await feedbackApi.searchFeedbacks(params);
-    },
-    enabled:
-      !!params.q || !!params.category || !!params.status || !!params.startDate,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
-};
