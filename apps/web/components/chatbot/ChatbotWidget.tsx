@@ -1,7 +1,16 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, ExternalLink } from 'lucide-react';
+import {
+  MessageCircle,
+  X,
+  Send,
+  Bot,
+  User,
+  ExternalLink,
+  Maximize2,
+  Minimize2,
+} from 'lucide-react';
 import { ChatbotMessage } from '@/api/chatbot.api';
 import { Button } from '@workspace/ui/components/button';
 import { Input } from '@workspace/ui/components/input';
@@ -21,6 +30,7 @@ interface Message {
 
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -265,6 +275,14 @@ export const ChatbotWidget: React.FC = () => {
 
   return (
     <div className='fixed bottom-4 right-4 z-50'>
+      {/* Overlay khi maximize */}
+      {isOpen && isMaximized && (
+        <div
+          className='fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-all duration-300'
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       {/* Chatbot Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -282,23 +300,47 @@ export const ChatbotWidget: React.FC = () => {
 
       {/* Chatbot Interface */}
       {isOpen && (
-        <div className='absolute bottom-16 right-0 w-96 h-[500px] bg-white rounded-lg shadow-xl border animate-in slide-in-from-bottom-2 duration-300'>
+        <div
+          className={cn(
+            'z-50 bg-white rounded-lg border flex flex-col transition-all duration-500',
+            isMaximized
+              ? 'fixed top-1/2 left-1/2 w-[80vw] h-[80vh] max-w-[900px] max-h-[90vh] -translate-x-1/2 -translate-y-1/2 scale-105 shadow-2xl'
+              : 'absolute bottom-16 right-0 w-[420px] h-[600px] scale-100 shadow-xl'
+          )}
+          style={{ transition: 'all 0.5s cubic-bezier(.4,2,.6,1)' }}
+        >
           {/* Header */}
           <div className='flex items-center justify-between p-4 border-b bg-primary text-white rounded-t-lg'>
             <div className='flex items-center gap-2'>
               <Bot className='w-5 h-5' />
               <h3 className='font-semibold'>Trợ lý ảo</h3>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className='hover:bg-white/20 rounded-full p-1 transition-colors'
-            >
-              <X className='w-4 h-4' />
-            </button>
+            <div className='flex items-center gap-2'>
+              <button
+                onClick={() => setIsMaximized((v) => !v)}
+                className='hover:bg-white/20 rounded-full p-1 transition-colors'
+                title={isMaximized ? 'Thu nhỏ' : 'Phóng to'}
+              >
+                {isMaximized ? (
+                  <Minimize2 className='w-4 h-4' />
+                ) : (
+                  <Maximize2 className='w-4 h-4' />
+                )}
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className='hover:bg-white/20 rounded-full p-1 transition-colors'
+              >
+                <X className='w-4 h-4' />
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
-          <div className='flex-1 p-4 overflow-y-auto h-[380px]'>
+          <div
+            className='flex-1 p-4 overflow-y-auto'
+            style={{ height: isMaximized ? undefined : '420px' }}
+          >
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
