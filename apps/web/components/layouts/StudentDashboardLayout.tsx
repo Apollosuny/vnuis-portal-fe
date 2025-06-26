@@ -20,7 +20,6 @@ import {
   ChevronRight,
   Bell,
   MessageSquare,
-  Bot,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,14 +49,8 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
   const router = useRouter();
   const { onLogout } = useLogout();
   const { theme } = useTheme();
-  const {
-    isSidebarCollapsed,
-    toggleSidebar,
-    setSidebarCollapsed,
-    isRightSidebarOpen,
-    toggleRightSidebar,
-    setRightSidebarOpen,
-  } = useUIStore();
+  const { isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } =
+    useUIStore();
 
   // Auto-collapse sidebar on small screens
   useEffect(() => {
@@ -82,18 +75,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
     if (!isSidebarCollapsed && window.innerWidth < 768) {
       setSidebarCollapsed(true);
     }
-
-    // Also close right sidebar on mobile when path changes
-    if (isRightSidebarOpen && window.innerWidth < 768) {
-      setRightSidebarOpen(false);
-    }
-  }, [
-    pathname,
-    isSidebarCollapsed,
-    setSidebarCollapsed,
-    isRightSidebarOpen,
-    setRightSidebarOpen,
-  ]);
+  }, [pathname, isSidebarCollapsed, setSidebarCollapsed]);
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -413,7 +395,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
           >
             {/* Header */}
             <motion.header
-              className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border h-24 relative z-50'
+              className='bg-card shadow-sm py-4 px-6 flex items-center justify-between border-b border-border h-24'
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.3 }}
@@ -461,17 +443,6 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.3 }}
               >
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  onClick={toggleRightSidebar}
-                  className='md:flex hidden'
-                  title={isRightSidebarOpen ? 'Đóng trợ lý ảo' : 'Mở trợ lý ảo'}
-                >
-                  <MessageSquare
-                    className={`h-5 w-5 ${isRightSidebarOpen ? 'text-primary' : ''}`}
-                  />
-                </Button>
                 <ThemeToggle />
                 <NotificationIcon />
                 <UserAvatar />
@@ -480,7 +451,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
 
             {/* Main Content */}
             <motion.div
-              className='flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-primary/20 scrollbar-track-transparent transition-all duration-300'
+              className='flex-1 p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-primary/20 scrollbar-track-transparent'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.4 }}
@@ -502,125 +473,6 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
               >
                 {children}
               </motion.div>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Sidebar */}
-          <AnimatePresence>
-            {isRightSidebarOpen && (
-              <motion.div
-                className='fixed inset-0 bg-black/20 z-30 md:hidden'
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setRightSidebarOpen(false)}
-              />
-            )}
-          </AnimatePresence>
-
-          <motion.div
-            className={`h-full bg-card flex flex-col text-foreground border-l z-40 fixed md:relative right-0 md:transform-none ${
-              isRightSidebarOpen ? 'w-64' : 'w-0'
-            }`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{
-              opacity: isRightSidebarOpen ? 1 : 0,
-              x: 0,
-              width: isRightSidebarOpen ? '16rem' : '0', // 64 vs 0 in rem
-              transition: {
-                width: {
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  duration: 0.3,
-                },
-              },
-            }}
-            style={{
-              transform: !isRightSidebarOpen
-                ? 'translateX(100%)'
-                : 'translateX(0)',
-            }}
-            transition={{
-              type: 'spring',
-              stiffness: 300,
-              damping: 25,
-            }}
-          >
-            <motion.div
-              className='p-4 border-b border-border flex items-center justify-between h-24'
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-            >
-              <div className='text-lg font-semibold flex items-center'>
-                <Bot className='text-primary inline-block mr-2 h-5 w-5' />
-                Trợ lý ảo
-              </div>
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={() => setRightSidebarOpen(false)}
-                className='md:flex'
-              >
-                <ChevronRight size={18} />
-              </Button>
-            </motion.div>
-
-            <motion.div
-              className='flex flex-col flex-1 p-4 gap-3 overflow-y-auto'
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.3 }}
-            >
-              <div className='bg-muted/20 p-4 rounded-lg border border-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <Calendar size={16} className='mr-2 text-primary' /> Hôm nay
-                </h3>
-                <p className='text-xs text-muted-foreground'>
-                  {new Date().toLocaleDateString('vi-VN', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-
-              <div className='bg-muted/20 p-4 rounded-lg border border-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <FileText size={16} className='mr-2 text-primary' /> Đơn gần
-                  đây
-                </h3>
-                <div className='space-y-2'>
-                  <p className='text-xs text-muted-foreground'>
-                    Không có đơn nào gần đây
-                  </p>
-                </div>
-              </div>
-
-              <div className='bg-muted/20 p-4 rounded-lg border border-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <DoorOpen size={16} className='mr-2 text-primary' /> Đặt phòng
-                  gần đây
-                </h3>
-                <div className='space-y-2'>
-                  <p className='text-xs text-muted-foreground'>
-                    Không có đặt phòng nào gần đây
-                  </p>
-                </div>
-              </div>
-
-              <div className='bg-muted/20 p-4 rounded-lg border border-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <Clock size={16} className='mr-2 text-primary' /> Sự kiện sắp
-                  tới
-                </h3>
-                <div className='space-y-2'>
-                  <p className='text-xs text-muted-foreground'>
-                    Không có sự kiện nào sắp tới
-                  </p>
-                </div>
-              </div>
             </motion.div>
           </motion.div>
         </motion.div>
