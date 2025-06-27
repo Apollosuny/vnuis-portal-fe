@@ -11,6 +11,7 @@ import { ArrowLeftIcon, Loader2Icon, PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { studentApi } from '@/api/student.api';
 import { ROUTES } from '@/constants/router';
+import { CreateStudent } from '@/types/user.types';
 
 import { Button } from '@workspace/ui/components/button';
 import { Input } from '@workspace/ui/components/input';
@@ -32,6 +33,18 @@ import {
 } from '@/components/ui/form';
 
 const formSchema = yup.object().shape({
+  username: yup
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .required('Username is required'),
+  password: yup
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .required('Password is required'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Passwords must match')
+    .required('Please confirm your password'),
   firstName: yup.string().required('First name is required'),
   lastName: yup.string().required('Last name is required'),
   studentId: yup.string().required('Student ID is required'),
@@ -48,18 +61,11 @@ const formSchema = yup.object().shape({
     .required('Enroll year is required'),
   dob: yup.string().required('Date of birth is required'),
   address: yup.string().optional(),
-} satisfies Record<keyof FormValues, yup.Schema>);
+  avatarUrl: yup.string().optional(),
+} satisfies Record<keyof CreateStudentFormValues, yup.Schema>);
 
-type FormValues = {
-  firstName: string;
-  lastName: string;
-  studentId: string;
-  email: string;
-  phone?: string;
-  major: string;
-  enrollYear: number;
-  dob: string;
-  address?: string;
+type CreateStudentFormValues = CreateStudent & {
+  confirmPassword: string;
 };
 
 export const StudentCreateClient = () => {
@@ -68,7 +74,7 @@ export const StudentCreateClient = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: (data: FormValues) => studentApi.createStudent(data),
+    mutationFn: (data: CreateStudent) => studentApi.createStudent(data),
     onSuccess: (newStudent) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       toast.success('Student created successfully');
@@ -83,9 +89,12 @@ export const StudentCreateClient = () => {
     },
   });
 
-  const form = useForm<FormValues>({
+  const form = useForm<CreateStudentFormValues>({
     resolver: yupResolver(formSchema) as any,
     defaultValues: {
+      username: '',
+      password: '',
+      confirmPassword: '',
       firstName: '',
       lastName: '',
       studentId: '',
@@ -95,12 +104,14 @@ export const StudentCreateClient = () => {
       enrollYear: new Date().getFullYear(),
       dob: '',
       address: '',
+      avatarUrl: '',
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (data: CreateStudentFormValues) => {
     setIsSubmitting(true);
-    createMutation.mutate(data);
+    const { confirmPassword, ...studentData } = data;
+    createMutation.mutate(studentData);
   };
 
   return (
@@ -122,6 +133,58 @@ export const StudentCreateClient = () => {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className='space-y-4'>
               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <FormField
+                  control={form.control}
+                  name='username'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder='Username' {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='Password'
+                          type='password'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <FormField
+                  control={form.control}
+                  name='confirmPassword'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='Confirm Password'
+                          type='password'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name='firstName'

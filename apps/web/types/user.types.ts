@@ -31,6 +31,21 @@ export type Student = {
   address?: string;
 };
 
+export type CreateStudent = {
+  username: string;
+  password: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string;
+  dob: string;
+  enrollYear: number;
+  major: string;
+  email: string;
+  phone?: string;
+  address?: string;
+};
+
 export type Operator = {
   id: string;
   firstName: string;

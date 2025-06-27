@@ -1,4 +1,4 @@
-import { Student } from '@/types/user.types';
+import { Student, CreateStudent } from '@/types/user.types';
 import { nexusAxios } from '@/configs/axios.config';
 
 const BASE_URL = '/student';
@@ -21,11 +21,12 @@ export const studentApi = {
   },
 
   getStudentById: async (id: string): Promise<Student> => {
+    console.log('id', id);
     const response = await nexusAxios.get<Student>(`${BASE_URL}/${id}`);
     return response.data;
   },
 
-  createStudent: async (student: Omit<Student, 'id'>): Promise<Student> => {
+  createStudent: async (student: CreateStudent): Promise<Student> => {
     const response = await nexusAxios.post<Student>(BASE_URL, student);
     return response.data;
   },

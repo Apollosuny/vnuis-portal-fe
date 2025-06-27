@@ -48,14 +48,14 @@ import { Separator } from '@workspace/ui/components/separator';
 export const StudentDetailClient = () => {
   const params = useParams();
   const router = useRouter();
-  const studentId = params.studentId as string;
+  const studentId = params.id as string;
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: student, isLoading } = useQuery({
     queryKey: ['student', studentId],
     queryFn: () => studentApi.getStudentById(studentId),
     enabled: !!studentId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    // staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const handleDelete = async () => {
