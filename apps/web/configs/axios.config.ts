@@ -13,6 +13,7 @@ const baseUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000/api';
 const axiosOptions = {
   baseURL: baseUrl,
   timeout: 300000,
+  withCredentials: true, // Enable sending cookies and credentials
   headers: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest', // CSRF protection
