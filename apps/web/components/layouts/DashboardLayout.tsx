@@ -220,7 +220,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 } float-animation pulse-border-animation`}
               >
                 <Image
-                  src='/assets/logos/logo.jpg'
+                  src='https://res.cloudinary.com/du1rup47p/image/upload/v1751039621/logo_q0tmvc.png'
                   alt='VirtuUni Nexus Logo'
                   fill
                   className={`object-contain glow-animation ${

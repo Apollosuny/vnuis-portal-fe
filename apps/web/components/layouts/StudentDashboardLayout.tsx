@@ -240,7 +240,7 @@ const StudentDashboardLayout: React.FC<StudentDashboardLayoutProps> = ({
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
                   <Image
-                    src='/assets/logos/logo.jpg'
+                    src='https://res.cloudinary.com/du1rup47p/image/upload/v1751039621/logo_q0tmvc.png'
                     alt='VirtuUni Nexus Logo'
                     fill
                     className={`object-contain ${theme === 'dark' ? 'filter invert' : ''} ${isSidebarCollapsed ? 'scale-75' : ''}`}
