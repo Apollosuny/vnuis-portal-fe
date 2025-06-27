@@ -149,15 +149,25 @@ export const FormSubmissionsClient = () => {
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          Form Submissions
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          View and manage form submissions
+        </p>
+      </div>
+
       {error && (
-        <div className='bg-destructive/10 p-3 rounded-md text-destructive border border-destructive'>
+        <div className='bg-destructive/10 p-3 rounded-md text-destructive border border-destructive text-sm'>
           {error}
         </div>
       )}
 
-      <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
-        <div className='flex flex-col sm:flex-row gap-4 w-full sm:w-auto'>
+      <div className='flex flex-col gap-4'>
+        <div className='flex flex-col sm:flex-row gap-4 w-full'>
           <Select
             value={selectedFormId}
             onValueChange={(value) => setSelectedFormId(value)}
@@ -177,28 +187,28 @@ export const FormSubmissionsClient = () => {
           </Select>
         </div>
 
-        <div className='flex flex-col sm:flex-row gap-4 w-full sm:w-auto'>
-          <div className='relative w-full sm:w-auto'>
+        <div className='flex flex-col sm:flex-row gap-4 w-full'>
+          <div className='relative flex-1'>
             <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
             <Input
               type='text'
               placeholder='Search student name or ID...'
-              className='pl-8 w-full sm:w-[280px]'
+              className='pl-8 w-full'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               disabled={loading || submissions.length === 0}
             />
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2 w-full sm:w-auto'>
             <Filter className='h-4 w-4 text-muted-foreground' />
             <Select
               value={statusFilter}
               onValueChange={setStatusFilter}
               disabled={loading || submissions.length === 0}
             >
-              <SelectTrigger className='w-[140px]'>
-                <SelectValue placeholder='Filter by status' />
+              <SelectTrigger className='w-full sm:w-[140px]'>
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='ALL'>All Status</SelectItem>
@@ -221,25 +231,25 @@ export const FormSubmissionsClient = () => {
       </div>
 
       <Card>
-        <CardHeader className='px-6'>
-          <div className='flex justify-between items-center'>
-            <CardTitle className='flex items-center gap-2'>
-              <FileText className='size-5' />
+        <CardHeader className='px-4 md:px-6'>
+          <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2'>
+            <CardTitle className='flex items-center gap-2 text-base md:text-lg'>
+              <FileText className='size-4 md:size-5' />
               <span>Form Submissions</span>
             </CardTitle>
-            <Badge className='bg-primary'>
+            <Badge className='bg-primary w-fit'>
               {filteredSubmissions.length} Submissions
             </Badge>
           </div>
         </CardHeader>
 
-        <CardContent className='px-6'>
+        <CardContent className='px-4 md:px-6'>
           {loading ? (
             <div className='flex justify-center items-center py-8'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
             </div>
           ) : submissions.length === 0 ? (
-            <div className='text-center py-8 text-muted-foreground'>
+            <div className='text-center py-8 text-muted-foreground text-sm md:text-base'>
               {selectedFormId !== 'all' ? (
                 <p>No submissions found for this form</p>
               ) : (
@@ -247,63 +257,131 @@ export const FormSubmissionsClient = () => {
               )}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Submitted On</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className='text-right'>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop Table View */}
+              <div className='hidden lg:block'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Submitted On</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className='text-right'>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSubmissions.map((submission) => (
+                      <TableRow key={submission.id}>
+                        <TableCell>
+                          <div className='flex flex-col'>
+                            <span>
+                              {submission.student
+                                ? submission.student.name ||
+                                  `${submission.student.firstName} ${submission.student.lastName}`
+                                : 'N/A'}
+                            </span>
+                            <span className='text-xs text-muted-foreground'>
+                              {submission.student?.studentId || 'Unknown ID'}
+                            </span>
+                            {(selectedFormId === 'all' || !selectedFormId) &&
+                              submission.form && (
+                                <span className='text-xs font-medium text-primary mt-1'>
+                                  {submission.form.name}
+                                </span>
+                              )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {formatSubmissionDate(submission.createdAt)}
+                        </TableCell>
+                        <TableCell>
+                          {formatSubmissionDate(submission.updatedAt)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(submission.status)}
+                        </TableCell>
+                        <TableCell className='text-right'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => handleViewSubmission(submission.id)}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className='lg:hidden space-y-3'>
                 {filteredSubmissions.map((submission) => (
-                  <TableRow key={submission.id}>
-                    <TableCell>
-                      <div className='flex flex-col'>
-                        <span>
+                  <div
+                    key={submission.id}
+                    className='bg-background border border-border rounded-lg p-4 space-y-3'
+                  >
+                    <div className='flex justify-between items-start'>
+                      <div className='flex-1 min-w-0'>
+                        <h3 className='text-sm font-medium text-foreground truncate'>
                           {submission.student
                             ? submission.student.name ||
                               `${submission.student.firstName} ${submission.student.lastName}`
                             : 'N/A'}
-                        </span>
-                        <span className='text-xs text-muted-foreground'>
-                          {submission.student?.studentId || 'Unknown ID'}
-                        </span>
+                        </h3>
+                        <p className='text-xs text-muted-foreground'>
+                          ID: {submission.student?.studentId || 'Unknown'}
+                        </p>
                         {(selectedFormId === 'all' || !selectedFormId) &&
                           submission.form && (
-                            <span className='text-xs font-medium text-primary mt-1'>
+                            <p className='text-xs font-medium text-primary mt-1 truncate'>
                               {submission.form.name}
-                            </span>
+                            </p>
                           )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {formatSubmissionDate(submission.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      {formatSubmissionDate(submission.updatedAt)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(submission.status)}</TableCell>
-                    <TableCell className='text-right'>
+                      <div className='ml-2 flex-shrink-0'>
+                        {getStatusBadge(submission.status)}
+                      </div>
+                    </div>
+
+                    <div className='grid grid-cols-2 gap-2 text-xs'>
+                      <div>
+                        <span className='text-muted-foreground'>
+                          Submitted:
+                        </span>
+                        <p className='text-foreground font-medium'>
+                          {formatSubmissionDate(submission.createdAt)}
+                        </p>
+                      </div>
+                      <div>
+                        <span className='text-muted-foreground'>Updated:</span>
+                        <p className='text-foreground font-medium'>
+                          {formatSubmissionDate(submission.updatedAt)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className='flex justify-end pt-2 border-t border-border'>
                       <Button
                         variant='outline'
                         size='sm'
                         onClick={() => handleViewSubmission(submission.id)}
+                        className='w-full sm:w-auto'
                       >
-                        View
+                        View Details
                       </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
 
-        <CardFooter className='px-6 border-t flex justify-between'>
-          <div className='text-sm text-muted-foreground'>
+        <CardFooter className='px-4 md:px-6 border-t flex flex-col sm:flex-row sm:justify-between gap-2'>
+          <div className='text-xs md:text-sm text-muted-foreground'>
             {forms.length > 0 && submissions.length > 0 && (
               <>
                 Showing {filteredSubmissions.length} of {submissions.length}{' '}

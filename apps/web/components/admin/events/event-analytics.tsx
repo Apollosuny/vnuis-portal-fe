@@ -179,7 +179,7 @@ export const EventAnalytics = ({ events }: EventAnalyticsProps) => {
   return (
     <div className='space-y-6'>
       {/* Stats Overview */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
         <Card>
           <CardContent className='p-6'>
             <div className='flex items-center justify-between space-x-4'>
@@ -254,7 +254,7 @@ export const EventAnalytics = ({ events }: EventAnalyticsProps) => {
       </div>
 
       {/* Charts */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-2'>
+      <div className='grid gap-4 grid-cols-1 lg:grid-cols-2'>
         <Card className='col-span-1'>
           <CardHeader>
             <CardTitle>Events by Category</CardTitle>

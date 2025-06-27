@@ -63,26 +63,41 @@ export const RoomFormClient = ({
     : handleSubmit(onCreateSubmit);
 
   return (
-    <div className='container mx-auto py-6'>
-      <div className='mb-6'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          {isEditing ? 'Edit Room' : 'Create Room'}
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          {isEditing
+            ? 'Update room information'
+            : 'Add a new room to the system'}
+        </p>
+      </div>
+
+      <div className='mb-4 md:mb-6'>
         <Link
           href={
             isEditing && room ? `${ROUTES.ROOMS}/${room.roomId}` : ROUTES.ROOMS
           }
-          className='flex items-center gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+          className='flex items-center gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 w-full sm:w-auto'
         >
           <ArrowLeftIcon className='h-4 w-4' />
-          {isEditing ? 'Back to Room Details' : 'Back to Rooms'}
+          <span className='hidden sm:inline'>
+            {isEditing ? 'Back to Room Details' : 'Back to Rooms'}
+          </span>
+          <span className='sm:hidden'>Back</span>
         </Link>
       </div>
 
-      <h1 className='text-2xl font-bold mb-6 text-gray-900 dark:text-white'>
+      <h1 className='hidden md:block text-2xl font-bold mb-6 text-gray-900 dark:text-white'>
         {isEditing ? 'Edit Room' : 'Create New Room'}
       </h1>
 
-      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700'>
-        <form onSubmit={submitHandler} className='space-y-6'>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700'>
+        <form onSubmit={submitHandler} className='space-y-4 md:space-y-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
             <div className='space-y-4'>
               {/* Room Name */}
               <div>
@@ -285,20 +300,29 @@ export const RoomFormClient = ({
             />
           </div>
 
-          <div className='flex justify-end mt-6'>
+          <div className='flex flex-col sm:flex-row sm:justify-end gap-3 mt-6'>
             <Link
-              href={isEditing && room ? `/rooms/${room.roomId}` : '/rooms'}
-              className='px-4 py-2 mr-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
+              href={
+                isEditing && room
+                  ? `/dashboard/rooms/${room.roomId}`
+                  : '/dashboard/rooms'
+              }
+              className='order-2 sm:order-1 px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 text-center'
             >
               Cancel
             </Link>
             <button
               type='submit'
               disabled={isDisabled}
-              className='flex items-center gap-2 px-4 py-2 rounded-md bg-primary dark:bg-primary-dark text-white disabled:opacity-50'
+              className='order-1 sm:order-2 flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary dark:bg-primary-dark text-white disabled:opacity-50'
             >
               {isSubmitting && <Loader2Icon className='h-4 w-4 animate-spin' />}
-              {isEditing ? 'Update Room' : 'Create Room'}
+              <span className='hidden sm:inline'>
+                {isEditing ? 'Update Room' : 'Create Room'}
+              </span>
+              <span className='sm:hidden'>
+                {isEditing ? 'Update' : 'Create'}
+              </span>
             </button>
           </div>
         </form>

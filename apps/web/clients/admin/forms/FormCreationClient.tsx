@@ -126,7 +126,17 @@ export const FormCreationClient = () => {
   ];
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          Create Form
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          Create a new administrative procedure form
+        </p>
+      </div>
+
       {/* Back button */}
       <div className='flex items-center gap-2'>
         <Button
@@ -135,14 +145,18 @@ export const FormCreationClient = () => {
           className='flex items-center gap-2'
         >
           <ArrowLeft className='h-4 w-4' />
-          Back to Forms
+          <span className='hidden sm:inline'>Back to Forms</span>
+          <span className='sm:hidden'>Back</span>
         </Button>
       </div>
 
-      <div className='bg-background rounded-xl shadow-lg p-8 border border-border'>
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
+      <div className='bg-background rounded-xl shadow-lg p-4 md:p-8 border border-border'>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className='space-y-6 md:space-y-8'
+        >
           {/* Form Basic Information */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
             <div className='space-y-4'>
               <div>
                 <label
@@ -297,7 +311,7 @@ export const FormCreationClient = () => {
                 />
               </div>
 
-              <div className='flex flex-col gap-4'>
+              <div className='flex flex-col sm:flex-row gap-4'>
                 <div className='flex items-center gap-2'>
                   <Controller
                     name='isActive'
@@ -365,19 +379,20 @@ export const FormCreationClient = () => {
           </div>
 
           {/* Form Questions Section */}
-          <div className='mt-8'>
-            <div className='flex justify-between items-center mb-6'>
-              <h2 className='text-xl font-semibold text-foreground'>
+          <div className='mt-6 md:mt-8'>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6'>
+              <h2 className='text-lg md:text-xl font-semibold text-foreground'>
                 Form Questions
               </h2>
               <Button
                 type='button'
                 variant='outline'
                 onClick={addQuestion}
-                className='flex items-center gap-2 text-sm'
+                className='flex items-center justify-center gap-2 text-sm w-full sm:w-auto'
               >
                 <PlusIcon className='h-4 w-4' />
-                Add Question
+                <span className='hidden sm:inline'>Add Question</span>
+                <span className='sm:hidden'>Add</span>
               </Button>
             </div>
 
@@ -385,9 +400,9 @@ export const FormCreationClient = () => {
             {Array.from({ length: questionCount }).map((_, index) => (
               <div
                 key={index}
-                className='bg-background border border-border rounded-lg p-6 mb-4'
+                className='bg-background border border-border rounded-lg p-4 md:p-6 mb-4'
               >
-                <div className='flex justify-between items-center mb-4'>
+                <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4'>
                   <h3 className='font-semibold text-foreground'>
                     Question {index + 1}
                   </h3>
@@ -395,15 +410,16 @@ export const FormCreationClient = () => {
                     type='button'
                     variant='destructive'
                     onClick={() => removeQuestion(index)}
-                    className='text-sm'
+                    className='text-sm w-full sm:w-auto'
                     size='sm'
                   >
                     <TrashIcon className='h-4 w-4' />
-                    Remove
+                    <span className='hidden sm:inline ml-1'>Remove</span>
+                    <span className='sm:hidden ml-1'>Remove</span>
                   </Button>
                 </div>
 
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
                   <div>
                     <label
                       htmlFor={`question-title-${index}`}
@@ -566,8 +582,8 @@ export const FormCreationClient = () => {
             ))}
 
             {questionCount === 0 && (
-              <div className='bg-background border border-border rounded-lg p-8 text-center'>
-                <p className='text-muted-foreground'>
+              <div className='bg-background border border-border rounded-lg p-4 md:p-8 text-center'>
+                <p className='text-muted-foreground text-sm md:text-base'>
                   No questions added yet. Click the "Add Question" button to add
                   your first question.
                 </p>
@@ -575,21 +591,31 @@ export const FormCreationClient = () => {
             )}
           </div>
 
-          <div className='flex justify-end mt-8'>
+          <div className='flex flex-col sm:flex-row gap-4 sm:justify-end mt-6 md:mt-8'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => router.push(ROUTES.FORMS)}
+              className='w-full sm:w-auto order-2 sm:order-1'
+            >
+              Cancel
+            </Button>
             <Button
               type='submit'
               disabled={shouldDisableButton}
-              className='flex items-center gap-2'
+              className='flex items-center justify-center gap-2 w-full sm:w-auto order-1 sm:order-2'
             >
               {isLoading ? (
                 <>
                   <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-background'></div>
-                  Loading...
+                  <span className='hidden sm:inline'>Loading...</span>
+                  <span className='sm:hidden'>...</span>
                 </>
               ) : (
                 <>
                   <SaveIcon className='h-4 w-4' />
-                  Save Form
+                  <span className='hidden sm:inline'>Save Form</span>
+                  <span className='sm:hidden'>Save</span>
                 </>
               )}
             </Button>

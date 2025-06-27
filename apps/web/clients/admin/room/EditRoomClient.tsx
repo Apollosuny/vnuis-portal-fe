@@ -29,14 +29,14 @@ export const EditRoomClient = ({ roomId }: EditRoomClientProps) => {
 
   if (error || !selectedRoom) {
     return (
-      <div className='container mx-auto py-6'>
-        <div className='text-center py-10 border rounded-lg'>
-          <p className='text-lg text-gray-500 mb-4'>
+      <div className='space-y-4 md:space-y-6'>
+        <div className='text-center py-8 md:py-10 border rounded-lg bg-white dark:bg-gray-800'>
+          <p className='text-base md:text-lg text-gray-500 dark:text-gray-400 mb-4'>
             {error || 'Room not found'}
           </p>
           <Link
-            href='/rooms'
-            className='bg-primary text-white px-4 py-2 rounded-md'
+            href='/dashboard/rooms'
+            className='bg-primary text-white px-4 py-2 rounded-md inline-block'
           >
             Back to Rooms
           </Link>

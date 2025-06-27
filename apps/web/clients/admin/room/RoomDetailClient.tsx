@@ -724,47 +724,67 @@ export const RoomDetailClient = ({ roomId }: RoomDetailClientProps) => {
   const groupedTimeSlots = groupTimeSlotsByDay(selectedRoom.timeSlots || []);
 
   return (
-    <div className='container mx-auto py-6'>
-      <div className='mb-6'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          Room Details
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          View and manage room information
+        </p>
+      </div>
+
+      <div className='mb-4 md:mb-6'>
         <Link
           href='/dashboard/rooms'
-          className='text-gray-500 hover:text-gray-700 flex items-center gap-1'
+          className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-1 w-full sm:w-auto'
         >
           <ArrowLeftIcon className='h-4 w-4' />
-          Back to Rooms
+          <span className='hidden sm:inline'>Back to Rooms</span>
+          <span className='sm:hidden'>Back</span>
         </Link>
       </div>
 
-      <div className='flex justify-between items-start mb-6'>
-        <div>
-          <h1 className='text-2xl font-bold'>{selectedRoom.name}</h1>
-          <p className='text-gray-500'>{selectedRoom.location}</p>
+      <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4 md:mb-6'>
+        <div className='flex-1 min-w-0'>
+          <h1 className='hidden md:block text-2xl font-bold break-words'>
+            {selectedRoom.name}
+          </h1>
+          <h1 className='md:hidden text-xl font-bold break-words'>
+            {selectedRoom.name}
+          </h1>
+          <p className='text-gray-500 dark:text-gray-400 text-sm md:text-base truncate'>
+            {selectedRoom.location}
+          </p>
         </div>
-        <div className='flex gap-2'>
+        <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
           <Link
             href={`/dashboard/rooms/${roomId}/edit`}
-            className='bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2'
+            className='bg-blue-500 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 w-full sm:w-auto'
           >
             <EditIcon className='h-4 w-4' />
-            Edit
+            <span className='hidden sm:inline'>Edit</span>
+            <span className='sm:hidden'>Edit</span>
           </Link>
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className='bg-red-500 text-white px-4 py-2 rounded-md flex items-center gap-2'
+            className='bg-red-500 text-white px-4 py-2 rounded-md flex items-center justify-center gap-2 w-full sm:w-auto'
           >
             {isDeleting ? (
               <Loader2Icon className='h-4 w-4 animate-spin' />
             ) : (
               <TrashIcon className='h-4 w-4' />
             )}
-            Delete
+            <span className='hidden sm:inline'>Delete</span>
+            <span className='sm:hidden'>Delete</span>
           </button>
         </div>
       </div>
 
-      <div className='bg-white rounded-lg shadow-sm p-4 sm:p-6 border'>
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+      <div className='bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 md:p-6 border border-gray-200 dark:border-gray-700'>
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
           <div>
             <h2 className='text-lg font-semibold mb-4'>Room Details</h2>
             <div className='space-y-4'>

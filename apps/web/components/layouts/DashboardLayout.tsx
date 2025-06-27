@@ -36,8 +36,30 @@ import { useLogout } from '@/hooks/useLogout';
 import { useUIStore } from '@/stores/ui.store';
 import { SidebarToggle } from '@/components/ui/sidebar-toggle';
 import { RightSidebarToggle } from '@/components/ui/right-sidebar-toggle';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { UserAvatar } from '../ui/user-avatar';
+
+// Custom hook for responsive behavior
+const useResponsive = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    // Initial check
+    checkIsMobile();
+
+    // Add event listener
+    window.addEventListener('resize', checkIsMobile);
+
+    // Clean up
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
+  return { isMobile };
+};
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -52,6 +74,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const router = useRouter();
   const { onLogout } = useLogout();
   const { theme } = useTheme();
+  const { isMobile } = useResponsive();
+  const [justToggled, setJustToggled] = useState(false);
+  const [previousPathname, setPreviousPathname] = useState(pathname);
   const {
     isSidebarCollapsed,
     toggleSidebar,
@@ -61,41 +86,45 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     setRightSidebarOpen,
   } = useUIStore();
 
-  // Auto-collapse sidebar on small screens
+  // Auto-collapse sidebar on small screens - only on initial load
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile, setSidebarCollapsed]);
+
+  // Only close sidebar when pathname actually changes (navigation)
+  useEffect(() => {
+    if (pathname !== previousPathname) {
+      // Pathname has changed - user navigated
+      if (isMobile && !isSidebarCollapsed) {
         setSidebarCollapsed(true);
       }
-    };
 
-    // Initial check
-    handleResize();
+      // Also close right sidebar on mobile when path changes
+      if (isRightSidebarOpen && isMobile) {
+        setRightSidebarOpen(false);
+      }
 
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-
-    // Clean up
-    return () => window.removeEventListener('resize', handleResize);
-  }, [setSidebarCollapsed]);
-
-  // Close sidebar on mobile devices when the path changes
-  useEffect(() => {
-    if (!isSidebarCollapsed && window.innerWidth < 768) {
-      toggleSidebar();
-    }
-
-    // Also close right sidebar on mobile when path changes
-    if (isRightSidebarOpen && window.innerWidth < 768) {
-      setRightSidebarOpen(false);
+      setPreviousPathname(pathname);
     }
   }, [
     pathname,
+    previousPathname,
+    isMobile,
     isSidebarCollapsed,
-    toggleSidebar,
+    setSidebarCollapsed,
     isRightSidebarOpen,
     setRightSidebarOpen,
   ]);
+
+  // Reset justToggled flag after a delay
+  useEffect(() => {
+    if (justToggled) {
+      const timer = setTimeout(() => setJustToggled(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [justToggled]);
 
   const getActiveTab = () => {
     if (pathname.includes('/forms')) return 'forms';
@@ -111,6 +140,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   const activeTab = getActiveTab();
 
   const handleNavigation = (tab: string) => {
+    // Close sidebar on mobile when navigating
+    if (isMobile && !isSidebarCollapsed) {
+      setSidebarCollapsed(true);
+    }
+
     switch (tab) {
       case 'overview':
         router.push('/dashboard');
@@ -164,228 +198,249 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         >
           {/* Mobile Overlay */}
           <AnimatePresence>
-            {!isSidebarCollapsed && (
+            {!isSidebarCollapsed && isMobile && (
               <motion.div
-                className='fixed inset-0 bg-black/20 z-30 md:hidden'
+                className='fixed inset-0 bg-black/30 z-20 md:hidden'
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={toggleSidebar}
+                onClick={() => {
+                  setJustToggled(true);
+                  toggleSidebar();
+                }}
               />
             )}
           </AnimatePresence>
 
           {/* Sidebar */}
           <motion.div
-            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-r relative z-40 fixed md:relative ${
-              isSidebarCollapsed ? 'w-20' : 'w-64'
+            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-r z-40 overflow-hidden ${
+              isMobile ? 'fixed left-0 top-0' : 'relative'
             }`}
-            initial={{ opacity: 0, x: -20 }}
             animate={{
-              opacity: 1,
-              x: 0,
-              width: isSidebarCollapsed ? '5rem' : '16rem', // 20 vs 64 in rem
-              transition: {
-                width: {
-                  type: 'spring',
-                  stiffness: 500,
-                  damping: 30,
-                  duration: 0.3,
-                },
-              },
-            }}
-            style={{
-              transform:
-                isSidebarCollapsed && window.innerWidth < 768
-                  ? 'translateX(-100%)'
-                  : 'translateX(0)',
+              width: isMobile
+                ? isSidebarCollapsed
+                  ? 0
+                  : 256
+                : isSidebarCollapsed
+                  ? 80
+                  : 256,
             }}
             transition={{
               type: 'spring',
               stiffness: 300,
-              damping: 25,
+              damping: 30,
+              duration: 0.3,
             }}
           >
             <SidebarToggle className='hidden sm:block' />
-            <motion.div
-              className={`p-4 border-b border-sidebar-border flex items-center justify-center !h-24 ${
-                isSidebarCollapsed ? 'px-2' : ''
-              }`}
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-            >
-              <div
-                className={`relative h-12 rounded-lg overflow-hidden ${
-                  isSidebarCollapsed ? 'w-full' : 'w-48'
-                } float-animation pulse-border-animation`}
-              >
-                <Image
-                  src='https://res.cloudinary.com/du1rup47p/image/upload/v1751039621/logo_q0tmvc.png'
-                  alt='VirtuUni Nexus Logo'
-                  fill
-                  className={`object-contain glow-animation ${
-                    theme === 'dark' ? 'filter invert' : ''
-                  } ${isSidebarCollapsed ? 'scale-75' : ''}`}
-                  priority
-                />
-              </div>
-            </motion.div>
-            <motion.div
-              className='flex flex-col flex-1 p-2 gap-1'
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.3 }}
-            >
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<LayoutDashboard size={18} />}
-                    animationType='pulse'
-                  />
-                }
-                label='Overview'
-                active={activeTab === 'overview'}
-                onClick={() => handleNavigation('overview')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<FileText size={18} />}
-                    animationType='bounce'
-                  />
-                }
-                label='Forms'
-                active={activeTab === 'forms'}
-                onClick={() => handleNavigation('forms')}
-              />
-              {activeTab === 'forms' && !isSidebarCollapsed && (
-                <div className='ml-6 space-y-1 mt-1'>
+            {(!isMobile || !isSidebarCollapsed) && (
+              <>
+                <motion.div
+                  className={`p-2 sm:p-4 border-b border-sidebar-border flex items-center justify-center h-16 sm:h-24 ${
+                    isSidebarCollapsed ? 'px-1 sm:px-2' : ''
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                >
+                  <div
+                    className={`relative h-8 sm:h-12 rounded-lg overflow-hidden ${
+                      isSidebarCollapsed ? 'w-full' : 'w-32 sm:w-48'
+                    } float-animation pulse-border-animation`}
+                  >
+                    <Image
+                      src='https://res.cloudinary.com/du1rup47p/image/upload/v1751039621/logo_q0tmvc.png'
+                      alt='VirtuUni Nexus Logo'
+                      fill
+                      className={`object-contain glow-animation ${
+                        theme === 'dark' ? 'filter invert' : ''
+                      } ${isSidebarCollapsed ? 'scale-75' : ''}`}
+                      priority
+                    />
+                  </div>
+                </motion.div>
+                <motion.div
+                  className='flex flex-col flex-1 p-1 sm:p-2 gap-1'
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.3 }}
+                >
                   <SidebarItem
                     icon={
                       <AnimatedIcon
-                        icon={<FileText size={16} />}
+                        icon={<LayoutDashboard size={18} />}
                         animationType='pulse'
                       />
                     }
-                    label='All Forms'
-                    active={pathname === '/dashboard/forms'}
-                    onClick={() => router.push('/dashboard/forms')}
-                    isSubItem
+                    label='Overview'
+                    active={activeTab === 'overview'}
+                    onClick={() => handleNavigation('overview')}
                   />
                   <SidebarItem
                     icon={
                       <AnimatedIcon
-                        icon={<BadgeCheck size={16} />}
+                        icon={<FileText size={18} />}
+                        animationType='bounce'
+                      />
+                    }
+                    label='Forms'
+                    active={activeTab === 'forms'}
+                    onClick={() => handleNavigation('forms')}
+                  />
+                  {activeTab === 'forms' && !isSidebarCollapsed && (
+                    <div className='ml-4 sm:ml-6 space-y-1 mt-1'>
+                      <SidebarItem
+                        icon={
+                          <AnimatedIcon
+                            icon={<FileText size={16} />}
+                            animationType='pulse'
+                          />
+                        }
+                        label='All Forms'
+                        active={pathname === '/dashboard/forms'}
+                        onClick={() => {
+                          if (isMobile && !isSidebarCollapsed) {
+                            setSidebarCollapsed(true);
+                          }
+                          router.push('/dashboard/forms');
+                        }}
+                        isSubItem
+                      />
+                      <SidebarItem
+                        icon={
+                          <AnimatedIcon
+                            icon={<BadgeCheck size={16} />}
+                            animationType='pulse'
+                          />
+                        }
+                        label='Form Submissions'
+                        active={pathname.includes(
+                          '/dashboard/forms/submissions'
+                        )}
+                        onClick={() => {
+                          if (isMobile && !isSidebarCollapsed) {
+                            setSidebarCollapsed(true);
+                          }
+                          router.push('/dashboard/forms/submissions');
+                        }}
+                        isSubItem
+                      />
+                    </div>
+                  )}
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<DoorOpen size={18} />}
+                        animationType='shake'
+                      />
+                    }
+                    label='Rooms'
+                    active={activeTab === 'rooms'}
+                    onClick={() => handleNavigation('rooms')}
+                  />
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<Calendar size={18} />}
+                        animationType='bounce'
+                      />
+                    }
+                    label='Room Bookings'
+                    active={activeTab === 'bookings'}
+                    onClick={() => handleNavigation('bookings')}
+                  />
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<BarChart4 size={18} />}
+                        animationType='bounce'
+                      />
+                    }
+                    label='Events'
+                    active={activeTab === 'events'}
+                    onClick={() => handleNavigation('events')}
+                  />
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<User size={18} />}
+                        animationType='shake'
+                      />
+                    }
+                    label='Students'
+                    active={pathname.includes('/dashboard/students')}
+                    onClick={() => {
+                      if (isMobile && !isSidebarCollapsed) {
+                        setSidebarCollapsed(true);
+                      }
+                      router.push(ROUTES.STUDENTS);
+                    }}
+                  />
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<Bell size={18} />}
                         animationType='pulse'
                       />
                     }
-                    label='Form Submissions'
-                    active={pathname.includes('/dashboard/forms/submissions')}
-                    onClick={() => router.push('/dashboard/forms/submissions')}
-                    isSubItem
+                    label='Notifications'
+                    active={activeTab === 'notifications'}
+                    onClick={() => handleNavigation('notifications')}
                   />
-                </div>
-              )}
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<DoorOpen size={18} />}
-                    animationType='shake'
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<MessageSquare size={18} />}
+                        animationType='bounce'
+                      />
+                    }
+                    label='Feedback'
+                    active={pathname.includes('/dashboard/feedback')}
+                    onClick={() => {
+                      if (isMobile && !isSidebarCollapsed) {
+                        setSidebarCollapsed(true);
+                      }
+                      router.push('/dashboard/feedback');
+                    }}
+                  />{' '}
+                </motion.div>
+                <motion.div
+                  className='p-1 sm:p-2'
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.3 }}
+                >
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<Settings size={18} />}
+                        animationType='spin'
+                      />
+                    }
+                    label='Settings'
+                    active={activeTab === 'settings'}
+                    onClick={() => handleNavigation('settings')}
                   />
-                }
-                label='Rooms'
-                active={activeTab === 'rooms'}
-                onClick={() => handleNavigation('rooms')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<Calendar size={18} />}
-                    animationType='bounce'
+                  <SidebarItem
+                    icon={
+                      <AnimatedIcon
+                        icon={<LogOut size={18} />}
+                        animationType='shake'
+                      />
+                    }
+                    label='Logout'
+                    onClick={onLogout}
                   />
-                }
-                label='Room Bookings'
-                active={activeTab === 'bookings'}
-                onClick={() => handleNavigation('bookings')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<BarChart4 size={18} />}
-                    animationType='bounce'
-                  />
-                }
-                label='Events'
-                active={activeTab === 'events'}
-                onClick={() => handleNavigation('events')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<User size={18} />}
-                    animationType='shake'
-                  />
-                }
-                label='Students'
-                active={pathname.includes('/dashboard/students')}
-                onClick={() => router.push(ROUTES.STUDENTS)}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<Bell size={18} />}
-                    animationType='pulse'
-                  />
-                }
-                label='Notifications'
-                active={activeTab === 'notifications'}
-                onClick={() => handleNavigation('notifications')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<MessageSquare size={18} />}
-                    animationType='bounce'
-                  />
-                }
-                label='Feedback'
-                active={pathname.includes('/dashboard/feedback')}
-                onClick={() => router.push('/dashboard/feedback')}
-              />
-            </motion.div>
-            <motion.div
-              className='p-2'
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.3 }}
-            >
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<Settings size={18} />}
-                    animationType='spin'
-                  />
-                }
-                label='Settings'
-                active={activeTab === 'settings'}
-                onClick={() => handleNavigation('settings')}
-              />
-              <SidebarItem
-                icon={
-                  <AnimatedIcon
-                    icon={<LogOut size={18} />}
-                    animationType='shake'
-                  />
-                }
-                label='Logout'
-                onClick={onLogout}
-              />
-            </motion.div>
+                </motion.div>
+              </>
+            )}
           </motion.div>
 
           {/* Main content */}
           <motion.div
-            className='flex-1 overflow-x-hidden overflow-y-auto bg-background'
+            className={`flex-1 overflow-x-hidden overflow-y-auto bg-background ${
+              isMobile && !isSidebarCollapsed ? 'ml-0' : ''
+            }`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.4 }}
@@ -393,28 +448,33 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div className='flex flex-col h-full w-full'>
               {/* Header */}
               <motion.header
-                className='border-b p-4 flex justify-between items-center backdrop-blur-sm bg-background/70 min-h-[5rem] shadow-sm !h-24'
+                className='border-b p-2 sm:p-4 flex justify-between items-center backdrop-blur-sm bg-background/70 min-h-[4rem] sm:min-h-[5rem] shadow-sm h-16 sm:h-24'
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.3 }}
               >
-                <div className='flex items-center gap-3 flex-grow'>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='md:hidden flex-shrink-0'
-                    onClick={toggleSidebar}
-                  >
-                    <Menu size={20} />
-                  </Button>
-                  <div className='flex items-center gap-2 min-w-0'>
+                <div className='flex items-center gap-3 flex-grow min-w-0'>
+                  <motion.div whileTap={{ scale: 0.95 }}>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='md:hidden flex-shrink-0'
+                      onClick={() => {
+                        setJustToggled(true);
+                        toggleSidebar();
+                      }}
+                    >
+                      <Menu size={18} />
+                    </Button>
+                  </motion.div>
+                  <div className='flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden'>
                     <AnimatedIcon
-                      icon={<Sparkles size={22} />}
+                      icon={<Sparkles size={18} className='sm:w-6 sm:h-6' />}
                       animationType='pulse'
-                      className='text-primary'
+                      className='text-primary flex-shrink-0'
                     />
                     <motion.h1
-                      className='text-2xl font-semibold text-nowrap'
+                      className='text-lg sm:text-2xl font-semibold truncate'
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.6, duration: 0.3 }}
@@ -424,7 +484,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   </div>
                 </div>
                 <motion.div
-                  className='flex items-center justify-center gap-3 flex-shrink-0 ml-4'
+                  className='flex items-center justify-center gap-1 sm:gap-3 flex-shrink-0 ml-2 sm:ml-4'
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.3 }}
@@ -439,9 +499,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     }
                   >
                     {isRightSidebarOpen ? (
-                      <PanelRight size={20} />
+                      <PanelRight size={18} />
                     ) : (
-                      <PanelRightOpen size={20} />
+                      <PanelRightOpen size={18} />
                     )}
                   </Button>
                   <ThemeToggle />
@@ -451,7 +511,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
               {/* Content */}
               <motion.main
-                className='flex-1 p-6 overflow-y-auto overflow-x-hidden relative'
+                className='flex-1 p-3 sm:p-6 overflow-y-auto overflow-x-hidden relative'
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.4 }}
@@ -460,16 +520,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 <DecorativeShape
                   variant='blob'
                   color='blue'
-                  size='xl'
+                  size='lg'
                   position='top-right'
-                  className='translate-x-1/3 -translate-y-1/4 opacity-30'
+                  className='translate-x-1/3 -translate-y-1/4 opacity-20 sm:opacity-30 hidden sm:block'
                 />
                 <DecorativeShape
                   variant='ring'
                   color='purple'
-                  size='lg'
+                  size='md'
                   position='bottom-left'
-                  className='-translate-x-1/3 translate-y-1/4'
+                  className='-translate-x-1/3 translate-y-1/4 opacity-10 sm:opacity-20 hidden sm:block'
                 />
 
                 {/* Content */}
@@ -482,9 +542,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           {/* Right Sidebar */}
           <AnimatePresence>
-            {isRightSidebarOpen && (
+            {isRightSidebarOpen && isMobile && (
               <motion.div
-                className='fixed inset-0 bg-black/20 z-30 md:hidden'
+                className='fixed inset-0 bg-black/20 z-30'
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -494,14 +554,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </AnimatePresence>
 
           <motion.div
-            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-l relative z-40 fixed right-0 md:relative ${
-              isRightSidebarOpen ? 'w-64' : 'w-0'
-            }`}
+            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-l z-40 ${
+              isMobile ? 'fixed right-0 top-0' : 'relative'
+            } ${isRightSidebarOpen ? 'w-64' : 'w-0'}`}
             initial={{ opacity: 0, x: 20 }}
             animate={{
               opacity: isRightSidebarOpen ? 1 : 0,
-              x: 0,
-              width: isRightSidebarOpen ? '16rem' : '0', // 64 vs 0 in rem
+              x: isMobile && !isRightSidebarOpen ? 250 : 0,
+              width: isRightSidebarOpen ? '16rem' : '0',
               transition: {
                 width: {
                   type: 'spring',
@@ -509,13 +569,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   damping: 30,
                   duration: 0.3,
                 },
+                x: {
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 30,
+                  duration: 0.3,
+                },
+                opacity: {
+                  duration: 0.2,
+                },
               },
-            }}
-            style={{
-              transform:
-                !isRightSidebarOpen && window.innerWidth < 768
-                  ? 'translateX(100%)'
-                  : 'translateX(0)',
             }}
             transition={{
               type: 'spring',
@@ -525,29 +588,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           >
             <RightSidebarToggle className='hidden sm:block' />
             <motion.div
-              className='p-4 border-b border-sidebar-border flex items-center justify-center h-24'
+              className='p-2 sm:p-4 border-b border-sidebar-border flex items-center justify-center h-16 sm:h-24'
               whileHover={{ scale: 1.05 }}
               transition={{ type: 'spring', stiffness: 400, damping: 10 }}
             >
-              <div className='text-lg font-semibold text-sidebar-foreground'>
+              <div className='text-sm sm:text-lg font-semibold text-sidebar-foreground'>
                 <AnimatedIcon
-                  icon={<Sparkles size={22} />}
+                  icon={<Sparkles size={18} className='sm:w-6 sm:h-6' />}
                   animationType='pulse'
-                  className='text-primary inline-block mr-2'
+                  className='text-primary inline-block mr-1 sm:mr-2'
                 />
                 Quick Info
               </div>
             </motion.div>
 
             <motion.div
-              className='flex flex-col flex-1 p-4 gap-3 overflow-y-auto'
+              className='flex flex-col flex-1 p-2 sm:p-4 gap-3 overflow-y-auto'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.3 }}
             >
-              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <Calendar size={16} className='mr-2 text-sidebar-primary' />{' '}
+              <div className='bg-sidebar-accent/10 p-2 sm:p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-xs sm:text-sm font-medium mb-2 flex items-center'>
+                  <Calendar
+                    size={14}
+                    className='sm:w-4 sm:h-4 mr-1 sm:mr-2 text-sidebar-primary'
+                  />{' '}
                   Today
                 </h3>
                 <p className='text-xs text-sidebar-muted'>
@@ -560,9 +626,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </p>
               </div>
 
-              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <FileText size={16} className='mr-2 text-sidebar-primary' />{' '}
+              <div className='bg-sidebar-accent/10 p-2 sm:p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-xs sm:text-sm font-medium mb-2 flex items-center'>
+                  <FileText
+                    size={14}
+                    className='sm:w-4 sm:h-4 mr-1 sm:mr-2 text-sidebar-primary'
+                  />{' '}
                   Recent Forms
                 </h3>
                 <div className='space-y-2'>
@@ -571,9 +640,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </div>
               </div>
 
-              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <BarChart4 size={16} className='mr-2 text-sidebar-primary' />{' '}
+              <div className='bg-sidebar-accent/10 p-2 sm:p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-xs sm:text-sm font-medium mb-2 flex items-center'>
+                  <BarChart4
+                    size={14}
+                    className='sm:w-4 sm:h-4 mr-1 sm:mr-2 text-sidebar-primary'
+                  />{' '}
                   Statistics
                 </h3>
                 <div className='space-y-1 text-xs text-sidebar-muted'>
@@ -592,9 +664,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 </div>
               </div>
 
-              <div className='bg-sidebar-accent/10 p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
-                <h3 className='text-sm font-medium mb-2 flex items-center'>
-                  <BadgeCheck size={16} className='mr-2 text-sidebar-primary' />{' '}
+              <div className='bg-sidebar-accent/10 p-2 sm:p-4 rounded-lg border border-sidebar-border/30 shadow-sm'>
+                <h3 className='text-xs sm:text-sm font-medium mb-2 flex items-center'>
+                  <BadgeCheck
+                    size={14}
+                    className='sm:w-4 sm:h-4 mr-1 sm:mr-2 text-sidebar-primary'
+                  />{' '}
                   Tasks
                 </h3>
                 <div className='space-y-2'>
@@ -618,17 +693,20 @@ const SidebarItem: React.FC<{
   isSubItem?: boolean;
 }> = ({ icon, label, active, onClick, isSubItem }) => {
   const { isSidebarCollapsed } = useUIStore();
+  const { isMobile } = useResponsive();
 
   return (
     <motion.div className={`relative ${active ? 'z-10' : 'z-0'}`} layout>
       <motion.button
-        className={`flex items-center p-2 rounded-md w-full transition-all relative overflow-hidden ${
+        className={`flex items-center p-1.5 sm:p-2 rounded-md w-full transition-all relative overflow-hidden text-sm sm:text-base ${
           active
             ? 'bg-sidebar-primary/15 text-sidebar-primary-foreground font-medium'
             : 'hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
-        } ${isSidebarCollapsed && !isSubItem ? 'justify-center' : ''}`}
+        } ${isSidebarCollapsed && !isSubItem ? 'justify-center' : ''} ${
+          isMobile ? 'active:bg-sidebar-accent/30' : ''
+        }`}
         onClick={onClick}
-        whileHover={{ scale: 1.02 }}
+        whileHover={!isMobile ? { scale: 1.02 } : {}}
         whileTap={{ scale: 0.97 }}
         transition={{
           type: 'spring',
@@ -641,14 +719,14 @@ const SidebarItem: React.FC<{
         >
           <div
             className={`flex items-center justify-center ${active ? 'text-sidebar-primary-foreground' : ''}`}
-            style={{ width: '24px', height: '24px', flexShrink: 0 }}
+            style={{ width: '20px', height: '20px', flexShrink: 0 }}
           >
             {icon}
           </div>
           {(!isSidebarCollapsed || isSubItem) && (
             <motion.span
               layout
-              className='whitespace-nowrap origin-left ml-3'
+              className='whitespace-nowrap origin-left ml-2 sm:ml-3 text-xs sm:text-sm'
               initial={{ opacity: 0, x: -5 }}
               animate={{
                 opacity: 1,
@@ -668,8 +746,8 @@ const SidebarItem: React.FC<{
         <motion.div
           className={`absolute ${
             isSidebarCollapsed && !isSubItem
-              ? 'bottom-1 left-1/2 w-10 h-1 -translate-x-1/2'
-              : 'left-0 top-1/2 -translate-y-1/2 w-1.5 h-4/5'
+              ? 'bottom-1 left-1/2 w-8 sm:w-10 h-0.5 sm:h-1 -translate-x-1/2'
+              : 'left-0 top-1/2 -translate-y-1/2 w-1 sm:w-1.5 h-3/4 sm:h-4/5'
           } bg-sidebar-primary rounded-full shadow-glow`}
           layoutId={isSubItem ? 'subItemActiveIndicator' : 'activeIndicator'}
           initial={{ opacity: 0 }}
@@ -698,13 +776,18 @@ const ThemeToggle = () => {
         size='icon'
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         title='Toggle theme'
+        className='h-8 w-8 sm:h-10 sm:w-10'
       >
         <motion.div
           initial={{ rotate: 0 }}
           animate={{ rotate: theme === 'dark' ? 180 : 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 10 }}
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? (
+            <Sun size={16} className='sm:w-5 sm:h-5' />
+          ) : (
+            <Moon size={16} className='sm:w-5 sm:h-5' />
+          )}
         </motion.div>
       </Button>
     </motion.div>

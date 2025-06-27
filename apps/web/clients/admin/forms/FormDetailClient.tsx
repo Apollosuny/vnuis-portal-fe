@@ -48,33 +48,49 @@ export const FormDetailClient = () => {
   }
 
   return (
-    <div className='space-y-6'>
-      <div className='flex items-center justify-between'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          Form Details
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          View form information and questions
+        </p>
+      </div>
+
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
         <Button
           variant='ghost'
           onClick={() => router.push(ROUTES.FORMS)}
-          className='flex items-center gap-2'
+          className='flex items-center gap-2 w-full sm:w-auto'
         >
           <ArrowLeft className='h-4 w-4' />
-          Back to Forms
+          <span className='hidden sm:inline'>Back to Forms</span>
+          <span className='sm:hidden'>Back</span>
         </Button>
         <Button
           onClick={() => router.push(`/dashboard/forms/${params.id}/edit`)}
-          className='flex items-center gap-2'
+          className='flex items-center justify-center gap-2 w-full sm:w-auto'
         >
           <Pencil className='h-4 w-4' />
-          Edit Form
+          <span className='hidden sm:inline'>Edit Form</span>
+          <span className='sm:hidden'>Edit</span>
         </Button>
       </div>
 
-      <div className='bg-background rounded-xl shadow-lg p-8 border border-border'>
-        <div className='space-y-6'>
+      <div className='bg-background rounded-xl shadow-lg p-4 md:p-8 border border-border'>
+        <div className='space-y-4 md:space-y-6'>
           <div>
-            <h1 className='text-2xl font-bold text-foreground'>{form.name}</h1>
-            <p className='text-muted-foreground mt-2'>{form.description}</p>
+            <h1 className='text-xl md:text-2xl font-bold text-foreground break-words'>
+              {form.name}
+            </h1>
+            <p className='text-muted-foreground mt-2 text-sm md:text-base'>
+              {form.description}
+            </p>
           </div>
 
-          <div className='grid grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6'>
             <div>
               <h3 className='text-sm font-medium text-muted-foreground'>
                 Form Type
@@ -108,33 +124,33 @@ export const FormDetailClient = () => {
                 Settings
               </h3>
               <div className='mt-1 space-y-1'>
-                <p className='text-sm text-foreground'>
+                <p className='text-xs md:text-sm text-foreground'>
                   {form.allowEditAfterSubmit ? '✓' : '✗'} Allow Edit After
                   Submit
                 </p>
-                <p className='text-sm text-foreground'>
+                <p className='text-xs md:text-sm text-foreground'>
                   {form.requireApproval ? '✓' : '✗'} Require Approval
                 </p>
               </div>
             </div>
           </div>
 
-          <div className='mt-8'>
+          <div className='mt-6 md:mt-8'>
             <h2 className='text-lg font-semibold text-foreground mb-4'>
               Questions
             </h2>
-            <div className='space-y-6'>
+            <div className='space-y-4 md:space-y-6'>
               {form.data.questions.map((question, index) => (
                 <div
                   key={question.id}
-                  className='bg-background border border-border rounded-lg p-6'
+                  className='bg-background border border-border rounded-lg p-4 md:p-6'
                 >
-                  <div className='space-y-4'>
+                  <div className='space-y-3 md:space-y-4'>
                     <div>
-                      <span className='text-sm text-muted-foreground'>
+                      <span className='text-xs md:text-sm text-muted-foreground'>
                         Question {index + 1}
                       </span>
-                      <h3 className='text-foreground font-medium mt-1'>
+                      <h3 className='text-foreground font-medium mt-1 text-sm md:text-base break-words'>
                         {question.title}
                       </h3>
                     </div>

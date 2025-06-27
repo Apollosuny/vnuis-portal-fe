@@ -163,22 +163,36 @@ export const FormEditClient = () => {
   ];
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-4 md:space-y-6'>
+      {/* Mobile Title */}
+      <div className='block md:hidden mb-4'>
+        <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+          Edit Form
+        </h1>
+        <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+          Update form information and questions
+        </p>
+      </div>
+
       <div className='flex items-center gap-2'>
         <Button
           variant='ghost'
           onClick={() => router.back()}
-          className='flex items-center gap-2'
+          className='flex items-center gap-2 w-full sm:w-auto'
         >
           <ArrowLeft className='h-4 w-4' />
-          Back
+          <span className='hidden sm:inline'>Back</span>
+          <span className='sm:hidden'>Back</span>
         </Button>
       </div>
 
-      <div className='bg-background rounded-xl shadow-lg p-8 border border-border'>
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
+      <div className='bg-background rounded-xl shadow-lg p-4 md:p-8 border border-border'>
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className='space-y-6 md:space-y-8'
+        >
           {/* Form Basic Information */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
             <div className='space-y-4'>
               <div>
                 <label

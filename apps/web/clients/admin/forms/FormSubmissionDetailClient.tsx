@@ -216,32 +216,52 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
 
   return (
     <>
-      <div className='space-y-6'>
+      <div className='space-y-4 md:space-y-6'>
+        {/* Mobile Title */}
+        <div className='block md:hidden mb-4'>
+          <h1 className='text-xl font-semibold text-gray-900 dark:text-white'>
+            Submission Details
+          </h1>
+          <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+            View and manage form submission
+          </p>
+        </div>
+
         <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
-          <Button variant='ghost' onClick={handleBack} className='px-2'>
-            <ArrowLeft className='mr-2 h-4 w-4' /> Back to Submissions
+          <Button
+            variant='ghost'
+            onClick={handleBack}
+            className='px-2 w-full sm:w-auto'
+          >
+            <ArrowLeft className='mr-2 h-4 w-4' />
+            <span className='hidden sm:inline'>Back to Submissions</span>
+            <span className='sm:hidden'>Back</span>
           </Button>
         </div>
 
         {/* Submission Overview Card */}
         <Card>
-          <CardHeader className='border-b'>
-            <div className='flex justify-between items-start'>
-              <div>
-                <CardTitle className='flex items-center gap-2 text-xl'>
-                  <FileText className='h-5 w-5' />
-                  {submission.form?.name || 'Form Submission'}
+          <CardHeader className='border-b px-4 md:px-6'>
+            <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
+              <div className='flex-1 min-w-0'>
+                <CardTitle className='flex items-center gap-2 text-lg md:text-xl break-words'>
+                  <FileText className='h-4 w-4 md:h-5 md:w-5 flex-shrink-0' />
+                  <span className='truncate'>
+                    {submission.form?.name || 'Form Submission'}
+                  </span>
                 </CardTitle>
-                <CardDescription className='mt-1'>
+                <CardDescription className='mt-1 text-xs md:text-sm break-all'>
                   Submission ID: {submission.id}
                 </CardDescription>
               </div>
-              {renderStatusBadge(submission.status)}
+              <div className='flex-shrink-0'>
+                {renderStatusBadge(submission.status)}
+              </div>
             </div>
           </CardHeader>
 
-          <CardContent className='pt-6'>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <CardContent className='pt-4 md:pt-6 px-4 md:px-6'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
               {/* Student Information */}
               <div className='space-y-4'>
                 <h3 className='font-medium flex items-center gap-2'>
