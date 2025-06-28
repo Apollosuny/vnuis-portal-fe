@@ -142,15 +142,17 @@ export function FeedbackList() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Feedback List</CardTitle>
-          <CardDescription>Loading feedbacks...</CardDescription>
+          <CardTitle className='text-lg md:text-xl'>Feedback List</CardTitle>
+          <CardDescription className='text-sm'>
+            Loading feedbacks...
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className='space-y-4'>
+          <div className='space-y-3 md:space-y-4'>
             {[...Array(5)].map((_, i) => (
               <div key={i} className='animate-pulse'>
-                <div className='h-4 bg-gray-200 rounded w-3/4 mb-2'></div>
-                <div className='h-3 bg-gray-200 rounded w-1/2'></div>
+                <div className='h-3 md:h-4 bg-gray-200 rounded w-3/4 mb-2'></div>
+                <div className='h-2 md:h-3 bg-gray-200 rounded w-1/2'></div>
               </div>
             ))}
           </div>
@@ -174,14 +176,22 @@ export function FeedbackList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Feedback List</CardTitle>
-        <CardDescription>
-          Manage and review student feedback submissions
-        </CardDescription>
+        <div className='md:hidden'>
+          <CardTitle className='text-lg'>Feedback List</CardTitle>
+          <CardDescription className='text-sm'>
+            Manage student feedback
+          </CardDescription>
+        </div>
+        <div className='hidden md:block'>
+          <CardTitle>Feedback List</CardTitle>
+          <CardDescription>
+            Manage and review student feedback submissions
+          </CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
         {/* Filters */}
-        <div className='flex flex-col sm:flex-row gap-4 mb-6'>
+        <div className='flex flex-col space-y-3 md:space-y-0 md:flex-row md:gap-4 mb-6'>
           <div className='flex-1'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
@@ -193,53 +203,112 @@ export function FeedbackList() {
               />
             </div>
           </div>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className='w-40'>
-              <SelectValue placeholder='Category' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Categories</SelectItem>
-              <SelectItem value='GENERAL'>General</SelectItem>
-              <SelectItem value='USER_EXPERIENCE'>User Experience</SelectItem>
-              <SelectItem value='FUNCTIONALITY'>Functionality</SelectItem>
-              <SelectItem value='PERFORMANCE'>Performance</SelectItem>
-              <SelectItem value='DESIGN'>Design</SelectItem>
-              <SelectItem value='CONTENT'>Content</SelectItem>
-              <SelectItem value='TECHNICAL_ISSUE'>Technical Issue</SelectItem>
-              <SelectItem value='SUGGESTION'>Suggestion</SelectItem>
-              <SelectItem value='COMPLAINT'>Complaint</SelectItem>
-              <SelectItem value='COMPLIMENT'>Compliment</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className='w-40'>
-              <SelectValue placeholder='Status' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Status</SelectItem>
-              <SelectItem value='SUBMITTED'>Submitted</SelectItem>
-              <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
-              <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
-              <SelectItem value='RESOLVED'>Resolved</SelectItem>
-              <SelectItem value='CLOSED'>Closed</SelectItem>
-              <SelectItem value='REJECTED'>Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sentiment} onValueChange={setSentiment}>
-            <SelectTrigger className='w-40'>
-              <SelectValue placeholder='Sentiment' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='all'>All Sentiment</SelectItem>
-              <SelectItem value='POSITIVE'>Positive</SelectItem>
-              <SelectItem value='NEGATIVE'>Negative</SelectItem>
-              <SelectItem value='NEUTRAL'>Neutral</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 md:flex md:flex-row'>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className='w-full md:w-40'>
+                <SelectValue placeholder='Category' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Categories</SelectItem>
+                <SelectItem value='GENERAL'>General</SelectItem>
+                <SelectItem value='USER_EXPERIENCE'>User Experience</SelectItem>
+                <SelectItem value='FUNCTIONALITY'>Functionality</SelectItem>
+                <SelectItem value='PERFORMANCE'>Performance</SelectItem>
+                <SelectItem value='DESIGN'>Design</SelectItem>
+                <SelectItem value='CONTENT'>Content</SelectItem>
+                <SelectItem value='TECHNICAL_ISSUE'>Technical Issue</SelectItem>
+                <SelectItem value='SUGGESTION'>Suggestion</SelectItem>
+                <SelectItem value='COMPLAINT'>Complaint</SelectItem>
+                <SelectItem value='COMPLIMENT'>Compliment</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className='w-full md:w-40'>
+                <SelectValue placeholder='Status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Status</SelectItem>
+                <SelectItem value='SUBMITTED'>Submitted</SelectItem>
+                <SelectItem value='UNDER_REVIEW'>Under Review</SelectItem>
+                <SelectItem value='IN_PROGRESS'>In Progress</SelectItem>
+                <SelectItem value='RESOLVED'>Resolved</SelectItem>
+                <SelectItem value='CLOSED'>Closed</SelectItem>
+                <SelectItem value='REJECTED'>Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sentiment} onValueChange={setSentiment}>
+              <SelectTrigger className='w-full md:w-40'>
+                <SelectValue placeholder='Sentiment' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Sentiment</SelectItem>
+                <SelectItem value='POSITIVE'>Positive</SelectItem>
+                <SelectItem value='NEGATIVE'>Negative</SelectItem>
+                <SelectItem value='NEUTRAL'>Neutral</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Table */}
-        <div className='rounded-md border'>
+        {/* Mobile Card Layout */}
+        <div className='md:hidden space-y-4'>
+          {feedbacks?.map((feedback) => (
+            <Card key={feedback.id} className='p-4'>
+              <div className='space-y-3'>
+                <div>
+                  <h3 className='font-medium text-sm'>{feedback.title}</h3>
+                  <p className='text-xs text-gray-500 line-clamp-2'>
+                    {feedback.content}
+                  </p>
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                  <Badge variant='outline' className='text-xs'>
+                    {feedback.category}
+                  </Badge>
+                  <Badge
+                    className={`text-xs ${getStatusColor(feedback.status)}`}
+                  >
+                    {feedback.status}
+                  </Badge>
+                  {feedback.sentiment && (
+                    <Badge
+                      className={`text-xs ${getSentimentColor(feedback.sentiment)}`}
+                    >
+                      {feedback.sentiment}
+                    </Badge>
+                  )}
+                </div>
+                <div className='flex items-center justify-between text-xs text-gray-500'>
+                  <div>{feedback.student?.name || 'Unknown'}</div>
+                  {feedback.rating ? (
+                    <div className='flex items-center'>
+                      <Star className='h-3 w-3 text-yellow-400 mr-1' />
+                      <span>{feedback.rating}/5</span>
+                    </div>
+                  ) : (
+                    <span>-</span>
+                  )}
+                </div>
+                <div className='flex items-center justify-between'>
+                  <div className='text-xs text-gray-500'>
+                    {formatDate(feedback.createdAt)}
+                  </div>
+                  <div className='flex items-center space-x-1'>
+                    <Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
+                      <Eye className='h-3 w-3' />
+                    </Button>
+                    <Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
+                      <MessageSquare className='h-3 w-3' />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className='hidden md:block rounded-md border'>
           <Table>
             <TableHeader>
               <TableRow>
@@ -316,8 +385,8 @@ export function FeedbackList() {
         </div>
 
         {/* Pagination */}
-        <div className='flex items-center justify-between mt-6'>
-          <div className='text-sm text-gray-500'>
+        <div className='flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center md:justify-between mt-6'>
+          <div className='text-xs md:text-sm text-gray-500 text-center md:text-left'>
             {feedbacks && feedbacks.length > 0 ? (
               <>
                 Showing {(page - 1) * ITEMS_PER_PAGE + 1} to{' '}
@@ -328,7 +397,7 @@ export function FeedbackList() {
               'No results found'
             )}
           </div>
-          <Pagination>
+          <Pagination className='justify-center md:justify-end'>
             <PaginationContent>
               {/* Previous Page Button */}
               <PaginationItem>
@@ -342,36 +411,45 @@ export function FeedbackList() {
                 />
               </PaginationItem>
 
-              {/* Page Numbers */}
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                // Logic to show correct page numbers around current page
-                let pageNum = 1;
+              {/* Page Numbers - Show fewer on mobile */}
+              {Array.from(
+                {
+                  length: Math.min(5, totalPages),
+                },
+                (_, i) => {
+                  let pageNum = 1;
+                  const maxPages = 5;
 
-                if (totalPages <= 5) {
-                  // Show all pages if total pages <= 5
-                  pageNum = i + 1;
-                } else if (page <= 3) {
-                  // When current page is near the start
-                  pageNum = i + 1;
-                } else if (page >= totalPages - 2) {
-                  // When current page is near the end
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  // When current page is in the middle
-                  pageNum = page - 2 + i;
+                  if (totalPages <= maxPages) {
+                    pageNum = i + 1;
+                  } else if (page <= Math.floor(maxPages / 2) + 1) {
+                    pageNum = i + 1;
+                  } else if (page >= totalPages - Math.floor(maxPages / 2)) {
+                    pageNum = totalPages - maxPages + 1 + i;
+                  } else {
+                    pageNum = page - Math.floor(maxPages / 2) + i;
+                  }
+
+                  return (
+                    <PaginationItem key={i} className='hidden sm:block'>
+                      <PaginationLink
+                        onClick={() => setPage(pageNum)}
+                        isActive={pageNum === page}
+                        className='text-xs md:text-sm'
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
                 }
+              )}
 
-                return (
-                  <PaginationItem key={i}>
-                    <PaginationLink
-                      onClick={() => setPage(pageNum)}
-                      isActive={pageNum === page}
-                    >
-                      {pageNum}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
+              {/* Mobile: Show only current page */}
+              <PaginationItem className='sm:hidden'>
+                <PaginationLink isActive={true} className='text-xs'>
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
 
               {/* Next Page Button */}
               <PaginationItem>

@@ -199,9 +199,17 @@ const Feedback = () => {
   return (
     <AuthenticatedGuard>
       <DashboardLayout>
-        <div className='space-y-6 p-6'>
+        <div className='space-y-4 md:space-y-6 p-4 md:p-6'>
+          {/* Mobile-only title */}
+          <div className='md:hidden'>
+            <h1 className='text-xl font-bold'>Feedback Management</h1>
+            <p className='text-sm text-muted-foreground'>
+              Monitor and analyze student feedback
+            </p>
+          </div>
+
           {/* Header */}
-          <div className='flex items-center justify-between'>
+          <div className='hidden md:flex items-center justify-between'>
             <div>
               <h1 className='text-3xl font-bold tracking-tight'>
                 Feedback Management
@@ -218,17 +226,25 @@ const Feedback = () => {
             </div>
           </div>
 
+          {/* Mobile Export Button */}
+          <div className='md:hidden'>
+            <Button variant='outline' size='sm' className='w-full'>
+              <Calendar className='h-4 w-4 mr-2' />
+              Export Report
+            </Button>
+          </div>
+
           {/* Date Range Selector */}
           <Card>
             <CardContent className='pt-6'>
-              <div className='flex items-center space-x-4'>
-                <div className='flex items-center space-x-2'>
+              <div className='flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4'>
+                <div className='flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-2'>
                   <span className='text-sm font-medium'>Date Range:</span>
                   <Select
                     value={dateRange}
                     onValueChange={(value: any) => setDateRange(value)}
                   >
-                    <SelectTrigger className='w-32'>
+                    <SelectTrigger className='w-full md:w-32'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -241,19 +257,19 @@ const Feedback = () => {
                   </Select>
                 </div>
                 {dateRange === 'custom' && (
-                  <div className='flex items-center space-x-2'>
+                  <div className='flex flex-col space-y-2 md:flex-row md:items-center md:space-y-0 md:space-x-2'>
                     <Input
                       type='date'
                       value={customStartDate}
                       onChange={(e) => setCustomStartDate(e.target.value)}
-                      className='w-40'
+                      className='w-full md:w-40'
                     />
-                    <span>to</span>
+                    <span className='text-center text-sm md:text-base'>to</span>
                     <Input
                       type='date'
                       value={customEndDate}
                       onChange={(e) => setCustomEndDate(e.target.value)}
-                      className='w-40'
+                      className='w-full md:w-40'
                     />
                   </div>
                 )}
@@ -274,51 +290,54 @@ const Feedback = () => {
             onValueChange={setActiveTab}
             className='space-y-4'
           >
-            <TabsList className='grid w-full grid-cols-4'>
+            <TabsList className='grid w-full grid-cols-2 md:grid-cols-4'>
               <TabsTrigger
                 value='overview'
-                className='flex items-center space-x-2'
+                className='flex items-center justify-center space-x-1 md:space-x-2 text-xs md:text-sm'
               >
-                <BarChart3 className='h-4 w-4' />
-                <span>Overview</span>
+                <BarChart3 className='h-3 w-3 md:h-4 md:w-4' />
+                <span className='hidden sm:inline'>Overview</span>
               </TabsTrigger>
               <TabsTrigger
                 value='analytics'
-                className='flex items-center space-x-2'
+                className='flex items-center justify-center space-x-1 md:space-x-2 text-xs md:text-sm'
               >
-                <PieChart className='h-4 w-4' />
-                <span>Analytics</span>
+                <PieChart className='h-3 w-3 md:h-4 md:w-4' />
+                <span className='hidden sm:inline'>Analytics</span>
               </TabsTrigger>
               <TabsTrigger
                 value='trends'
-                className='flex items-center space-x-2'
+                className='flex items-center justify-center space-x-1 md:space-x-2 text-xs md:text-sm'
               >
-                <TrendingUp className='h-4 w-4' />
-                <span>Trends</span>
+                <TrendingUp className='h-3 w-3 md:h-4 md:w-4' />
+                <span className='hidden sm:inline'>Trends</span>
               </TabsTrigger>
-              <TabsTrigger value='list' className='flex items-center space-x-2'>
-                <MessageSquare className='h-4 w-4' />
-                <span>Feedback List</span>
+              <TabsTrigger
+                value='list'
+                className='flex items-center justify-center space-x-1 md:space-x-2 text-xs md:text-sm'
+              >
+                <MessageSquare className='h-3 w-3 md:h-4 md:w-4' />
+                <span className='hidden sm:inline'>List</span>
               </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
             <TabsContent value='overview' className='space-y-4'>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
                 {/* Sentiment Distribution */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <PieChart className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <PieChart className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Sentiment Distribution</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Distribution of feedback by sentiment analysis
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isOverviewLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : isValidArray((sentimentData as any)?.distribution) ? (
@@ -328,8 +347,20 @@ const Feedback = () => {
                         options={{
                           labels: ['Positive', 'Negative', 'Neutral'],
                           colors: ['#10b981', '#ef4444', '#6b7280'],
-                          legend: { position: 'bottom' },
+                          legend: {
+                            position: 'bottom',
+                            fontSize: '14px',
+                          },
                           plotOptions: { pie: { donut: { size: '60%' } } },
+                          responsive: [
+                            {
+                              breakpoint: 768,
+                              options: {
+                                chart: { height: 250 },
+                                legend: { fontSize: '12px' },
+                              },
+                            },
+                          ],
                         }}
                         series={[
                           ((sentimentData as any)?.distribution ?? []).find(
@@ -344,7 +375,7 @@ const Feedback = () => {
                         ]}
                       />
                     ) : (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         No data
                       </div>
                     )}
@@ -354,17 +385,17 @@ const Feedback = () => {
                 {/* Category Distribution */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <BarChart3 className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <BarChart3 className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Category Distribution</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Feedback distribution by category
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : isValidArray(processedCategoryData.categories) ? (
@@ -375,9 +406,25 @@ const Feedback = () => {
                           chart: { type: 'bar', toolbar: { show: false } },
                           xaxis: {
                             categories: processedCategoryData.categories,
+                            labels: {
+                              style: {
+                                fontSize: '12px',
+                              },
+                            },
                           },
                           colors: ['#3b82f6'],
                           plotOptions: { bar: { horizontal: true } },
+                          responsive: [
+                            {
+                              breakpoint: 768,
+                              options: {
+                                chart: { height: 250 },
+                                xaxis: {
+                                  labels: { style: { fontSize: '10px' } },
+                                },
+                              },
+                            },
+                          ],
                         }}
                         series={[
                           {
@@ -387,7 +434,7 @@ const Feedback = () => {
                         ]}
                       />
                     ) : (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         No data available
                       </div>
                     )}
@@ -398,21 +445,21 @@ const Feedback = () => {
 
             {/* Analytics Tab */}
             <TabsContent value='analytics' className='space-y-4'>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
                 {/* Rating Distribution */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <Star className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <Star className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Rating Distribution</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Distribution of feedback ratings
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isAnalyticsLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : isValidArray((ratingData as any)?.distribution) ? (
@@ -421,9 +468,27 @@ const Feedback = () => {
                         height={300}
                         options={{
                           chart: { type: 'bar', toolbar: { show: false } },
-                          xaxis: { categories: ['1★', '2★', '3★', '4★', '5★'] },
+                          xaxis: {
+                            categories: ['1★', '2★', '3★', '4★', '5★'],
+                            labels: {
+                              style: {
+                                fontSize: '14px',
+                              },
+                            },
+                          },
                           colors: ['#f59e0b'],
                           plotOptions: { bar: { borderRadius: 4 } },
+                          responsive: [
+                            {
+                              breakpoint: 768,
+                              options: {
+                                chart: { height: 250 },
+                                xaxis: {
+                                  labels: { style: { fontSize: '12px' } },
+                                },
+                              },
+                            },
+                          ],
                         }}
                         series={[
                           {
@@ -438,7 +503,7 @@ const Feedback = () => {
                         ]}
                       />
                     ) : (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         No data
                       </div>
                     )}
@@ -448,17 +513,17 @@ const Feedback = () => {
                 {/* Response Time Analysis */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <Clock className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <Clock className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Response Time Analysis</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Average response time and distribution
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isAnalyticsLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : (responseTimeData as any)?.responseTimeDistribution &&
@@ -467,13 +532,13 @@ const Feedback = () => {
                       ).some((v: any) => v > 0) ? (
                       <div className='space-y-4'>
                         <div className='text-center'>
-                          <div className='text-3xl font-bold text-primary'>
+                          <div className='text-2xl md:text-3xl font-bold text-primary'>
                             {(
                               responseTimeData as any
                             )?.averageResponseTime?.toFixed(1) ?? 'N/A'}
                             h
                           </div>
-                          <div className='text-sm text-muted-foreground'>
+                          <div className='text-xs md:text-sm text-muted-foreground'>
                             Average Response Time
                           </div>
                         </div>
@@ -488,7 +553,19 @@ const Feedback = () => {
                               '#f59e0b',
                               '#ef4444',
                             ],
-                            legend: { position: 'bottom' },
+                            legend: {
+                              position: 'bottom',
+                              fontSize: '14px',
+                            },
+                            responsive: [
+                              {
+                                breakpoint: 768,
+                                options: {
+                                  chart: { height: 150 },
+                                  legend: { fontSize: '12px' },
+                                },
+                              },
+                            ],
                           }}
                           series={[
                             (responseTimeData as any)?.responseTimeDistribution
@@ -503,7 +580,7 @@ const Feedback = () => {
                         />
                       </div>
                     ) : (
-                      <div className='h-[200px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[150px] md:h-[200px] flex items-center justify-center text-muted-foreground'>
                         No data
                       </div>
                     )}
@@ -514,21 +591,21 @@ const Feedback = () => {
 
             {/* Trends Tab */}
             <TabsContent value='trends' className='space-y-4'>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6'>
                 {/* Feedback Volume Over Time */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <TrendingUp className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <TrendingUp className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Feedback Volume Over Time</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Daily feedback submission trends
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isTrendsLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : isValidArray(processedTrendsData.volumeOverTime) ? (
@@ -560,6 +637,17 @@ const Feedback = () => {
                           stroke: { curve: 'smooth', width: 3 },
                           markers: { size: 4 },
                           grid: { borderColor: '#e5e7eb' },
+                          responsive: [
+                            {
+                              breakpoint: 768,
+                              options: {
+                                chart: { height: 250 },
+                                xaxis: {
+                                  labels: { style: { fontSize: '10px' } },
+                                },
+                              },
+                            },
+                          ],
                         }}
                         series={[
                           {
@@ -572,7 +660,7 @@ const Feedback = () => {
                         ]}
                       />
                     ) : (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         No trend data available
                       </div>
                     )}
@@ -582,17 +670,17 @@ const Feedback = () => {
                 {/* Sentiment Trends */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className='flex items-center space-x-2'>
-                      <PieChart className='h-5 w-5' />
+                    <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                      <PieChart className='h-4 w-4 md:h-5 md:w-5' />
                       <span>Sentiment Trends</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className='text-xs md:text-sm'>
                       Sentiment distribution over time
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isTrendsLoading ? (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         Loading...
                       </div>
                     ) : isValidArray(processedTrendsData.sentimentTrends) ? (
@@ -629,8 +717,23 @@ const Feedback = () => {
                               opacityTo: 0.1,
                             },
                           },
-                          legend: { position: 'top' },
+                          legend: {
+                            position: 'top',
+                            fontSize: '14px',
+                          },
                           grid: { borderColor: '#e5e7eb' },
+                          responsive: [
+                            {
+                              breakpoint: 768,
+                              options: {
+                                chart: { height: 250 },
+                                xaxis: {
+                                  labels: { style: { fontSize: '10px' } },
+                                },
+                                legend: { fontSize: '12px' },
+                              },
+                            },
+                          ],
                         }}
                         series={[
                           {
@@ -657,7 +760,7 @@ const Feedback = () => {
                         ]}
                       />
                     ) : (
-                      <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                      <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                         No sentiment trend data available
                       </div>
                     )}
@@ -666,19 +769,19 @@ const Feedback = () => {
               </div>
 
               {/* Rating Trends */}
-              <Card>
+              <Card className='lg:col-span-2'>
                 <CardHeader>
-                  <CardTitle className='flex items-center space-x-2'>
-                    <Star className='h-5 w-5' />
+                  <CardTitle className='flex items-center space-x-2 text-sm md:text-base'>
+                    <Star className='h-4 w-4 md:h-5 md:w-5' />
                     <span>Average Rating Trends</span>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className='text-xs md:text-sm'>
                     Average feedback rating over time
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isTrendsLoading ? (
-                    <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                    <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                       Loading...
                     </div>
                   ) : isValidArray(processedTrendsData.ratingTrends) ? (
@@ -716,6 +819,17 @@ const Feedback = () => {
                             formatter: (value) => `${value.toFixed(2)} stars`,
                           },
                         },
+                        responsive: [
+                          {
+                            breakpoint: 768,
+                            options: {
+                              chart: { height: 250 },
+                              xaxis: {
+                                labels: { style: { fontSize: '10px' } },
+                              },
+                            },
+                          },
+                        ],
                       }}
                       series={[
                         {
@@ -728,7 +842,7 @@ const Feedback = () => {
                       ]}
                     />
                   ) : (
-                    <div className='h-[300px] flex items-center justify-center text-muted-foreground'>
+                    <div className='h-[250px] md:h-[300px] flex items-center justify-center text-muted-foreground'>
                       No rating trend data available
                     </div>
                   )}

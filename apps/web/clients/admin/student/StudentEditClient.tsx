@@ -139,24 +139,43 @@ export const StudentEditClient = () => {
   }
 
   return (
-    <div className='container mx-auto py-6'>
-      <div className='flex items-center mb-6'>
+    <div className='container mx-auto py-4 px-4 md:py-6'>
+      {/* Mobile Header */}
+      <div className='sm:hidden mb-6'>
+        <div className='flex items-center mb-3'>
+          <Button variant='ghost' size='icon' asChild className='mr-2'>
+            <Link href={`${ROUTES.STUDENT_DETAIL}/${studentId}`}>
+              <ArrowLeftIcon className='h-4 w-4' />
+            </Link>
+          </Button>
+          <h1 className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+            Edit Student
+          </h1>
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className='hidden sm:flex items-center mb-6'>
         <Button variant='ghost' size='icon' asChild className='mr-2'>
           <Link href={`${ROUTES.STUDENT_DETAIL}/${studentId}`}>
             <ArrowLeftIcon className='h-4 w-4' />
           </Link>
         </Button>
-        <h1 className='text-2xl font-bold'>Edit Student</h1>
+        <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+          Edit Student
+        </h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Information</CardTitle>
+          <CardTitle className='text-lg sm:text-xl text-gray-900 dark:text-gray-100'>
+            Student Information
+          </CardTitle>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className='space-y-4'>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <FormField
                   control={form.control}
                   name='firstName'
@@ -236,7 +255,7 @@ export const StudentEditClient = () => {
                 )}
               />
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <FormField
                   control={form.control}
                   name='major'
@@ -294,13 +313,21 @@ export const StudentEditClient = () => {
                 )}
               />
             </CardContent>
-            <CardFooter className='flex justify-between'>
-              <Button variant='outline' asChild>
+            <CardFooter className='flex flex-col sm:flex-row gap-3 sm:justify-between'>
+              <Button
+                variant='outline'
+                asChild
+                className='w-full sm:w-auto order-2 sm:order-1'
+              >
                 <Link href={`${ROUTES.STUDENT_DETAIL}/${studentId}`}>
                   Cancel
                 </Link>
               </Button>
-              <Button type='submit' disabled={isSubmitting}>
+              <Button
+                type='submit'
+                disabled={isSubmitting}
+                className='w-full sm:w-auto order-1 sm:order-2'
+              >
                 {isSubmitting && (
                   <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
                 )}

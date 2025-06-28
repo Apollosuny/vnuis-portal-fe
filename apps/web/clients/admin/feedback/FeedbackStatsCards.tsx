@@ -21,16 +21,16 @@ export function FeedbackStatsCards({
 }: FeedbackStatsCardsProps) {
   if (isLoading) {
     return (
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+      <div className='grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
         {[...Array(4)].map((_, i) => (
           <Card key={i}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <div className='h-4 w-24 bg-gray-200 rounded animate-pulse' />
-              <div className='h-4 w-4 bg-gray-200 rounded animate-pulse' />
+              <div className='h-3 md:h-4 w-20 md:w-24 bg-gray-200 rounded animate-pulse' />
+              <div className='h-3 md:h-4 w-3 md:w-4 bg-gray-200 rounded animate-pulse' />
             </CardHeader>
             <CardContent>
-              <div className='h-8 w-16 bg-gray-200 rounded animate-pulse mb-2' />
-              <div className='h-3 w-32 bg-gray-200 rounded animate-pulse' />
+              <div className='h-6 md:h-8 w-12 md:w-16 bg-gray-200 rounded animate-pulse mb-2' />
+              <div className='h-2 md:h-3 w-24 md:w-32 bg-gray-200 rounded animate-pulse' />
             </CardContent>
           </Card>
         ))}
@@ -39,15 +39,17 @@ export function FeedbackStatsCards({
   }
 
   return (
-    <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
+    <div className='grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'>
       {/* Total Feedbacks */}
       <Card className='animate-in slide-in-from-left-2 duration-500'>
         <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-          <CardTitle className='text-sm font-medium'>Total Feedbacks</CardTitle>
-          <MessageSquare className='h-4 w-4 text-muted-foreground' />
+          <CardTitle className='text-xs md:text-sm font-medium'>
+            Total Feedbacks
+          </CardTitle>
+          <MessageSquare className='h-3 w-3 md:h-4 md:w-4 text-muted-foreground' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold'>
+          <div className='text-lg md:text-2xl font-bold'>
             {dashboardData?.totalFeedbacks || 0}
           </div>
           <p className='text-xs text-muted-foreground'>
@@ -59,13 +61,13 @@ export function FeedbackStatsCards({
       {/* Average Response Time */}
       <Card className='animate-in slide-in-from-left-2 duration-500 delay-100'>
         <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-          <CardTitle className='text-sm font-medium'>
+          <CardTitle className='text-xs md:text-sm font-medium'>
             Avg Response Time
           </CardTitle>
-          <Clock className='h-4 w-4 text-muted-foreground' />
+          <Clock className='h-3 w-3 md:h-4 md:w-4 text-muted-foreground' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold'>
+          <div className='text-lg md:text-2xl font-bold'>
             {responseTimeData?.averageResponseTime
               ? `${responseTimeData.averageResponseTime.toFixed(1)}h`
               : 'N/A'}
@@ -79,11 +81,13 @@ export function FeedbackStatsCards({
       {/* Average Rating */}
       <Card className='animate-in slide-in-from-left-2 duration-500 delay-200'>
         <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-          <CardTitle className='text-sm font-medium'>Average Rating</CardTitle>
-          <Star className='h-4 w-4 text-muted-foreground' />
+          <CardTitle className='text-xs md:text-sm font-medium'>
+            Average Rating
+          </CardTitle>
+          <Star className='h-3 w-3 md:h-4 md:w-4 text-muted-foreground' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold'>
+          <div className='text-lg md:text-2xl font-bold'>
             {dashboardData?.avgRating
               ? `${dashboardData.avgRating.toFixed(1)}/5`
               : 'N/A'}
@@ -97,11 +101,13 @@ export function FeedbackStatsCards({
       {/* Response Rate */}
       <Card className='animate-in slide-in-from-left-2 duration-500 delay-300'>
         <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-          <CardTitle className='text-sm font-medium'>Response Rate</CardTitle>
-          <CheckCircle className='h-4 w-4 text-muted-foreground' />
+          <CardTitle className='text-xs md:text-sm font-medium'>
+            Response Rate
+          </CardTitle>
+          <CheckCircle className='h-3 w-3 md:h-4 md:w-4 text-muted-foreground' />
         </CardHeader>
         <CardContent>
-          <div className='text-2xl font-bold'>
+          <div className='text-lg md:text-2xl font-bold'>
             {dashboardData?.totalFeedbacks && responseTimeData?.totalResponded
               ? `${Math.round((responseTimeData.totalResponded / dashboardData.totalFeedbacks) * 100)}%`
               : '0%'}

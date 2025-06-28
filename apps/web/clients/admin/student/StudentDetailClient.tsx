@@ -90,79 +90,106 @@ export const StudentDetailClient = () => {
   }
 
   return (
-    <div className='container mx-auto py-6'>
-      <div className='flex items-center mb-6'>
+    <div className='container mx-auto py-4 px-4 md:py-6'>
+      {/* Mobile Header */}
+      <div className='sm:hidden mb-6'>
+        <div className='flex items-center mb-3'>
+          <Button variant='ghost' size='icon' asChild className='mr-2'>
+            <Link href={ROUTES.STUDENTS}>
+              <ArrowLeftIcon className='h-4 w-4' />
+            </Link>
+          </Button>
+          <h1 className='text-xl font-bold text-gray-900 dark:text-gray-100'>
+            Student Details
+          </h1>
+        </div>
+      </div>
+
+      {/* Desktop Header */}
+      <div className='hidden sm:flex items-center mb-6'>
         <Button variant='ghost' size='icon' asChild className='mr-2'>
           <Link href={ROUTES.STUDENTS}>
             <ArrowLeftIcon className='h-4 w-4' />
           </Link>
         </Button>
-        <h1 className='text-2xl font-bold'>Student Details</h1>
+        <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+          Student Details
+        </h1>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        <Card className='md:col-span-1'>
+      <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        <Card className='lg:col-span-1'>
           <CardHeader className='text-center'>
             <div className='mx-auto mb-4 relative'>
               {student.avatarUrl ? (
                 <img
                   src={student.avatarUrl}
                   alt={`${student.firstName} ${student.lastName}`}
-                  className='w-32 h-32 rounded-full object-cover'
+                  className='w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover'
                 />
               ) : (
-                <div className='w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-3xl text-gray-500 mx-auto'>
+                <div className='w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-2xl sm:text-3xl text-gray-500 dark:text-gray-400 mx-auto'>
                   {student.firstName.charAt(0)}
                   {student.lastName.charAt(0)}
                 </div>
               )}
             </div>
-            <CardTitle>
+            <CardTitle className='text-lg sm:text-xl text-gray-900 dark:text-gray-100'>
               {student.firstName} {student.lastName}
             </CardTitle>
-            <div className='text-sm text-gray-500 mt-1'>
+            <div className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
               #{student.studentId}
             </div>
           </CardHeader>
           <CardContent>
-            <div className='space-y-4'>
+            <div className='space-y-3 sm:space-y-4'>
               <div className='flex items-center'>
-                <MailIcon className='h-4 w-4 mr-2 text-gray-500' />
-                <span>{student.email}</span>
+                <MailIcon className='h-4 w-4 mr-2 text-gray-500 flex-shrink-0' />
+                <span className='text-sm sm:text-base break-words'>
+                  {student.email}
+                </span>
               </div>
 
               {student.phone && (
                 <div className='flex items-center'>
-                  <PhoneIcon className='h-4 w-4 mr-2 text-gray-500' />
-                  <span>{student.phone}</span>
+                  <PhoneIcon className='h-4 w-4 mr-2 text-gray-500 flex-shrink-0' />
+                  <span className='text-sm sm:text-base'>{student.phone}</span>
                 </div>
               )}
 
               <div className='flex items-center'>
-                <BookOpenIcon className='h-4 w-4 mr-2 text-gray-500' />
-                <span>{student.major}</span>
+                <BookOpenIcon className='h-4 w-4 mr-2 text-gray-500 flex-shrink-0' />
+                <span className='text-sm sm:text-base break-words'>
+                  {student.major}
+                </span>
               </div>
 
               <div className='flex items-center'>
-                <CalendarIcon className='h-4 w-4 mr-2 text-gray-500' />
-                <span>Enrolled: {student.enrollYear}</span>
+                <CalendarIcon className='h-4 w-4 mr-2 text-gray-500 flex-shrink-0' />
+                <span className='text-sm sm:text-base'>
+                  Enrolled: {student.enrollYear}
+                </span>
               </div>
 
               <div className='flex items-center'>
-                <CalendarIcon className='h-4 w-4 mr-2 text-gray-500' />
-                <span>DOB: {formatDate(student.dob, 'dd MMM yyyy')}</span>
+                <CalendarIcon className='h-4 w-4 mr-2 text-gray-500 flex-shrink-0' />
+                <span className='text-sm sm:text-base'>
+                  DOB: {formatDate(student.dob, 'dd MMM yyyy')}
+                </span>
               </div>
 
               {student.address && (
                 <div className='flex items-start'>
-                  <MapPinIcon className='h-4 w-4 mr-2 text-gray-500 mt-0.5' />
-                  <span>{student.address}</span>
+                  <MapPinIcon className='h-4 w-4 mr-2 text-gray-500 mt-0.5 flex-shrink-0' />
+                  <span className='text-sm sm:text-base break-words'>
+                    {student.address}
+                  </span>
                 </div>
               )}
             </div>
           </CardContent>
-          <CardFooter className='flex justify-between'>
-            <Button variant='outline' asChild>
+          <CardFooter className='flex flex-col sm:flex-row gap-2 sm:justify-between'>
+            <Button variant='outline' asChild className='w-full sm:w-auto'>
               <Link href={`${ROUTES.STUDENT_DETAIL}/${studentId}/edit`}>
                 <PencilIcon className='h-4 w-4 mr-2' />
                 Edit
@@ -171,12 +198,12 @@ export const StudentDetailClient = () => {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant='destructive'>
+                <Button variant='destructive' className='w-full sm:w-auto'>
                   <TrashIcon className='h-4 w-4 mr-2' />
                   Delete
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className='mx-4 max-w-md sm:max-w-lg'>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
@@ -188,11 +215,13 @@ export const StudentDetailClient = () => {
                     and all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogFooter className='flex flex-col-reverse sm:flex-row gap-2 sm:gap-0'>
+                  <AlertDialogCancel className='w-full sm:w-auto'>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
-                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto'
                     disabled={isDeleting}
                   >
                     {isDeleting && (
@@ -206,34 +235,52 @@ export const StudentDetailClient = () => {
           </CardFooter>
         </Card>
 
-        <div className='md:col-span-2'>
+        <div className='lg:col-span-2'>
           <Tabs defaultValue='academic'>
-            <TabsList className='mb-4'>
-              <TabsTrigger value='academic'>Academic Info</TabsTrigger>
-              <TabsTrigger value='activities'>Activities</TabsTrigger>
-              <TabsTrigger value='forms'>Forms</TabsTrigger>
+            <TabsList className='mb-4 w-full sm:w-auto'>
+              <TabsTrigger value='academic' className='flex-1 sm:flex-none'>
+                Academic Info
+              </TabsTrigger>
+              <TabsTrigger value='activities' className='flex-1 sm:flex-none'>
+                Activities
+              </TabsTrigger>
+              <TabsTrigger value='forms' className='flex-1 sm:flex-none'>
+                Forms
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value='academic'>
               <Card>
                 <CardHeader>
-                  <CardTitle>Academic Information</CardTitle>
+                  <CardTitle className='text-lg sm:text-xl text-gray-900 dark:text-gray-100'>
+                    Academic Information
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className='space-y-4'>
                     <div>
-                      <h3 className='font-medium'>Major</h3>
-                      <p className='text-gray-600'>{student.major}</p>
+                      <h3 className='font-medium text-gray-900 dark:text-gray-100'>
+                        Major
+                      </h3>
+                      <p className='text-gray-600 dark:text-gray-400 break-words'>
+                        {student.major}
+                      </p>
                     </div>
                     <Separator />
                     <div>
-                      <h3 className='font-medium'>Year of Enrollment</h3>
-                      <p className='text-gray-600'>{student.enrollYear}</p>
+                      <h3 className='font-medium text-gray-900 dark:text-gray-100'>
+                        Year of Enrollment
+                      </h3>
+                      <p className='text-gray-600 dark:text-gray-400'>
+                        {student.enrollYear}
+                      </p>
                     </div>
                     <Separator />
                     <div>
-                      <h3 className='font-medium'>Current Status</h3>
-                      <p className='text-gray-600'>Active</p>
+                      <h3 className='font-medium text-gray-900 dark:text-gray-100'>
+                        Current Status
+                      </h3>
+                      <p className='text-gray-600 dark:text-gray-400'>Active</p>
                     </div>
                   </div>
                 </CardContent>
@@ -243,10 +290,12 @@ export const StudentDetailClient = () => {
             <TabsContent value='activities'>
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Activities</CardTitle>
+                  <CardTitle className='text-lg sm:text-xl text-gray-900 dark:text-gray-100'>
+                    Recent Activities
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className='text-gray-500 text-center py-8'>
+                  <p className='text-gray-500 dark:text-gray-400 text-center py-8'>
                     No recent activities found
                   </p>
                 </CardContent>
@@ -256,10 +305,12 @@ export const StudentDetailClient = () => {
             <TabsContent value='forms'>
               <Card>
                 <CardHeader>
-                  <CardTitle>Forms Submitted</CardTitle>
+                  <CardTitle className='text-lg sm:text-xl text-gray-900 dark:text-gray-100'>
+                    Forms Submitted
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className='text-gray-500 text-center py-8'>
+                  <p className='text-gray-500 dark:text-gray-400 text-center py-8'>
                     No forms submitted yet
                   </p>
                 </CardContent>
