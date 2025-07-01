@@ -16,10 +16,16 @@ export const useStudentNotifications = (type?: NotificationType) => {
     isLoading,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<{
+    data: Notification[];
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    pageSize: number;
+  } | null>({
     queryKey: ['studentNotifications', user?.id, type, page, limit],
     queryFn: async () => {
-      if (!user?.id) return { notifications: [], total: 0 };
+      if (!user?.id) return null;
 
       // Use the getMyNotifications endpoint which filters for the current user
       const notifications = await notificationApi.getMyNotifications({
@@ -28,29 +34,7 @@ export const useStudentNotifications = (type?: NotificationType) => {
         limit: limit, // Items per page
       });
 
-      // Check if API returns paginated response or just array
-      if (
-        notifications &&
-        typeof notifications === 'object' &&
-        'items' in notifications
-      ) {
-        return {
-          notifications: notifications.items,
-          total: notifications.total || 0,
-          currentPage: notifications.page || page,
-          totalPages:
-            notifications.totalPages ||
-            Math.ceil((notifications.total || 0) / limit),
-        };
-      }
-
-      // If API doesn't return paginated structure yet, assume it's still returning array
-      return {
-        notifications: notifications || [],
-        total: notifications?.length || 0,
-        currentPage: page,
-        totalPages: 1,
-      };
+      return notifications;
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -59,7 +43,7 @@ export const useStudentNotifications = (type?: NotificationType) => {
 
   // Get unread count
   const unreadCount =
-    response?.notifications?.reduce(
+    (response?.data || []).reduce(
       (count: number, notification: Notification) => {
         if (!notification.readBy?.includes(user?.id || '')) {
           return count + 1;
@@ -87,7 +71,7 @@ export const useStudentNotifications = (type?: NotificationType) => {
     try {
       // Extract notification IDs to be marked as read
       const unreadNotificationIds =
-        response?.notifications
+        response?.data
           ?.filter(
             (notification: Notification) =>
               !notification.readBy?.includes(user?.id || '')
@@ -110,7 +94,7 @@ export const useStudentNotifications = (type?: NotificationType) => {
   };
 
   return {
-    notifications: response?.notifications || [],
+    notifications: response?.data || [],
     total: response?.total || 0,
     currentPage: response?.currentPage || page,
     totalPages: response?.totalPages || 1,

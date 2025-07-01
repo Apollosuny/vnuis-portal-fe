@@ -138,6 +138,8 @@ const EnhancedStudentNotificationList = ({
     setLimit,
   } = useStudentNotifications(type);
 
+  console.log(notifications);
+
   // Update limit when pageSize changes
   const handlePageSizeChange = (newPageSize: string) => {
     const size = Number(newPageSize);
