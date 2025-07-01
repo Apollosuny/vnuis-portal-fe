@@ -2,10 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationApi } from '@/api/notification.api';
 import { useNotificationStore } from '@/stores/notification.store';
 import { useUserStore } from '@/stores/user.store';
-import {
-  NotificationStatus,
-  NotificationTargetType,
-} from '@/types/notification.types';
 import { useState } from 'react';
 
 export const useNotifications = () => {
@@ -53,7 +49,7 @@ export const useNotifications = () => {
         // Handle different response structures
         const notificationItems = Array.isArray(notifications)
           ? notifications
-          : notifications.items || [];
+          : notifications.data || [];
 
         setNotifications(notificationItems);
 
@@ -88,7 +84,7 @@ export const useNotifications = () => {
       const notificationItems = notifications
         ? Array.isArray(notifications)
           ? notifications
-          : notifications.items || []
+          : notifications.data || []
         : [];
 
       // Filter for unread notifications
@@ -111,7 +107,7 @@ export const useNotifications = () => {
   const notificationItems = notifications
     ? Array.isArray(notifications)
       ? notifications
-      : notifications.items || []
+      : notifications.data || []
     : storeNotifications;
 
   // Extract pagination data if available
@@ -119,7 +115,7 @@ export const useNotifications = () => {
     notifications && !Array.isArray(notifications)
       ? {
           total: notifications.total || notificationItems.length,
-          page: notifications.page || 1,
+          page: notifications.currentPage || 1,
           totalPages: notifications.totalPages || 1,
         }
       : { total: notificationItems.length, page: 1, totalPages: 1 };
