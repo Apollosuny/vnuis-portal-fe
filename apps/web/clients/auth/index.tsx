@@ -159,35 +159,42 @@ const LoginPage: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.4 }}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ y: -3, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
                 className='relative group'
               >
-                {/* Glow effect */}
-                <div className='absolute -inset-1 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-700 rounded-2xl sm:rounded-3xl blur-lg opacity-40 group-hover:opacity-70 transition duration-300'></div>
-
+                {' '}
+                {/* Enhanced Glow effect */}
+                <div className='absolute -inset-1 bg-gradient-to-r from-gray-800 via-slate-800 to-gray-900 rounded-2xl sm:rounded-3xl blur-lg opacity-20 group-hover:opacity-40 transition-all duration-500'></div>
+                {/* Secondary glow for depth */}
+                <div className='absolute -inset-0.5 bg-gradient-to-r from-gray-600 via-slate-600 to-gray-700 rounded-2xl sm:rounded-3xl blur-sm opacity-15 group-hover:opacity-30 transition-all duration-500'></div>
                 <Button
                   onClick={() => handleSubmit(onLogin)()}
                   disabled={shouldDisableButton}
-                  className='relative w-full bg-blue-800/40 backdrop-blur-xl border border-blue-300/40 hover:border-blue-300/60 text-white font-semibold text-lg sm:text-xl py-4 sm:py-6 px-6 sm:px-8 rounded-2xl sm:rounded-3xl shadow-xl hover:shadow-blue-700/30 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group'
+                  className='relative w-full bg-gradient-to-r from-gray-900 via-slate-900 to-gray-950 hover:from-black hover:via-slate-950 hover:to-black backdrop-blur-xl border border-gray-300/20 hover:border-white/30 text-white font-bold text-lg sm:text-xl py-4 sm:py-6 px-6 sm:px-8 rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-gray-900/30 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group transform hover:scale-[1.02] active:scale-[0.98]'
                 >
-                  {/* Glass shine effect */}
-                  <div className='absolute inset-0 bg-gradient-to-r from-transparent via-blue-200/15 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700'></div>
+                  {/* Animated gradient overlay */}
+                  <div className='absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
 
-                  {/* Background gradient overlay */}
-                  <div className='absolute inset-0 bg-gradient-to-r from-blue-700/35 via-blue-600/25 to-blue-700/35 rounded-2xl sm:rounded-3xl'></div>
+                  {/* Enhanced glass shine effect */}
+                  <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out'></div>
+
+                  {/* Subtle inner glow */}
+                  <div className='absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-white/10 rounded-2xl sm:rounded-3xl'></div>
 
                   {/* Content */}
                   <div className='relative z-10'>
                     {isLoading ? (
                       <div className='flex items-center justify-center gap-2 sm:gap-3'>
-                        <Loader2 className='w-5 h-5 sm:w-6 sm:h-6 animate-spin' />
-                        <span className='text-white/90 text-sm sm:text-base'>
+                        <Loader2 className='w-5 h-5 sm:w-6 sm:h-6 animate-spin text-white' />
+                        <span className='text-white font-semibold text-sm sm:text-base drop-shadow-lg'>
                           Signing in...
                         </span>
                       </div>
                     ) : (
-                      <span className='text-white drop-shadow-lg'>Login</span>
+                      <span className='text-white drop-shadow-lg font-bold tracking-wide'>
+                        Login
+                      </span>
                     )}
                   </div>
                 </Button>
