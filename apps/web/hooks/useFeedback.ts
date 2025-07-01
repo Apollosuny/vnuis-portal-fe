@@ -12,14 +12,18 @@ import { useUserStore } from '@/stores/user.store';
 export const useMyFeedbacks = (query?: QueryFeedbackDto) => {
   const { user } = useUserStore();
 
-  return useQuery({
+  return useQuery<{
+    data: Feedback[];
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  } | null>({
     queryKey: ['myFeedbacks', user?.id, query],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return null;
 
       // Query for current student's feedbacks
       const studentQuery: QueryFeedbackDto = {
-        where: { studentId: user.id },
         sort: { createdAt: 'desc' },
         include: ['responses'],
         ...query,

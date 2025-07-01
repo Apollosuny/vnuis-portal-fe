@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Plus, List, Search, Filter } from 'lucide-react';
 import { Button } from '@workspace/ui/components/button';
@@ -21,23 +21,12 @@ const StudentFeedbackPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const { data, isLoading } = useMyFeedbacks();
-  const feedbacks = Array.isArray(data) ? data : [];
-
-  // Filter feedbacks based on search and filters
-  const filteredFeedbacks = feedbacks.filter((feedback) => {
-    const matchesSearch =
-      !searchTerm ||
-      feedback.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      feedback.content.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCategory =
-      categoryFilter === 'all' || feedback.category === categoryFilter;
-    const matchesStatus =
-      statusFilter === 'all' || feedback.status === statusFilter;
-
-    return matchesSearch && matchesCategory && matchesStatus;
+  const { data, isLoading } = useMyFeedbacks({
+    skip: (page - 1) * pageSize,
+    take: pageSize,
   });
 
   const getCategoryLabel = (category: FeedbackCategory) => {
@@ -114,7 +103,7 @@ const StudentFeedbackPage: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <FeedbackStats feedbacks={feedbacks} />
+        <FeedbackStats feedbacks={data?.data || []} />
       </motion.div>
 
       {/* Main Content */}
@@ -191,8 +180,15 @@ const StudentFeedbackPage: React.FC = () => {
 
             {/* Feedback List */}
             <FeedbackList
-              feedbacks={filteredFeedbacks}
+              feedbacks={data?.data || []}
               isLoading={isLoading}
+              pagination={{
+                currentPage: page,
+                totalPages: data?.totalPages || 1,
+                pageSize: pageSize,
+                totalItems: data?.totalItems || 0,
+                onPageChange: setPage,
+              }}
               onRefresh={() => window.location.reload()}
             />
           </TabsContent>

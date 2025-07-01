@@ -131,12 +131,22 @@ export const feedbackApi = {
   },
 
   // Get my feedbacks (for current student)
-  getMyFeedbacks: async (query?: QueryFeedbackDto): Promise<Feedback[]> => {
+  getMyFeedbacks: async (
+    query?: QueryFeedbackDto
+  ): Promise<{
+    data: Feedback[];
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  }> => {
     const params = query ? qs.stringify(query) : '';
-    const url = params
-      ? `/feedback?params=${encodeURIComponent(params)}`
-      : '/feedback';
-    const response = await nexusAxios.get(url);
+    const url = params ? `/feedback/me?params=${params}` : '/feedback/me';
+    const response = await nexusAxios.get<{
+      data: Feedback[];
+      totalItems: number;
+      totalPages: number;
+      currentPage: number;
+    }>(url);
     return response.data;
   },
 

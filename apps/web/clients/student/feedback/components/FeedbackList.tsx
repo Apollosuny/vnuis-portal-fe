@@ -21,6 +21,10 @@ import {
   Trash2,
   RefreshCw,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import {
   Feedback,
@@ -32,16 +36,140 @@ import { DateTime } from 'luxon';
 import { useDeleteFeedback } from '@/hooks/useFeedback';
 import { FeedbackDetailModal } from './FeedbackDetailModal';
 
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+}
+
 interface FeedbackListProps {
   feedbacks: Feedback[];
   isLoading: boolean;
   onRefresh: () => void;
+  pagination?: PaginationProps;
 }
+
+// Pagination Component
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  pageSize,
+  totalItems,
+  onPageChange,
+}) => {
+  const startItem = (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
+  return (
+    <div className='flex items-center justify-between px-2'>
+      <div className='flex-1 text-sm text-muted-foreground'>
+        Showing {startItem} to {endItem} of {totalItems} results
+      </div>
+
+      <div className='flex items-center space-x-2'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronsLeft className='h-4 w-4' />
+        </Button>
+
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ChevronLeft className='h-4 w-4' />
+        </Button>
+
+        <div className='flex items-center space-x-1'>
+          {getPageNumbers().map((page, index) => (
+            <div key={index}>
+              {page === '...' ? (
+                <span className='px-2 py-1 text-sm text-muted-foreground'>
+                  ...
+                </span>
+              ) : (
+                <Button
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size='sm'
+                  onClick={() => onPageChange(page as number)}
+                  className='w-8 h-8 p-0'
+                >
+                  {page}
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronRight className='h-4 w-4' />
+        </Button>
+
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages}
+        >
+          <ChevronsRight className='h-4 w-4' />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export const FeedbackList: React.FC<FeedbackListProps> = ({
   feedbacks,
   isLoading,
   onRefresh,
+  pagination,
 }) => {
   const [selectedFeedback, setSelectedFeedback] = useState<Feedback | null>(
     null
@@ -177,7 +305,8 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
       {/* Header */}
       <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold'>
-          Your Feedback ({feedbacks.length})
+          Your Feedback ({pagination ? pagination.totalItems : feedbacks.length}
+          )
         </h2>
         <Button onClick={onRefresh} variant='outline' size='sm'>
           <RefreshCw className='mr-2 h-4 w-4' />
@@ -277,6 +406,13 @@ export const FeedbackList: React.FC<FeedbackListProps> = ({
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className='mt-6 pt-4 border-t'>
+          <Pagination {...pagination} />
+        </div>
+      )}
 
       {/* Detail Modal */}
       <FeedbackDetailModal
