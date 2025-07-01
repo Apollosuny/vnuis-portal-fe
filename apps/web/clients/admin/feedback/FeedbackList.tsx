@@ -335,7 +335,9 @@ export function FeedbackList() {
                   </TableCell>
                   <TableCell>
                     <div className='text-sm'>
-                      {feedback.student?.name || 'Unknown'}
+                      {feedback.student?.firstName +
+                        ' ' +
+                        feedback.student?.lastName || 'Unknown'}
                     </div>
                   </TableCell>
                   <TableCell>

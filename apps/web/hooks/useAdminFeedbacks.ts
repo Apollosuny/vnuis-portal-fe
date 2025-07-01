@@ -63,6 +63,8 @@ export const useAdminFeedbacks = (params: UseAdminFeedbacksParams = {}) => {
         };
       }
 
+      query.include = ['student'];
+
       query.skip = (page - 1) * limit;
       query.take = limit;
       query.sort = { createdAt: 'desc' };
