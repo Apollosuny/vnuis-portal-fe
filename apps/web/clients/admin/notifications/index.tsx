@@ -86,20 +86,6 @@ export default function NotificationManagementPage() {
     queryKey: ['notifications'],
     queryFn: async () => {
       const result = await notificationApi.getNotifications();
-      console.log('Notifications data received:', result);
-      // Check if any notification has missing fields
-      if (result && Array.isArray(result) && result.length > 0) {
-        const sample = result[0];
-        console.log('Sample notification:', sample);
-        console.log(
-          'Fields check - type:',
-          sample.type,
-          'priority:',
-          sample.priority,
-          'status:',
-          sample.status
-        );
-      }
       return result;
     },
     staleTime: 60000, // 1 minute

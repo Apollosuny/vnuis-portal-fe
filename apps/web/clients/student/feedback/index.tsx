@@ -22,7 +22,8 @@ const StudentFeedbackPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const { data: feedbacks = [], isLoading } = useMyFeedbacks();
+  const { data, isLoading } = useMyFeedbacks();
+  const feedbacks = Array.isArray(data) ? data : [];
 
   // Filter feedbacks based on search and filters
   const filteredFeedbacks = feedbacks.filter((feedback) => {

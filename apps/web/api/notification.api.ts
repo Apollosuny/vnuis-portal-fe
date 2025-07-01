@@ -40,9 +40,6 @@ export const notificationApi = {
   getNotifications: async (params?: QueryNotificationDto) => {
     const response = await nexusAxios.get('/notifications', { params });
 
-    console.log('Raw API response:', response);
-    console.log('Notification data from API:', response.data);
-
     // Ensure we have proper data
     if (Array.isArray(response.data)) {
       const processedData = response.data.map((notification: any) => {
