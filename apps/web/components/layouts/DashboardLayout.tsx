@@ -214,7 +214,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
           {/* Sidebar */}
           <motion.div
-            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-r z-40 overflow-hidden ${
+            className={`h-full bg-sidebar flex flex-col text-sidebar-foreground border-r z-40 overflow-visible ${
               isMobile ? 'fixed left-0 top-0' : 'relative'
             }`}
             animate={{
@@ -467,20 +467,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                       <Menu size={18} />
                     </Button>
                   </motion.div>
-                  <div className='flex items-center gap-1 sm:gap-2 min-w-0 overflow-hidden'>
+                  <div className='flex items-center gap-2 min-w-0'>
                     <AnimatedIcon
                       icon={<Sparkles size={18} className='sm:w-6 sm:h-6' />}
                       animationType='pulse'
-                      className='text-primary flex-shrink-0'
+                      className='text-primary'
                     />
-                    <motion.h1
-                      className='text-lg sm:text-2xl font-semibold truncate'
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.6, duration: 0.3 }}
-                    >
-                      {getPageTitle()}
-                    </motion.h1>
+                    <span className='font-bold text-base sm:text-xl truncate text-primary flex-shrink-0'>
+                      VirtuUni Nexus - International School
+                    </span>
                   </div>
                 </div>
                 <motion.div

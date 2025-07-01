@@ -14,7 +14,7 @@ export const SidebarToggle = ({ className = '' }: SidebarToggleProps) => {
 
   return (
     <motion.div
-      className={`absolute -right-4 top-1/2 -translate-y-1/2 z-50 ${className}`}
+      className={`absolute -right-4 top-1/2 -translate-y-1/2 z-[9999] ${className}`}
       whileHover={{ scale: 1.15 }}
       whileTap={{ scale: 0.92 }}
       transition={{
