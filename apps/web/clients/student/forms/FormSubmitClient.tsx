@@ -178,6 +178,16 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                         />
                       )}
 
+                      {question.type === 'email' && (
+                        <input
+                          type='email'
+                          name={`question-${question.id || qIndex}`}
+                          className='w-full p-2 border rounded-md'
+                          placeholder={`Enter ${question.title.toLowerCase()}`}
+                          required
+                        />
+                      )}
+
                       {question.type === 'number' && (
                         <input
                           type='number'
@@ -270,6 +280,15 @@ export const FormSubmitClient = ({ id }: { id: string }) => {
                             </option>
                           ))}
                         </select>
+                      )}
+
+                      {question.type === 'date' && (
+                        <input
+                          type='date'
+                          name={`question-${question.id || qIndex}`}
+                          className='w-full p-2 border rounded-md'
+                          required
+                        />
                       )}
                     </div>
                   ))

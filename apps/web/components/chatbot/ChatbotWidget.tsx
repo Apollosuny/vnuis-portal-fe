@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   MessageCircle,
   X,
@@ -28,6 +28,110 @@ interface Message {
   showTypingAnimation?: boolean;
 }
 
+// Move TypingAnimation outside to prevent re-creation
+const TypingAnimation: React.FC = () => (
+  <div className='flex items-center space-x-1'>
+    <div className='flex space-x-1'>
+      <div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
+      <div
+        className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
+        style={{ animationDelay: '0.1s' }}
+      ></div>
+      <div
+        className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
+        style={{ animationDelay: '0.2s' }}
+      ></div>
+    </div>
+  </div>
+);
+
+// Move MessageBubble outside and memoize it to prevent unnecessary re-renders
+const MessageBubble: React.FC<{
+  message: Message;
+  onTypingComplete: (messageId: string) => void;
+  onContentChange?: () => void;
+}> = React.memo(({ message, onTypingComplete, onContentChange }) => {
+  // Scroll when suggested links appear
+  useEffect(() => {
+    if (
+      message.suggestedLinks &&
+      message.suggestedLinks.length > 0 &&
+      !message.showTypingAnimation
+    ) {
+      onContentChange?.();
+    }
+  }, [message.suggestedLinks, message.showTypingAnimation, onContentChange]);
+
+  return (
+    <div
+      className={cn(
+        'flex gap-3 mb-4',
+        message.type === 'user' ? 'justify-end' : 'justify-start'
+      )}
+    >
+      {message.type === 'bot' && (
+        <div className='w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0'>
+          <Bot className='w-4 h-4 text-white' />
+        </div>
+      )}
+
+      <div
+        className={cn(
+          'max-w-[80%] rounded-lg px-4 py-2',
+          message.type === 'user'
+            ? 'bg-primary text-white'
+            : 'bg-gray-100 text-gray-900'
+        )}
+      >
+        {message.isTyping ? (
+          <TypingAnimation />
+        ) : message.showTypingAnimation ? (
+          <TypingText
+            text={message.content}
+            speed={30}
+            onComplete={() => onTypingComplete(message.id)}
+            className='text-sm'
+          />
+        ) : (
+          <p className='text-sm whitespace-pre-wrap'>{message.content}</p>
+        )}
+
+        {/* Suggested Links - Only show after typing is complete */}
+        {message.suggestedLinks &&
+          message.suggestedLinks.length > 0 &&
+          !message.showTypingAnimation && (
+            <div className='mt-3 space-y-2 animate-in fade-in duration-500'>
+              <p className='text-xs text-gray-500'>Có thể bạn quan tâm:</p>
+              <div className='flex flex-wrap gap-2'>
+                {message.suggestedLinks.map((link, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(link.route, '_blank');
+                    }}
+                    className='inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors'
+                  >
+                    <ExternalLink className='w-3 h-3' />
+                    {link.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+      </div>
+
+      {message.type === 'user' && (
+        <div className='w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0'>
+          <User className='w-4 h-4 text-gray-600' />
+        </div>
+      )}
+    </div>
+  );
+});
+
+MessageBubble.displayName = 'MessageBubble';
+
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -35,12 +139,42 @@ export const ChatbotWidget: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { processMessage, isLoading, error } = useChatbot();
+
+  // Auto-scroll function with smooth behavior
+  const scrollToBottom = useCallback(
+    (behavior: 'smooth' | 'instant' = 'smooth') => {
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({
+          behavior,
+          block: 'end',
+          inline: 'nearest',
+        });
+      }
+    },
+    []
+  );
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    scrollToBottom('smooth');
+  }, [messages, scrollToBottom]);
+
+  // Auto-scroll during typing animation - check periodically
+  useEffect(() => {
+    const hasTypingMessage = messages.some(
+      (msg) => msg.showTypingAnimation || msg.isTyping
+    );
+
+    if (hasTypingMessage) {
+      const intervalId = setInterval(() => {
+        scrollToBottom('smooth');
+      }, 500); // Check and scroll every 500ms during typing
+
+      return () => clearInterval(intervalId);
+    }
+  }, [messages, scrollToBottom]);
 
   // Focus input when chat opens
   useEffect(() => {
@@ -90,61 +224,62 @@ export const ChatbotWidget: React.FC = () => {
       content: message,
     };
 
+    // Sinh 1 id duy nhất cho cặp bot message này
+    const botId = `bot-${Date.now()}`;
+
+    // Thêm message của user vào trước
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
+
+    // Scroll ngay sau khi thêm user message
+    setTimeout(() => scrollToBottom('smooth'), 50);
+
+    // Thêm message bot với trạng thái isTyping/loading NGAY LẬP TỨC, dùng botId
+    const typingMessage: Message = {
+      id: botId,
+      type: 'bot',
+      content: '',
+      isTyping: true,
+    };
+    setMessages((prev) => [...prev, typingMessage]);
+
+    // Scroll ngay sau khi thêm typing message
+    setTimeout(() => scrollToBottom('smooth'), 100);
 
     try {
       const response = await processMessage(message);
 
-      if (response) {
-        // Add typing animation
-        const typingMessage: Message = {
-          id: `typing-${Date.now()}`,
-          type: 'bot',
-          content: '',
-          isTyping: true,
-        };
+      // Nếu intent là 'conversation' hoặc 'help', KHÔNG hiển thị suggestedLinks
+      const shouldShowSuggestedLinks =
+        response &&
+        response.intent !== 'conversation' &&
+        response.intent !== 'help';
 
-        setMessages((prev) => [...prev, typingMessage]);
+      // Update message bot với cùng id, KHÔNG tạo id mới
+      const botMessage: Message = {
+        id: botId,
+        type: 'bot',
+        content: response
+          ? response.message
+          : error || 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
+        suggestedLinks:
+          response && shouldShowSuggestedLinks ? response.suggestedLinks : [],
+        showTypingAnimation: true,
+      };
 
-        // Simulate typing delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Replace typing message with actual response
-        const botMessage: Message = {
-          id: `bot-${Date.now()}`,
-          type: 'bot',
-          content: response.message,
-          suggestedLinks: response.suggestedLinks,
-          quickActions: response.quickActions,
-          showTypingAnimation: true,
-        };
-
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === typingMessage.id ? botMessage : msg))
-        );
-      } else {
-        // Handle error response
-        const errorMessage: Message = {
-          id: `error-${Date.now()}`,
-          type: 'bot',
-          content: error || 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
-          showTypingAnimation: true,
-        };
-
-        setMessages((prev) => [...prev, errorMessage]);
-      }
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === botId ? botMessage : msg))
+      );
     } catch (error) {
-      console.error('Error sending message:', error);
-
       const errorMessage: Message = {
-        id: `error-${Date.now()}`,
+        id: botId,
         type: 'bot',
         content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
         showTypingAnimation: true,
       };
-
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === botId ? errorMessage : msg))
+      );
     }
   };
 
@@ -166,111 +301,18 @@ export const ChatbotWidget: React.FC = () => {
     }
   };
 
-  const handleTypingComplete = (messageId: string) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === messageId ? { ...msg, showTypingAnimation: false } : msg
-      )
-    );
-  };
-
-  const TypingAnimation: React.FC = () => (
-    <div className='flex items-center space-x-1'>
-      <div className='flex space-x-1'>
-        <div className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'></div>
-        <div
-          className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-          style={{ animationDelay: '0.1s' }}
-        ></div>
-        <div
-          className='w-2 h-2 bg-gray-400 rounded-full animate-bounce'
-          style={{ animationDelay: '0.2s' }}
-        ></div>
-      </div>
-    </div>
-  );
-
-  const MessageBubble: React.FC<{ message: Message }> = ({ message }) => (
-    <div
-      className={cn(
-        'flex gap-3 mb-4',
-        message.type === 'user' ? 'justify-end' : 'justify-start'
-      )}
-    >
-      {message.type === 'bot' && (
-        <div className='w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0'>
-          <Bot className='w-4 h-4 text-white' />
-        </div>
-      )}
-
-      <div
-        className={cn(
-          'max-w-[80%] rounded-lg px-4 py-2',
-          message.type === 'user'
-            ? 'bg-primary text-white'
-            : 'bg-gray-100 text-gray-900'
-        )}
-      >
-        {message.isTyping ? (
-          <TypingAnimation />
-        ) : message.showTypingAnimation ? (
-          <TypingText
-            text={message.content}
-            speed={30}
-            onComplete={() => handleTypingComplete(message.id)}
-            className='text-sm'
-          />
-        ) : (
-          <p className='text-sm whitespace-pre-wrap'>{message.content}</p>
-        )}
-
-        {/* Suggested Links - Only show after typing is complete */}
-        {message.suggestedLinks &&
-          message.suggestedLinks.length > 0 &&
-          !message.showTypingAnimation && (
-            <div className='mt-3 space-y-2 animate-in fade-in duration-500'>
-              <p className='text-xs text-gray-500'>Có thể bạn quan tâm:</p>
-              <div className='flex flex-wrap gap-2'>
-                {message.suggestedLinks.map((link, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleLinkClick(link.route)}
-                    className='inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors'
-                  >
-                    <ExternalLink className='w-3 h-3' />
-                    {link.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-        {/* Quick Actions - Only show after typing is complete */}
-        {message.quickActions &&
-          message.quickActions.length > 0 &&
-          !message.showTypingAnimation && (
-            <div className='mt-3 space-y-2 animate-in fade-in duration-500'>
-              <div className='flex flex-wrap gap-2'>
-                {message.quickActions.map((action, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleQuickActionClick(action)}
-                    className='px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors'
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-      </div>
-
-      {message.type === 'user' && (
-        <div className='w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0'>
-          <User className='w-4 h-4 text-gray-600' />
-        </div>
-      )}
-    </div>
+  // Use useCallback to prevent function recreation on every render
+  const handleTypingComplete = useCallback(
+    (messageId: string) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId ? { ...msg, showTypingAnimation: false } : msg
+        )
+      );
+      // Scroll after typing is complete and suggested links might appear
+      setTimeout(() => scrollToBottom('smooth'), 300);
+    },
+    [scrollToBottom]
   );
 
   return (
@@ -338,11 +380,19 @@ export const ChatbotWidget: React.FC = () => {
 
           {/* Messages */}
           <div
-            className='flex-1 p-4 overflow-y-auto'
+            ref={messagesContainerRef}
+            className='flex-1 p-4 overflow-y-auto scroll-smooth'
             style={{ height: isMaximized ? undefined : '420px' }}
           >
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                onTypingComplete={handleTypingComplete}
+                onContentChange={() =>
+                  setTimeout(() => scrollToBottom('smooth'), 200)
+                }
+              />
             ))}
             <div ref={messagesEndRef} />
           </div>
