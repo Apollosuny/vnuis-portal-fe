@@ -318,15 +318,17 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
                     </p>
                   </div>
                   <div>
-                    <p className='text-sm text-muted-foreground'>Status</p>
-                    <p className='font-medium flex items-center gap-2'>
+                    <span className='text-sm text-muted-foreground'>
+                      Status
+                    </span>
+                    <div className='font-medium flex items-center gap-2'>
                       {renderStatusBadge(submission.status)}
                       {submission.status === FormSubmissionStatus.PENDING && (
                         <span className='text-sm text-muted-foreground'>
                           (Awaiting review)
                         </span>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -342,62 +344,28 @@ export const FormSubmissionDetailClient = ({ id }: { id: string }) => {
               <Card className='border border-dashed'>
                 <CardContent className='pt-6'>
                   {submission.result &&
-                  Object.keys(submission.result).length > 0 ? (
+                  Array.isArray(submission.result.answers) &&
+                  submission.result.answers.length > 0 ? (
                     <div className='space-y-6'>
-                      {Object.entries(submission.result).map(
-                        ([questionId, answer], index) => {
-                          const question =
-                            submission.form?.data?.questions?.find(
-                              (q) => (q.id?.toString() || '') === questionId
-                            );
-
-                          return (
-                            <div
-                              key={questionId}
-                              className='pb-4 border-b last:border-0 last:pb-0'
-                            >
-                              <p className='font-medium mb-2'>
-                                {question?.title ||
-                                  `Question ${parseInt(questionId) + 1}`}
-                              </p>
-
-                              {/* Display answer based on its type */}
-                              {answer.value ? (
-                                <p className='bg-muted/40 p-3 rounded'>
-                                  {answer.value}
-                                </p>
-                              ) : (
-                                <div className='space-y-2'>
-                                  {Object.entries(answer).map(
-                                    ([optionId, selected]) => {
-                                      const option = question?.answers?.find(
-                                        (a) =>
-                                          (a.id?.toString() || '') === optionId
-                                      );
-
-                                      if (selected) {
-                                        return (
-                                          <div
-                                            key={optionId}
-                                            className='flex items-center gap-2'
-                                          >
-                                            <CheckCircle2 className='h-4 w-4 text-emerald-500' />
-                                            <span>
-                                              {option?.content ||
-                                                `Option ${optionId}`}
-                                            </span>
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    }
-                                  )}
-                                </div>
-                              )}
+                      {submission.result.answers.map((item, index) => {
+                        const question = submission.form?.data?.questions?.find(
+                          (q) => q.id === item.questionId
+                        );
+                        return (
+                          <div
+                            key={item.questionId}
+                            className='pb-4 border-b last:border-0 last:pb-0'
+                          >
+                            <div className='font-medium mb-2'>
+                              {question?.title ||
+                                `Unknown Question (${item.questionId})`}
                             </div>
-                          );
-                        }
-                      )}
+                            <div className='bg-muted/40 p-3 rounded'>
+                              {item.answer}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className='text-center py-6 text-muted-foreground'>
